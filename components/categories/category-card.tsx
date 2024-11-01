@@ -32,14 +32,26 @@ export function CategoryCard({ category, onUpdate, onDelete }: CategoryCardProps
     <>
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader>
-          <div className="flex justify-between items-start">
             <div>
               <h3 className="text-2xl font-semibold">{category.name}</h3>
-              <p className="text-sm text-muted-foreground capitalize">
-                {category.type}
-              </p>
+              
             </div>
-            <div className="flex space-x-2">
+            
+        </CardHeader>
+        <CardContent className="p-4 flex flex-col items-center justify-center h-40">
+        <img src={category.imageBlob || '/images/placeholder.svg'} alt={category.name} className="w-16 h-16 mb-2 rounded-full"/>
+            {category.roles?.map((role) => (
+              <Badge key={role.id} variant="secondary">
+                {role.name}
+              </Badge>
+            ))}
+          
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">
+            {category.roles?.length} Role{category.roles?.length !== 1 && "s"}
+          </p>
+          <div className="flex space-x-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -73,22 +85,6 @@ export function CategoryCard({ category, onUpdate, onDelete }: CategoryCardProps
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">{category.description}</p>
-          <div className="flex flex-wrap gap-2">
-            {category.roles.map((role) => (
-              <Badge key={role.id} variant="secondary">
-                {role.name}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-        <CardFooter>
-          <p className="text-sm text-muted-foreground">
-            {category.roles.length} Role{category.roles.length !== 1 && "s"}
-          </p>
         </CardFooter>
       </Card>
 

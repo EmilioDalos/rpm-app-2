@@ -6,30 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CategoryDialog } from "./category-dialog";
 import { Category } from "@/types";
-import { initialCategories } from "@/lib/initial-data";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-export function CategoryList() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+interface CategoryGridProps {
+  categories: Category[];
+  onAddCategory: (category: Omit<Category, 'id'>) => void;
+  onUpdateCategory: (category: Category) => void;
+  onDeleteCategory: (id: string) => void;
+}
+
+export function CategoryList({ categories, onAddCategory, onUpdateCategory, onDeleteCategory }: CategoryGridProps) {
+ 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<"all" | "personal" | "professional">("all");
-
-  const handleAddCategory = (newCategory: Category) => {
-    setCategories([...categories, newCategory]);
-    setIsAddDialogOpen(false);
-  };
-
-  const handleUpdateCategory = (updatedCategory: Category) => {
-    setCategories(
-      categories.map((cat) =>
-        cat.id === updatedCategory.id ? updatedCategory : cat
-      )
-    );
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(categories.filter((cat) => cat.id !== categoryId));
-  };
 
   const filteredCategories = categories.filter(
     (category) => selectedType === "all" || category.type === selectedType
@@ -58,13 +47,13 @@ export function CategoryList() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredCategories.map((category) => (
           <CategoryCard
             key={category.id}
             category={category}
-            onUpdate={handleUpdateCategory}
-            onDelete={handleDeleteCategory}
+            onUpdate={onUpdateCategory}
+            onDelete={onDeleteCategory}
           />
         ))}
         <Button
@@ -80,7 +69,7 @@ export function CategoryList() {
       <CategoryDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onSave={handleAddCategory}
+        onSave={onAddCategory}
       />
     </div>
   );

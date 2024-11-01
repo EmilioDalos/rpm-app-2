@@ -51,7 +51,7 @@ export function CategoryDialog({
       name: category?.name || "",
       type: category?.type || "personal",
       description: category?.description || "",
-      roles: category?.roles.map(role => ({ name: role.name })) || [],
+      roles: category?.roles?.map(role => ({ name: role.name })) || [],
     },
   });
 
@@ -78,6 +78,7 @@ export function CategoryDialog({
       name: data.name,
       type: data.type,
       description: data.description,
+      imageBlob: category?.imageBlob || "",
       roles,
       createdAt: category?.createdAt || new Date(),
       updatedAt: new Date(),
@@ -95,6 +96,7 @@ export function CategoryDialog({
             {category ? "Edit Category" : "Create New Category"}
           </DialogTitle>
         </DialogHeader>
+    
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -166,6 +168,35 @@ export function CategoryDialog({
                 </div>
               ))}
             </div>
+            {category?.imageBlob && (
+               <img src={category.imageBlob} alt="Category Image" className="w-16 h-16 mb-2 rounded-full" />
+            )}
+            <FormField
+              control={form.control}
+              name="imageBlob"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            field.onChange(reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end space-x-4">
               <Button

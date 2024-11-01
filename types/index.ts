@@ -4,6 +4,7 @@ export interface Category {
   type: "personal" | "professional";
   description: string;
   roles: Role[];
+  imageBlob: string;
   createdAt: Date;
   updatedAt: Date;
 }
