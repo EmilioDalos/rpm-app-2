@@ -29,22 +29,29 @@ export function CategoryList({ categories, onAddCategory, onUpdateCategory, onDe
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-3xl font-bold">Life Categories</h2>
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <ToggleGroup
-            type="single"
-            value={selectedType}
-            onValueChange={(value) => setSelectedType(value as typeof selectedType)}
-            className="justify-start"
-          >
-           
-            <ToggleGroupItem value="personal" aria-label="Show personal categories">
-              Personal
-            </ToggleGroupItem>
-            <ToggleGroupItem value="professional" aria-label="Show professional categories">
-              Professional
-            </ToggleGroupItem>
-          </ToggleGroup>
-         
-        </div>
+  <ToggleGroup
+    type="single"
+    value={selectedType}
+    onValueChange={(value) => setSelectedType(value as typeof selectedType)}
+    className="justify-start"
+  >
+    <ToggleGroupItem
+      value="personal"
+      aria-label="Show personal categories"
+      className="bg-white p-2 rounded-md border border-gray-300 hover:bg-gray-100 w-32 text-center"
+    >
+      Personal
+    </ToggleGroupItem>
+    <ToggleGroupItem
+      value="professional"
+      aria-label="Show professional categories"
+      className="bg-white p-2 rounded-md border border-gray-300 hover:bg-gray-100 w-32 text-center"
+    >
+      Professional
+    </ToggleGroupItem>
+  </ToggleGroup>
+</div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
