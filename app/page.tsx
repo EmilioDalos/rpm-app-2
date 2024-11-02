@@ -50,11 +50,29 @@ export default function Home() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
-    setCategories((prevCategories) =>
-      prevCategories.map((cat) =>
-        cat.id === updatedCategory.id ? updatedCategory : cat
-      )
-    );
+    console.log('Updating category with ID:', updatedCategory.id); // Log de ID
+    try {
+      const response = await fetch(`/api/categories/${updatedCategory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedCategory),
+      });
+  
+      if (response.ok) {
+        const updatedData = await response.json();
+        setCategories((prevCategories) =>
+          prevCategories.map((cat) =>
+            cat.id === updatedData.id ? updatedData : cat
+          )
+        );
+      } else {
+        console.error('Failed to update category');
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {
