@@ -66,9 +66,11 @@ export function CategoryDialog({
       categoryId: category?.id || Math.random().toString(36).substr(2, 9),
       name: role.name,
       purpose: "",
+      description: "",
       coreQualities: [],
       identityStatement: "",
       reflection: "",
+      imageBlob:  "",
       createdAt: new Date(),
       updatedAt: new Date(),
     }));

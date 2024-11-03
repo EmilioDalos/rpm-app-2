@@ -39,13 +39,14 @@ export function CategoryCard({ category, onUpdate, onDelete }: CategoryCardProps
 </CardHeader>
   <CardContent className="p-4 flex flex-col items-center justify-center h-40">
   <img src={category.imageBlob || '/images/placeholder.svg'} alt={category.name} className="w-32 h-32 mb-2 rounded-full border border-gray-300" />
+  
+  </CardContent>
+  <CardFooter>
   {category.roles?.map((role) => (
       <Badge key={role.id} variant="secondary">
         {role.name}
       </Badge>
     ))}
-  </CardContent>
-  <CardFooter>
     <div className="flex justify-end w-full">
       <AlertDialog>
         <AlertDialogTrigger asChild>

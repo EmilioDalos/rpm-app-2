@@ -15,9 +15,10 @@ async function writeCategories(categories) {
   await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
 }
 
-// GET, PUT, and DELETE methods for a single category by ID
-export async function GET(req: Request, { params }) {
-  const { id } = params;
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const id = url.pathname.split('/').pop();
+
   const categories = await readCategories();
   const category = categories.find((cat) => cat.id === id);
 
@@ -28,8 +29,10 @@ export async function GET(req: Request, { params }) {
   }
 }
 
-export async function PUT(req: Request, { params }) {
-  const { id } = params;
+export async function PUT(req: Request) {
+  const url = new URL(req.url);
+  const id = url.pathname.split('/').pop();
+
   const updatedCategory = await req.json();
   const categories = await readCategories();
 
@@ -43,11 +46,13 @@ export async function PUT(req: Request, { params }) {
   }
 }
 
-export async function DELETE(req: Request, { params }) {
-  const { id } = params;
-  const categories = await readCategories();
+export async function DELETE(req: Request) {
+  const url = new URL(req.url);
+  const id = url.pathname.split('/').pop();
 
+  const categories = await readCategories();
   const updatedCategories = categories.filter((cat) => cat.id !== id);
+
   if (updatedCategories.length === categories.length) {
     return NextResponse.json({ error: 'Category not found' }, { status: 404 });
   }
@@ -55,3 +60,4 @@ export async function DELETE(req: Request, { params }) {
   await writeCategories(updatedCategories);
   return NextResponse.json({ message: 'Category deleted' });
 }
+

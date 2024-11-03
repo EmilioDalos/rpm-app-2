@@ -14,10 +14,11 @@ export interface Role {
   categoryId: string;
   name: string;
   purpose: string;
+  description: string;
   coreQualities: string[];
   identityStatement: string;
   reflection: string;
-  imageUrl?: string;
+  imageBlob: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +33,7 @@ export interface CategoryFormData {
 export interface RoleFormData {
   name: string;
   purpose: string;
+  description: string;
   coreQualities: string[];
   identityStatement: string;
   reflection: string;
