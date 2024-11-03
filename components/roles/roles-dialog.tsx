@@ -22,16 +22,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["personal", "professional"]),
   description: z.string().min(1, "Description is required"),
-  subroles: z.array(
-    z.object({
-      name: z.string().min(1, "Sub-role name is required"),
-    })
-  ),
+  purpose: z.string().min(1, "Purpose is required"),
+  coreQualities: z.array(z.string().min(1, "Quality cannot be empty")),
+  identityStatement: z.string().min(1, "Identity statement is required"),
+  reflection: z.string().optional(),
+  imageBlob: z.string().optional(),
 });
 
 interface RoleDialogProps {
@@ -47,37 +47,33 @@ export function RoleDialog({
   onSave,
   role,
 }: RoleDialogProps) {
-  const form = useForm<RoleFormData & { subroles: { name: string }[] }>({
+  const [imagePreview, setImagePreview] = useState(role?.imageBlob || "");
+
+  const form = useForm<RoleFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: role?.name || "",
       description: role?.description || "",
+      purpose: role?.purpose || "",
+      coreQualities: role?.coreQualities || [""],
+      identityStatement: role?.identityStatement || "",
+      reflection: role?.reflection || "",
+      imageBlob: role?.imageBlob || "",
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "subroles",
+    name: "coreQualities",
   });
 
-  const onSubmit = (data: RoleFormData & { subroles: { name: string }[] }) => {
-    const subroles = data.subroles.map((subrole) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: subrole.name,
-    }));
-
+  const onSubmit = (data: RoleFormData) => {
     const newRole: Role = {
-      id: role?.id || Math.random().toString(36).substr(2, 9),
-      name: data.name,
-      description: data.description,
+      ...role,
+      ...data,
+      coreQualities: data.coreQualities.filter(Boolean), // Remove empty entries
       createdAt: role?.createdAt || new Date(),
       updatedAt: new Date(),
-      categoryId: role?.categoryId || "",
-      purpose: role?.purpose || "",
-      coreQualities: role?.coreQualities || [],
-      identityStatement: role?.identityStatement || "",
-      reflection: "",
-      imageBlob: data?.imageBlob || "",
     };
 
     onSave(newRole);
@@ -87,7 +83,7 @@ export function RoleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-screen overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
         <DialogHeader>
           <DialogTitle>{role ? "Edit Role" : "Create New Role"}</DialogTitle>
         </DialogHeader>
@@ -114,36 +110,46 @@ export function RoleDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe this role..." {...field} value={field.value as string} />
+                    <Textarea placeholder="Describe this role..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            <FormField
+              control={form.control}
+              name="purpose"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Purpose</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Purpose of this role..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <FormLabel>Sub-roles</FormLabel>
+                <FormLabel>Core Qualities</FormLabel>
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => append({ name: "" })}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => append("")}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Sub-role
+                  <Plus className="h-6 w-6" />
                 </Button>
               </div>
-
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
                   <FormField
                     control={form.control}
-                    name={`subroles.${index}.name`}
+                    name={`coreQualities.${index}`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input placeholder="Sub-role name" {...field} />
+                          <Input placeholder="Core Quality" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -160,6 +166,67 @@ export function RoleDialog({
                 </div>
               ))}
             </div>
+            <FormField
+              control={form.control}
+              name="identityStatement"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Identity Statement</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Identity statement..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reflection"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reflection</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Reflection..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageBlob"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const result = reader.result as string;
+                            field.onChange(result);
+                            setImagePreview(result); // Update the preview
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Selected Preview"
+                      className="mt-2 w-32 h-32 object-cover rounded"
+                    />
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end space-x-4">
               <Button
