@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,6 +46,8 @@ export function CategoryDialog({
   onSave,
   category,
 }: CategoryDialogProps) {
+  const [imagePreview, setImagePreview] = useState(category?.imageBlob || "");
+
   const form = useForm<CategoryFormData & { roles: { name: string }[] }>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,7 +73,7 @@ export function CategoryDialog({
       coreQualities: [],
       identityStatement: "",
       reflection: "",
-      imageBlob:  "",
+      imageBlob: "",
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
@@ -80,7 +83,7 @@ export function CategoryDialog({
       name: data.name,
       type: data.type,
       description: data.description,
-      imageBlob: category?.imageBlob || "",
+      imageBlob: imagePreview,
       roles,
       createdAt: category?.createdAt || new Date(),
       updatedAt: new Date(),
@@ -170,9 +173,11 @@ export function CategoryDialog({
                 </div>
               ))}
             </div>
-            {category?.imageBlob && (
-               <img src={category.imageBlob} alt="Category Image" className="w-16 h-16 mb-2 rounded-full" />
+
+            {imagePreview && (
+              <img src={imagePreview} alt="Category Image" className="w-16 h-16 mb-2 rounded-full" />
             )}
+
             <FormField
               control={form.control}
               name="imageBlob"
@@ -188,7 +193,9 @@ export function CategoryDialog({
                           const file = e.target.files[0];
                           const reader = new FileReader();
                           reader.onloadend = () => {
-                            field.onChange(reader.result);
+                            const result = reader.result as string;
+                            field.onChange(result);
+                            setImagePreview(result); // Update the preview
                           };
                           reader.readAsDataURL(file);
                         }

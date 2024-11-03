@@ -18,7 +18,9 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
+          <Link href="/categories" passHref>
             <Button variant="ghost">Categories</Button>
+            </Link>
             <Button variant="ghost">Roles</Button>
             <Button variant="ghost">Settings</Button>
           </nav>
@@ -32,7 +34,9 @@ export function Header() {
             </SheetTrigger>
             <SheetContent>
               <nav className="flex flex-col space-y-4 mt-8">
+              <Link href="/categories" passHref>
                 <Button variant="ghost">Categories</Button>
+                </Link>
                 <Button variant="ghost">Roles</Button>
                 <Button variant="ghost">Settings</Button>
               </nav>

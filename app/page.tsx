@@ -50,7 +50,9 @@ export default function Home() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
-    console.log('Updating category with ID:', updatedCategory.id); // Log de ID
+    console.log('Updating category with ID:', updatedCategory.id);
+    console.log('Updated imageBlob:', updatedCategory.imageBlob); // Log imageBlob
+  
     try {
       const response = await fetch(`/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
@@ -62,6 +64,7 @@ export default function Home() {
   
       if (response.ok) {
         const updatedData = await response.json();
+        console.log('Updated category data:', updatedData); // Log response
         setCategories((prevCategories) =>
           prevCategories.map((cat) =>
             cat.id === updatedData.id ? updatedData : cat
@@ -74,7 +77,7 @@ export default function Home() {
       console.error('Error updating category:', error);
     }
   };
-
+  
   const handleDeleteCategory = async (id: string) => {
     setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
   };
