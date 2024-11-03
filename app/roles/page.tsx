@@ -1,88 +1,90 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CategoryList } from "@/components/categories/category-list";
-import { Category } from "@/types";
 import { Header } from "@/components/layout/header";
+import { Role } from "@/types"; // Ensure Role type is defined in "@/types"
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+// Placeholder for RoleList component; replace with actual implementation
+import { RoleList } from "@/components/roles/roles-list"; 
+
+export default function RolesPage() {
+  const [roles, setRoles] = useState<Role[]>([]);
 
   useEffect(() => {
-    async function fetchCategories() {
+    async function fetchRoles() {
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch('/api/roles');
         if (response.ok) {
           const data = await response.json();
-          setCategories(data);
+          setRoles(data);
         } else {
-          console.error('Failed to fetch categories');
+          console.error('Failed to fetch roles');
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching roles:', error);
       }
     }
 
-    fetchCategories();
+    fetchRoles();
   }, []);
 
-  const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
+  const handleAddRole = async (newRole: Omit<Role, 'id'>) => {
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch('/api/roles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify(newRole),
       });
       if (response.ok) {
-        const addedCategory = await response.json();
-        setCategories((prevCategories) => [...prevCategories, addedCategory]);
+        const addedRole = await response.json();
+        setRoles((prevRoles) => [...prevRoles, addedRole]);
       } else {
-        console.error('Failed to add category');
+        console.error('Failed to add role');
       }
     } catch (error) {
-      console.error('Error adding category:', error);
+      console.error('Error adding role:', error);
     }
   };
 
-  const handleUpdateCategory = async (updatedCategory: Category) => {
+  const handleUpdateRole = async (updatedRole: Role) => {
     try {
-      const response = await fetch(`/api/categories/${updatedCategory.id}`, {
+      const response = await fetch(`/api/roles/${updatedRole.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updatedCategory),
+        body: JSON.stringify(updatedRole),
       });
 
       if (response.ok) {
         const updatedData = await response.json();
-        setCategories((prevCategories) =>
-          prevCategories.map((cat) =>
-            cat.id === updatedData.id ? updatedData : cat
+        setRoles((prevRoles) =>
+          prevRoles.map((role) =>
+            role.id === updatedData.id ? updatedData : role
           )
         );
       } else {
-        console.error('Failed to update category');
+        console.error('Failed to update role');
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('Error updating role:', error);
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeleteRole = async (id: string) => {
     try {
-      const response = await fetch(`/api/categories/${id}`, {
+      const response = await fetch(`/api/roles/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {
-        setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
+        setRoles((prevRoles) => prevRoles.filter((role) => role.id !== id));
       } else {
-        console.error('Failed to delete category');
+        console.error('Failed to delete role');
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('Error deleting role:', error);
     }
   };
 
@@ -90,11 +92,11 @@ export default function CategoriesPage() {
     <main className="min-h-screen bg-gray-100">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <CategoryList
-          categories={categories}
-          onAddCategory={handleAddCategory}
-          onUpdateCategory={handleUpdateCategory}
-          onDeleteCategory={handleDeleteCategory}
+        <RoleList
+          roles={roles}
+          onAddRole={handleAddRole}
+          onUpdateRole={handleUpdateRole}
+          onDeleteRole={handleDeleteRole}
         />
       </div>
     </main>
