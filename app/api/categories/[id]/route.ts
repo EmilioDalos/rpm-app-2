@@ -19,6 +19,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
+  console.log(`Parsed ID from URL: ${id}`); // DEBUG LOG
+
   const categories = await readCategories();
   const category = categories.find((cat) => cat.id === id);
 
@@ -60,4 +62,6 @@ export async function DELETE(req: Request) {
   await writeCategories(updatedCategories);
   return NextResponse.json({ message: 'Category deleted' });
 }
+
+
 
