@@ -15,8 +15,18 @@
     "roles": [
       {
         "id": "r1",
-        "name": "Sample Role",
-        "purpose": "Example purpose"
+        "categoryId": "1730998653445",
+        "name": "UpdaRole",
+        "purpose": "Updated purpose for the role",
+        "description": "This role is responsible for overseeing sample operations.",
+        "coreQualities": [
+          "Leadership"
+        ],
+        "identityStatement": "I am a leader who drives change.",
+        "reflection": "Reflecting on achievements and areas for improvement.",
+        "imageBlob": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "updatedAt": "2024-11-08T16:43:02.123Z"
       }
     ]
   }

@@ -57,14 +57,19 @@ export default function RolesPage() {
         },
         body: JSON.stringify(updatedRole),
       });
-
+  
       if (response.ok) {
         const updatedData = await response.json();
+  
+        // Werk de state bij en ververs de lijst
         setRoles((prevRoles) =>
           prevRoles.map((role) =>
             role.id === updatedData.id ? updatedData : role
           )
         );
+  
+        // Optioneel: herlaad de lijst volledig om de laatste data te krijgen
+        //fetchRoles();
       } else {
         console.error('Failed to update role');
       }
@@ -72,6 +77,8 @@ export default function RolesPage() {
       console.error('Error updating role:', error);
     }
   };
+  
+  
 
   const handleDeleteRole = async (id: string) => {
     try {

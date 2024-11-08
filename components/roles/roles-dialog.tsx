@@ -81,6 +81,19 @@ export function RoleDialog({
     form.reset();
   };
 
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        form.setValue("imageBlob", base64String); // Set image data in form state
+        setImagePreview(base64String); // Update image preview
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-screen overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
@@ -202,18 +215,7 @@ export function RoleDialog({
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            const result = reader.result as string;
-                            field.onChange(result);
-                            setImagePreview(result); // Update the preview
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
+                      onChange={handleImageChange}
                     />
                   </FormControl>
                   {imagePreview && (

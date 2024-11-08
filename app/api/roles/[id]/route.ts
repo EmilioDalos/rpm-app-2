@@ -31,20 +31,35 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const url = new URL(req.url);
-  const id = url.pathname.split('/').pop();
+  const roleId = url.pathname.split('/').pop();
 
   const updatedRole = await req.json();
-  const roles = await readRoles();
+  
+  // Lees alle categorieën in
+  const data = await fs.readFile(filePath, 'utf8');
+  const categories = JSON.parse(data);
 
-  const index = roles.findIndex((role) => role.id === id);
-  if (index !== -1) {
-    roles[index] = { ...updatedRole, id };
-    await writeRoles(roles);
-    return NextResponse.json(roles[index]);
-  } else {
+  let roleUpdated = false;
+
+  // Zoek de categorie en rol die overeenkomen met het opgegeven ID
+  categories.forEach((category) => {
+    const roleIndex = category.roles.findIndex((role) => role.id === roleId);
+    if (roleIndex !== -1) {
+      // Werk de rol bij
+      category.roles[roleIndex] = { ...updatedRole, id: roleId };
+      roleUpdated = true;
+    }
+  });
+
+  if (!roleUpdated) {
     return NextResponse.json({ error: 'Role not found' }, { status: 404 });
   }
+
+  // Schrijf de bijgewerkte categorieën terug naar het bestand
+  await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
+  return NextResponse.json(updatedRole);
 }
+
 
 export async function DELETE(req: Request) {
   const url = new URL(req.url);
