@@ -7,7 +7,26 @@
   {
     "id": "456",
     "name": "Another Category",
-    "roles": []
+    "type": "personal",
+    "description": "des",
+    "imageBlob": "",
+    "roles": [
+      {
+        "id": "58hnidfvi",
+        "categoryId": "456",
+        "name": "testRole",
+        "purpose": "",
+        "description": "",
+        "coreQualities": [],
+        "identityStatement": "",
+        "reflection": "",
+        "imageBlob": "",
+        "createdAt": "2024-11-08T16:56:03.108Z",
+        "updatedAt": "2024-11-08T16:56:03.108Z"
+      }
+    ],
+    "createdAt": "2024-11-08T16:56:03.108Z",
+    "updatedAt": "2024-11-08T16:56:03.108Z"
   },
   {
     "id": "1730998653445",
