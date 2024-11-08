@@ -30,7 +30,7 @@ const formSchema = z.object({
   purpose: z.string().min(1, "Purpose is required"),
   coreQualities: z.array(z.string().min(1, "Quality cannot be empty")),
   identityStatement: z.string().min(1, "Identity statement is required"),
-  reflection: z.string().optional(),
+  incantations: z.array(z.string().optional()).optional(),
   imageBlob: z.string().optional(),
 });
 
@@ -57,7 +57,7 @@ export function RoleDialog({
       purpose: role?.purpose || "",
       coreQualities: role?.coreQualities || [""],
       identityStatement: role?.identityStatement || "",
-      reflection: role?.reflection || "",
+      incantations: role?.incantations || [""],
       imageBlob: role?.imageBlob || "",
     },
   });
@@ -67,11 +67,17 @@ export function RoleDialog({
     name: "coreQualities",
   });
 
+  const { fields: incantationFields, append: appendIncantation, remove: removeIncantation } = useFieldArray({
+    control: form.control,
+    name: "incantations",
+  });
+
   const onSubmit = (data: RoleFormData) => {
     const newRole: Role = {
       ...role,
       ...data,
       coreQualities: data.coreQualities.filter(Boolean), // Remove empty entries
+      incantations: data.incantations?.filter(Boolean), // Remove empty entries
       createdAt: role?.createdAt || new Date(),
       updatedAt: new Date(),
     };
@@ -192,19 +198,43 @@ export function RoleDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="reflection"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reflection</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Reflection..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <FormLabel>Incantations</FormLabel>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => appendIncantation("")}
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
+              </div>
+              {incantationFields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`incantations.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input placeholder="Incantations" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeIncantation(index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
             <FormField
               control={form.control}
               name="imageBlob"

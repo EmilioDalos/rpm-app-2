@@ -17,7 +17,7 @@ export interface Role {
   description: string;
   coreQualities: string[];
   identityStatement: string;
-  reflection: string;
+  incantations: string[];
   imageBlob: string;
   createdAt: Date;
   updatedAt: Date;
