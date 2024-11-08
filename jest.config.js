@@ -1,12 +1,9 @@
 module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
   transform: {
-    "^.+\\.(ts|tsx)$": "babel-jest",
+    '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  testEnvironment: "node",
-  moduleDirectories: ["node_modules", "<rootDir>/"],
-  testMatch: ["**/test/**/*.test.js", "**/test/**/*.test.ts"],
-  testPathIgnorePatterns: ["/node_modules/", "/Mendix/SocialFlexModel-Feature_branch_Maandsluiting_2/"],
-  transform: {
-    "^.+\\.(ts|tsx)$": "babel-jest",
-  },
+  moduleFileExtensions: ['ts', 'js', 'json', 'node'],
+  transformIgnorePatterns: ['/node_modules/'],
 };

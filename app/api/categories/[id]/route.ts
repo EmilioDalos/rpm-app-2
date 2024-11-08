@@ -11,7 +11,7 @@ async function readCategories() {
 }
 
 // Helper function to write categories
-async function writeCategories(categories) {
+async function writeCategories(categories: { id: string; [key: string]: any }[]) {
   await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
 }
 
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   console.log(`Parsed ID from URL: ${id}`); // DEBUG LOG
 
   const categories = await readCategories();
-  const category = categories.find((cat) => cat.id === id);
+  const category = categories.find((cat: { id: string; [key: string]: any }) => cat.id === id);
 
   if (category) {
     return NextResponse.json(category);
@@ -38,7 +38,7 @@ export async function PUT(req: Request) {
   const updatedCategory = await req.json();
   const categories = await readCategories();
 
-  const index = categories.findIndex((cat) => cat.id === id);
+  const index = categories.findIndex((cat: { id: string; [key: string]: any }) => cat.id === id);
   if (index !== -1) {
     categories[index] = { ...updatedCategory, id };
     await writeCategories(categories);
@@ -53,7 +53,7 @@ export async function DELETE(req: Request) {
   const id = url.pathname.split('/').pop();
 
   const categories = await readCategories();
-  const updatedCategories = categories.filter((cat) => cat.id !== id);
+  const updatedCategories = categories.filter((cat: { id: string; [key: string]: any }) => cat.id !== id);
 
   if (updatedCategories.length === categories.length) {
     return NextResponse.json({ error: 'Category not found' }, { status: 404 });

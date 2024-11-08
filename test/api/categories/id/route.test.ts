@@ -1,4 +1,4 @@
-const { GET, PUT, DELETE, POST} = require('../../../../app/api/categories/[id]/route');
+const { GET, PUT, DELETE} = require('../../../../app/api/categories/[id]/route');
 const { NextRequest } = require('next/server');
 const mockFs = require('mock-fs');
 const fs = require('fs/promises');
@@ -15,7 +15,7 @@ describe('API Categories', () => {
       await fs.writeFile(originalCategoriesPath, JSON.stringify([
         { id: '123', name: 'Sample Category', roles: [{ id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' }] },
         { id: '456', name: 'Another Category', roles: [] },
-      ]));
+      ]));0
     }
   });
 
