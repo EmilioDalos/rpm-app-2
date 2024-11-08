@@ -64,18 +64,35 @@ export async function PUT(req: Request) {
   return NextResponse.json(updatedRole);
 }
 
-
 export async function DELETE(req: Request) {
   const url = new URL(req.url);
-  const id = url.pathname.split('/').pop();
+  const roleId = url.pathname.split('/').pop();
 
-  const roles = await readRoles();
-  const updatedRoles = roles.filter((role) => role.id !== id);
+  // Read all categories
+  const data = await fs.readFile(filePath, 'utf8');
+  const categories = JSON.parse(data);
 
-  if (updatedRoles.length === roles.length) {
+  let roleDeleted = false;
+
+  // Iterate over each category and remove the role if it exists
+  categories.forEach((category) => {
+    // Ensure roles are defined and are an array
+    if (Array.isArray(category.roles)) {
+      const initialLength = category.roles.length;
+      category.roles = category.roles.filter((role) => role.id !== roleId);
+      if (category.roles.length < initialLength) {
+        roleDeleted = true;
+      }
+    }
+  });
+
+  if (!roleDeleted) {
     return NextResponse.json({ error: 'Role not found' }, { status: 404 });
   }
 
-  await writeRoles(updatedRoles);
+  // Write updated categories back to the file
+  await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
   return NextResponse.json({ message: 'Role deleted' });
 }
+
+

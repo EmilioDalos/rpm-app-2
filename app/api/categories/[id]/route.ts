@@ -48,6 +48,8 @@ export async function PUT(req: Request) {
   }
 }
 
+
+
 export async function DELETE(req: Request) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
