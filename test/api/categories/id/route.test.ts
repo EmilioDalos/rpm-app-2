@@ -1,22 +1,21 @@
-const { GET, PUT, DELETE} = require('../../../../app/api/categories/[id]/route');
+const { GET, PUT, DELETE } = require('../../../../app/api/categories/[id]/route');
 const { NextRequest } = require('next/server');
 const mockFs = require('mock-fs');
 const fs = require('fs/promises');
 const path = require('path');
 
 describe('API Categories', () => {
-  const originalCategoriesPath = path.join(process.cwd(), 'data', 'categories.x.json');
-  const categoriesPath = path.join(process.cwd(), 'data', 'categories.json');
+  const originalCategoriesPath = path.join(process.cwd(), 'data', 'categories.json');
 
   beforeAll(async () => {
-    // Creëer categories.json als het niet bestaat voor testdoeleinden.
+    // Create categories.json if it doesn't exist for test purposes.
     try {
       await fs.access(originalCategoriesPath);
     } catch {
       await fs.writeFile(originalCategoriesPath, JSON.stringify([
         { id: '123', name: 'Sample Category', roles: [{ id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' }] },
         { id: '456', name: 'Another Category', roles: [] },
-      ]));0
+      ]));
     }
   });
 
@@ -24,8 +23,16 @@ describe('API Categories', () => {
     // Mock the filesystem with the categories.json file for testing purposes.
     mockFs({
       'data/categories.json': JSON.stringify([
-        {"id": "123", "name": "Sample Category", "roles": []},
-       
+        {
+          id: '123',
+          name: 'Sample Category',
+          roles: [{ id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' }],
+        },
+        {
+          id: '456',
+          name: 'Another Category',
+          roles: [],
+        },
       ]),
     });
   });
@@ -35,13 +42,12 @@ describe('API Categories', () => {
     mockFs.restore();
   });
 
-
   it('GET should return a category by ID', async () => {
     const request = new NextRequest('http://localhost:3000/api/categories/123');
     const response = await GET(request);
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data).toEqual({ id: '123', name: 'Sample Category', roles: [] });
+    expect(data).toEqual({ id: '123', name: 'Sample Category', roles: [{ id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' }] });
   });
 
   it('GET should return 404 if the category is not found', async () => {
@@ -53,10 +59,11 @@ describe('API Categories', () => {
   });
 
   it('PUT should update an existing category', async () => {
-    const updatedCategory = { name: 'Updated Category', roles: ['newRole'] };
+    const updatedCategory = { name: 'Updated Category', roles: [{ id: 'r1', name: 'Updated Role', purpose: 'Purpose 1' }] };
     const request = new NextRequest('http://localhost:3000/api/categories/123', {
       method: 'PUT',
       body: JSON.stringify(updatedCategory),
+      headers: { 'Content-Type': 'application/json' },
     });
     const response = await PUT(request);
     expect(response.status).toBe(200);
@@ -69,6 +76,7 @@ describe('API Categories', () => {
     const request = new NextRequest('http://localhost:3000/api/categories/999', {
       method: 'PUT',
       body: JSON.stringify(updatedCategory),
+      headers: { 'Content-Type': 'application/json' },
     });
     const response = await PUT(request);
     expect(response.status).toBe(404);
@@ -97,18 +105,17 @@ describe('API Categories', () => {
   });
 
   it('should keep existing roles when adding or updating roles in a category', async () => {
-    // Nieuwe of bijgewerkte data met een extra rol
+    // Updated category with an extra role
     const updatedCategory = {
-      id: '123',
-      name: 'Updated Test Category',
+      name: 'Updated Sample Category',
       roles: [
         { id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' },
-        { id: 'r2', name: 'New Role', purpose: 'Purpose 2' }
+        { id: 'r2', name: 'New Role', purpose: 'Purpose 2' },
       ],
     };
 
-    // Voer een PUT-verzoek uit om de categorie bij te werken
-    const request = new NextRequest('http://localhost:3000/api/categories', {
+    // Perform a PUT request to update the category
+    const request = new NextRequest('http://localhost:3000/api/categories/123', {
       method: 'PUT',
       body: JSON.stringify(updatedCategory),
       headers: { 'Content-Type': 'application/json' },
@@ -117,12 +124,12 @@ describe('API Categories', () => {
     const response = await PUT(request);
     expect(response.status).toBe(200);
 
-    // Lees de categorieën na de update en controleer of beide rollen bestaan
-    const updatedData = await fs.readFile(categoriesPath, 'utf8');
+    // Read the categories after the update and verify both roles exist
+    const updatedData = await fs.readFile(originalCategoriesPath, 'utf8');
     const categories: { id: string; name: string; roles: any[] }[] = JSON.parse(updatedData);
     const category = categories.find((cat: { id: string }) => cat.id === '123');
 
-    // Controleer of de categorie is gevonden voordat je de rollen bevestigt
+    // Verify the category was found and the roles are updated as expected
     expect(category).toBeDefined();
     expect(category?.roles).toEqual([
       { id: 'r1', name: 'Existing Role', purpose: 'Purpose 1' },
