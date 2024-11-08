@@ -235,6 +235,10 @@ export function RoleDialog({
                 </div>
               ))}
             </div>
+            {imagePreview && (
+              <img src={imagePreview} alt="CRole Image" className="w-16 h-16 mb-2 rounded-full" />
+            )}
+
             <FormField
               control={form.control}
               name="imageBlob"
@@ -245,16 +249,20 @@ export function RoleDialog({
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={handleImageChange}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const result = reader.result as string;
+                            field.onChange(result);
+                            setImagePreview(result); // Update the preview
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
                     />
                   </FormControl>
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Selected Preview"
-                      className="mt-2 w-32 h-32 object-cover rounded"
-                    />
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
