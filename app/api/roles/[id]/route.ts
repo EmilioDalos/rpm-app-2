@@ -4,6 +4,10 @@ import { promises as fs } from 'fs';
 
 const filePath = path.join(process.cwd(), 'data', 'categories.json');
 
+// Helper function to write roles
+async function writeRoles(roles: { id: string; [key: string]: any }[]) {
+  await fs.writeFile(filePath, JSON.stringify(roles, null, 2));
+}
 
 // Helper function to read roles from nested categories
 async function readRoles() {
