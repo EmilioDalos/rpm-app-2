@@ -40,17 +40,41 @@ export async function PUT(req: Request) {
   const categories = await readCategories();
 
   let roleUpdated = false;
+  let originalCategoryIndex = null;
+  let roleToMove = null;
 
-  // Iterate over categories to find and update the role
-  categories.forEach((category: { roles?: { id: string }[] }) => {
+  // Iterate over categories to find the role and check if it needs to be moved
+  categories.forEach((category: { id: string; roles?: { id: string }[] }, categoryIndex: number) => {
     if (category.roles) {
       const roleIndex = category.roles.findIndex((role) => role.id === roleId);
       if (roleIndex !== -1) {
-        category.roles[roleIndex] = { ...updatedRole, id: roleId };
-        roleUpdated = true;
+        if (category.id === updatedRole.categoryId) {
+          // Update the role if it's in the same category
+          category.roles[roleIndex] = { ...updatedRole, id: roleId };
+          roleUpdated = true;
+        } else {
+          // Mark the role for moving if the category ID has changed
+          roleToMove = { ...category.roles[roleIndex], ...updatedRole, id: roleId };
+          originalCategoryIndex = categoryIndex;
+        }
       }
     }
   });
+
+  if (roleToMove && originalCategoryIndex !== null) {
+    // Remove the role from the original category
+    categories[originalCategoryIndex].roles = categories[originalCategoryIndex].roles.filter(
+      (role: { id: string }) => role.id !== roleId
+    );
+
+    // Find the target category and add the role there
+    const targetCategory = categories.find((category: { id: string; roles: any[] }) => category.id === updatedRole.categoryId);
+    if (!targetCategory) {
+      return NextResponse.json({ error: 'Target category not found' }, { status: 404 });
+    }
+    targetCategory.roles.push(roleToMove);
+    roleUpdated = true;
+  }
 
   if (!roleUpdated) {
     return NextResponse.json({ error: 'Role not found' }, { status: 404 });
@@ -60,6 +84,7 @@ export async function PUT(req: Request) {
   await writeCategories(categories);
   return NextResponse.json(updatedRole);
 }
+
 
 // DELETE: Remove a role from a specific category
 export async function DELETE(req: Request) {

@@ -22,7 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -31,6 +31,7 @@ const formSchema = z.object({
   coreQualities: z.array(z.string().min(1, "Quality cannot be empty")),
   identityStatement: z.string().min(1, "Identity statement is required"),
   incantations: z.array(z.string().optional()).optional(),
+  categoryId: z.string().optional(),
   imageBlob: z.string().optional(),
 });
 
@@ -48,6 +49,7 @@ export function RoleDialog({
   role,
 }: RoleDialogProps) {
   const [imagePreview, setImagePreview] = useState(role?.imageBlob || "");
+  const [categories, setCategories] = useState([]);
 
   const form = useForm<RoleFormData>({
     resolver: zodResolver(formSchema),
@@ -58,6 +60,7 @@ export function RoleDialog({
       coreQualities: role?.coreQualities || [""],
       identityStatement: role?.identityStatement || "",
       incantations: role?.incantations || [""],
+      categoryId: role?.categoryId || "",
       imageBlob: role?.imageBlob || "",
     },
   });
@@ -72,12 +75,29 @@ export function RoleDialog({
     name: "incantations",
   });
 
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await fetch('/api/categories?simplified=true');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+    fetchCategories();
+  }, []);
+
   const onSubmit = (data: RoleFormData) => {
     const newRole: Role = {
       ...role,
       ...data,
-      coreQualities: data.coreQualities.filter(Boolean), // Remove empty entries
-      incantations: data.incantations?.filter(Boolean), // Remove empty entries
+      coreQualities: data.coreQualities.filter(Boolean),
+      incantations: data.incantations?.filter(Boolean),
       createdAt: role?.createdAt || new Date(),
       updatedAt: new Date(),
     };
@@ -85,19 +105,6 @@ export function RoleDialog({
     onSave(newRole);
     onOpenChange(false);
     form.reset();
-  };
-
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        form.setValue("imageBlob", base64String); // Set image data in form state
-        setImagePreview(base64String); // Update image preview
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   return (
@@ -109,6 +116,26 @@ export function RoleDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FormControl>
+                    <select {...field} className="block w-full">
+                      <option value="">Select a category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="name"
@@ -236,7 +263,7 @@ export function RoleDialog({
               ))}
             </div>
             {imagePreview && (
-              <img src={imagePreview} alt="CRole Image" className="w-16 h-16 mb-2 rounded-full" />
+              <img src={imagePreview} alt="Role Image" className="w-16 h-16 mb-2 rounded-full" />
             )}
 
             <FormField
@@ -256,7 +283,7 @@ export function RoleDialog({
                           reader.onloadend = () => {
                             const result = reader.result as string;
                             field.onChange(result);
-                            setImagePreview(result); // Update the preview
+                            setImagePreview(result);
                           };
                           reader.readAsDataURL(file);
                         }

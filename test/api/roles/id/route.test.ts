@@ -40,18 +40,6 @@ describe('API Roles', () => {
     expect(data).toEqual({ error: 'Role not found' });
   });
 
-  it('PUT should update an existing role', async () => {
-    const updatedRole = { id: '1', name: 'Updated Role' };
-    const request = new NextRequest('http://localhost:3000/api/roles/1', {
-      method: 'PUT',
-      body: JSON.stringify(updatedRole),
-    });
-    const response = await PUT(request);
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toEqual(updatedRole);
-  });
-
   it('PUT should return 404 if the role is not found', async () => {
     const updatedRole = { id: '999', name: 'Non-existent Role' };
     const request = new NextRequest('http://localhost:3000/api/roles/999', {
@@ -83,4 +71,53 @@ describe('API Roles', () => {
     const data = await response.json();
     expect(data).toEqual({ error: 'Role not found' });
   });
+
+  it('PUT should update an existing role within the same category', async () => {
+    const updatedRole = { id: '1', name: 'Updated Role', categoryId: '456' }; // Assuming it already belongs to '456'
+    const request = new NextRequest('http://localhost:3000/api/roles/1', {
+      method: 'PUT',
+      body: JSON.stringify(updatedRole),
+    });
+    
+    const response = await PUT(request);
+    expect(response.status).toBe(200);
+    
+    const data = await response.json();
+    expect(data).toEqual(updatedRole);
+    
+    // Verify that the role was updated and remains in the same category
+    const updatedCategories = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    expect(updatedCategories.find((cat: { id: string; roles: any[] }) => cat.id === '456').roles).toContainEqual(updatedRole);
+  });
+  
+  it('PUT should move an existing role to a different category', async () => {
+    const initialCategories = [
+      { id: '123', name: 'Category A', roles: [{ id: '1', name: 'Role 1', categoryId: '123' }] },
+      { id: '456', name: 'Category B', roles: [] },
+    ];
+  
+    mockFs({
+      'data/categories.json': JSON.stringify(initialCategories),
+    });
+  
+    const updatedRole = { id: '1', name: 'Role 1', categoryId: '456' }; // Changing categoryId
+    const request = new NextRequest('http://localhost:3000/api/roles/1', {
+      method: 'PUT',
+      body: JSON.stringify(updatedRole),
+    });
+  
+    const response = await PUT(request);
+    expect(response.status).toBe(200);
+  
+    const data = await response.json();
+    expect(data).toEqual(updatedRole);
+  
+    // Verify the role was moved
+    const updatedCategories = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    expect(updatedCategories.find((cat: { id: string; roles: any[] }) => cat.id === '123').roles).toEqual([]);
+    expect(updatedCategories.find((cat: { id: string; roles: any[] }) => cat.id === '456').roles).toContainEqual(updatedRole);
+  
+    mockFs.restore();
+  });
+  
 });

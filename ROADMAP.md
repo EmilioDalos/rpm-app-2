@@ -3,30 +3,7 @@ Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implemen
 ### Roadmap voor App Functionaliteit
 
 #### Huidige Functionaliteit
-1. **Toevoegen van Kattige Reeën**
-   - Gebruikers kunnen kattige reeën aan de app toevoegen.
-  
-2. **Toevoegen van Rollen**
-   - Gebruikers kunnen verschillende rollen toevoegen binnen de app.
-
-#### Openstaande Functionaliteit
-1. **Implementatieplanning**
-   - Voltooi de implementatieplanning om de volgende functionaliteiten op te nemen:
-     - Voltooi de UI/UX voor het toevoegen van reeën en rollen.
-     - Test de functionaliteit voor het toevoegen van meerdere reeën en rollen.
-
-2. **Verwijderen van Rollen **
-   - Probleem: Het verwijderen van een rol geeft momenteel een error.
-     - Actie: Onderzoek de oorzaak van de error en los deze op.
-  
-3. **Veld voor Reflecties**
-   - Implementatie van een veld voor reflecties dat gebruikers in staat stelt hun gedachten te delen over de toegevoegde reeën en rollen.
-     - Actie: Zorg ervoor dat dit veld gebruiksvriendelijk is en goed werkt.
-
-4. **Incantations Array**
-   - Huidige Status: Het veld voor incantations moet worden aangepast.
-   - Actie: Maak het mogelijk om meerdere incantations toe te voegen in de vorm van een array.
-     - Onderzoek hoe dit de gebruikerservaring kan verbeteren.
+1. In het roloverzicht: met een nieuw of bestaande rol een categporie kunnen toevoegen of kunnen wijzigen, dropdown in het dialoog met alle
 
 #### Volgende Stappen
 1. **Testen**
