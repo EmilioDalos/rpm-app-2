@@ -2,8 +2,7 @@ Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implemen
 
 ### Roadmap voor App Functionaliteit
 
-#### Huidige Functionaliteit
-1. In het roloverzicht: met een nieuw of bestaande rol een categporie kunnen toevoegen of kunnen wijzigen, dropdown in het dialoog met alle
+###
 
 #### Volgende Stappen
 1. **Testen**

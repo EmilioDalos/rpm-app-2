@@ -3,11 +3,18 @@ export interface Category {
   name: string;
   type: "personal" | "professional";
   description: string;
+  vision: string;
+  purpose: string;
   roles: Role[];
+  threeToThrive: string[];
+  resources: string;
+  results[]: string; //result, date to achieve
+  actionPlans: string[];
   imageBlob: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 export interface Role {
   id: string;
