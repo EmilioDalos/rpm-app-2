@@ -65,9 +65,13 @@ export default function Capturelist() {
 
   const createGroup = () => {
     if (groupTitle.trim()) {
-      const newGroup = { id: Date.now(), title: groupTitle, actions: [], isEditing: false }
+      const checkedActions = actions.filter(action => action.checked)
+      const newGroup = { id: Date.now(), title: groupTitle, actions: checkedActions, isEditing: false }
       setGroups([...groups, newGroup])
-      setGroupTitle('')
+
+      // Verwijder de aangevinkte acties uit de Capturelist
+      setActions(actions.filter(action => !action.checked))
+      setGroupTitle('') // Reset de invoer voor de groepsnaam
     }
   }
 
