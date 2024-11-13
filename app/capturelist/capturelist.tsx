@@ -219,17 +219,6 @@ useEffect(() => {
         </ul>
 
         <div className="flex mb-4">
-          <Input
-            type="text"
-            value={groupTitle}
-            onChange={(e) => setGroupTitle(e.target.value)}
-            placeholder="Nieuwe groep"
-            className="mr-2"
-          />
-          <Button onClick={createGroup}><Group className="h-4 w-4" /></Button>
-        </div>
-
-        <div className="flex mb-4">
           <Select value={selectedGroup || ''} onValueChange={setSelectedGroup}>
             <SelectTrigger className="w-full mr-2">
               <SelectValue placeholder="Selecteer een groep" />
@@ -243,6 +232,17 @@ useEffect(() => {
           <Button onClick={addToGroup} disabled={!selectedGroup || !actions.some(a => a.checked)}>
             Toevoegen aan groep
           </Button>
+        </div>
+
+        <div className="flex mb-4">
+          <Input
+            type="text"
+            value={groupTitle}
+            onChange={(e) => setGroupTitle(e.target.value)}
+            placeholder="Nieuwe groep"
+            className="mr-2"
+          />
+          <Button onClick={createGroup}><Group className="h-4 w-4" /></Button>
         </div>
 
         <div>

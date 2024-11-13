@@ -18,6 +18,9 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
+          <Link href="/capturelist" passHref>
+            <Button variant="ghost">Capture list</Button>
+            </Link>
           <Link href="/categories" passHref>
             <Button variant="ghost">Categories</Button>
             </Link>
