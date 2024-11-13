@@ -27,6 +27,7 @@ type ActionPlanPanelProps = {
 }
 
 export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps) {
+  
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
   const [result, setResult] = useState('')
@@ -43,6 +44,23 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
 
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Add the group's actions to the massiveActions list when the panel opens
+  useEffect(() => {
+    if (group?.actions?.length) {
+      const newActions = group.actions.map((action) => ({
+        id: Date.now() + Math.random(), // Ensure unique ID
+        text: action.text,
+        leverage: '',
+        durationAmount: 0,
+        durationUnit: 'min',
+        priority: massiveActions.length + 1,
+        key: '✘',
+      }))
+      setMassiveActions([...massiveActions, ...newActions])
+      setResult(group.title);
+    }
+  }, [group])
 
   const addMassiveAction = () => {
     const newAction: ActionPlan = {
@@ -96,7 +114,7 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
       <div className="flex-grow bg-white shadow-lg overflow-hidden flex">
         {/* Main Content */}
         <div className="flex-grow p-8 overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-4">Massive Action Plan</h2>
+          <h2 className="text-2xl font-bold mb-4">{group.title} - Massive Action Plan</h2>
 
           {/* Column Layout */}
           <div className="flex justify-between gap-4">
@@ -104,71 +122,70 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
             <div className={`flex-[2] p-4 rounded-lg w-full bg-gray-100 ${isCollapsed && activeColumn !== 'massiveActions' ? 'hidden' : ''}`}>
               <h3 className="text-lg font-semibold mb-2">MASSIVE ACTION PLAN</h3>
               
-                {massiveActions.map((action, index) => (
-                  <div key={action.id} className="flex items-center my-2 rounded  w-full">
-                    <Input
-                      placeholder="LB"
-                      value={action.leverage}
-                      onChange={(e) => updateMassiveAction(index, { leverage: e.target.value })}
-                      className="w-10 text-xs p-1"
-                    />
-                    <Input
-                      placeholder="1"
-                      type="number"
-                      value={action.durationAmount}
-                      onChange={(e) => updateMassiveAction(index, { durationAmount: parseInt(e.target.value) })}
-                      className="w-10 text-xs p-1"
-                    />
-                    <Select
-                      value={action.durationUnit}
-                      onValueChange={(value) => updateMassiveAction(index, { durationUnit: value })}
-                    >
-                      <SelectTrigger className="w-16 text-xs p-1"><SelectValue placeholder="Unit" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="min">min</SelectItem>
-                        <SelectItem value="hr">hr</SelectItem>
-                        <SelectItem value="d">d</SelectItem>
-                        <SelectItem value="wk">wk</SelectItem>
-                        <SelectItem value="mo">mo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      placeholder="P"
-                      type="number"
-                      value={action.priority}
-                      onChange={(e) => updateMassiveAction(index, { priority: parseInt(e.target.value) })}
-                      className="w-10 text-xs p-1"
-                    />
-                    <Select
-                      value={action.key}
-                      onValueChange={(value) => updateMassiveAction(index, { key: value })}
-                    >
-                      <SelectTrigger className="w-10 text-xs p-1"><SelectValue placeholder="Key" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="✘">✘</SelectItem>
-                        <SelectItem value="✔">✔</SelectItem>
-                        <SelectItem value="O">O</SelectItem>
-                        <SelectItem value="➜">➜</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input 
-                      value={action.text} 
-                      placeholder="Test Action" 
-                      onChange={(e) => updateMassiveAction(index, { text: e.target.value })}
-                      className="flex-grow text-xs p-1"
-                    />
-                    <Button onClick={() => removeMassiveAction(index)} variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </div>
-                ))}
-              
+              {massiveActions.map((action, index) => (
+                <div key={action.id} className="flex items-center my-2 rounded  w-full">
+                  <Input
+                    placeholder="LB"
+                    value={action.leverage}
+                    onChange={(e) => updateMassiveAction(index, { leverage: e.target.value })}
+                    className="w-10 text-xs p-1"
+                  />
+                  <Input
+                    placeholder="1"
+                    type="number"
+                    value={action.durationAmount}
+                    onChange={(e) => updateMassiveAction(index, { durationAmount: parseInt(e.target.value) })}
+                    className="w-10 text-xs p-1"
+                  />
+                  <Select
+                    value={action.durationUnit}
+                    onValueChange={(value) => updateMassiveAction(index, { durationUnit: value })}
+                  >
+                    <SelectTrigger className="w-16 text-xs p-1"><SelectValue placeholder="Unit" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="min">min</SelectItem>
+                      <SelectItem value="hr">hr</SelectItem>
+                      <SelectItem value="d">d</SelectItem>
+                      <SelectItem value="wk">wk</SelectItem>
+                      <SelectItem value="mo">mo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="P"
+                    type="number"
+                    value={action.priority}
+                    onChange={(e) => updateMassiveAction(index, { priority: parseInt(e.target.value) })}
+                    className="w-10 text-xs p-1"
+                  />
+                  <Select
+                    value={action.key}
+                    onValueChange={(value) => updateMassiveAction(index, { key: value })}
+                  >
+                    <SelectTrigger className="w-10 text-xs p-1"><SelectValue placeholder="Key" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="✘">✘</SelectItem>
+                      <SelectItem value="✔">✔</SelectItem>
+                      <SelectItem value="O">O</SelectItem>
+                      <SelectItem value="➜">➜</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input 
+                    value={action.text} 
+                    placeholder="Test Action" 
+                    onChange={(e) => updateMassiveAction(index, { text: e.target.value })}
+                    className="flex-grow text-xs p-1"
+                  />
+                  <Button onClick={() => removeMassiveAction(index)} variant="ghost" size="sm">
+                    <Trash2 className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </div>
+              ))}
 
               <Button onClick={addMassiveAction} className="mt-2"><Plus className="h-4 w-4 mr-1" /> Add Action</Button>
             </div>
 
-              {/* Result Column */}
-              <div className={`flex-1 p-4 rounded-lg text-center bg-gray-200 ${isCollapsed && activeColumn !== 'result' ? 'hidden' : ''}`}>
+            {/* Result and Purpose Columns remain unchanged */}
+            <div className={`flex-1 p-4 rounded-lg text-center bg-gray-200 ${isCollapsed && activeColumn !== 'result' ? 'hidden' : ''}`}>
               <h3 className="text-lg font-semibold mb-2">RESULT</h3>
               <Textarea
                 placeholder="What do I want?"
@@ -177,8 +194,6 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
                 className="w-full mt-2 text-xs p-1 bg-white min-h-[100px] resize-none overflow-hidden"
               />
             </div>
-
-            {/* Purpose Column */}
             <div className={`flex-1 p-4 rounded-lg bg-gray-300 ${isCollapsed && activeColumn !== 'purpose' ? 'hidden' : ''}`}>
               <h3 className="text-lg font-semibold mb-2">PURPOSE</h3>
               {purposes.map((purpose, index) => (
@@ -205,7 +220,7 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
           <Button onClick={onClose} className="mt-6">Close</Button>
         </div>
 
-        {/* Right Sidebar - Only shown when collapsed */}
+        {/* Right Sidebar */}
         {isCollapsed && (
           <div className="w-16 bg-gray-900 flex flex-col items-center py-4">
             <Button

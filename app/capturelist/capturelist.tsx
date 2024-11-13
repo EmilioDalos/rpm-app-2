@@ -33,6 +33,7 @@ export default function Capturelist() {
   const [viewingGroup, setViewingGroup] = useState<number | null>(null)
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
   const [editingActionId, setEditingActionId] = useState<number | null>(null) // Track editing action ID
+  const [massiveActions, setMassiveActions] = useState([]);
 
   useEffect(() => {
     const savedActions = localStorage.getItem('actions')
@@ -101,9 +102,14 @@ export default function Capturelist() {
   }
 
   const openActionPlan = (group: Group) => {
-    setSelectedGroupForPlan(group)
+    setSelectedGroupForPlan(group); // Set the selected group
+
+   
     setShowActionPlan(true)
-  }
+    
+    // Voeg deze regel toe om de acties naar het actieplan te kopiëren
+    addActionsFromBook(group.actions);
+  };
 
   const toggleGroupView = (groupId: number) => {
     setViewingGroup(prevViewingGroup => prevViewingGroup === groupId ? null : groupId)
@@ -145,6 +151,38 @@ export default function Capturelist() {
         : group
     ))
   }
+
+// Example of using addActionsFromBook
+const handleAddGroupActions = (group: Group) => {
+  addActionsFromBook(group.actions);
+};
+
+const addActionsFromBook = (actions) => {
+  if (!actions || actions.length === 0) return; // Exit if no actions are provided
+
+  // Map actions into the format required for `massiveActions`
+  const newActions = actions.map((action) => ({
+    id: Date.now() + Math.random(), // Unique ID
+    text: action.text, // Text from the provided action
+    leverage: '', // Default leverage
+    durationAmount: 0, // Default duration amount
+    durationUnit: 'min', // Default duration unit
+    priority: massiveActions.length + 1, // Priority based on current array length
+    key: '✘', // Default key
+  }));
+
+  // Append the new actions to the existing state
+  setMassiveActions((prevMassiveActions) => [...prevMassiveActions, ...newActions]);
+};
+
+
+// Call addActionsFromBook when the group is passed to ActionPlanPanel
+useEffect(() => {
+  if (selectedGroupForPlan && selectedGroupForPlan.actions.length > 0) {
+    addActionsFromBook(selectedGroupForPlan.actions);
+  }
+}, [selectedGroupForPlan]);
+
 
   return (
     <div className="flex">
@@ -269,6 +307,7 @@ export default function Capturelist() {
           ))}
         </div>
       </div>
+      
       {showActionPlan && selectedGroupForPlan && (
         <ActionPlanPanel group={selectedGroupForPlan} onClose={() => setShowActionPlan(false)} />
       )}
