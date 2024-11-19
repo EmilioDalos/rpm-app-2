@@ -7,6 +7,15 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+type ActionPlan = {
+  id: number;
+  text: string;
+  leverage: string;
+  durationAmount: number;
+  durationUnit: string;
+  priority: number;
+  key: string;
+};
 
 type ActionPlanPanelProps = {
   group: {
@@ -14,10 +23,10 @@ type ActionPlanPanelProps = {
     title: string
     actions: { id: number; text: string; checked: boolean }[]
   }
-  onClose: () => void
+  onClose: (deletedGroupId?: number) => void
 }
 
-export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps) {
+export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps) {
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
   const [result, setResult] = useState('')
@@ -26,7 +35,7 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
   const [categories] = useState(['Personal', 'Work', 'Fitness', 'Learning'])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedOption, setSelectedOption] = useState<string>('Day')
-
+  
   useEffect(() => {
     const handleResize = () => {
       setIsCollapsed(window.innerWidth < 1024)
@@ -101,8 +110,20 @@ export default function ActionPlanPanel({ group, onClose }: ActionPlanPanelProps
 
       const data = await response.json();
       console.log('Actieplan succesvol opgeslagen:', data);
-    } catch (error) {
-      console.error('Fout bij het opslaan van het actieplan:', error.message || error);
+
+      console.log('Sluit het ActionPlanPanel');
+      onClose(group.id);
+
+
+    // Zorg ervoor dat de parent component ook de nieuwe groepen ontvangt
+     onClose(); // Verwijder deze regel, omdat onClose geen argumenten verwacht
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Fout bij het opslaan van het actieplan:', error.message);
+      } else {
+        console.error('Fout bij het opslaan van het actieplan:', error);
+      }
     }
   }
 

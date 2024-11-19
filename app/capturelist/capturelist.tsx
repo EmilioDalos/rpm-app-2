@@ -33,7 +33,7 @@ export default function Capturelist() {
   const [viewingGroup, setViewingGroup] = useState<number | null>(null)
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
   const [editingActionId, setEditingActionId] = useState<number | null>(null) // Track editing action ID
-  const [massiveActions, setMassiveActions] = useState([]);
+  const [massiveActions, setMassiveActions] = useState<{ id: number; text: string; leverage: string; durationAmount: number; durationUnit: string; priority: number; key: string; }[]>([]);
 
   useEffect(() => {
     const savedActions = localStorage.getItem('actions')
@@ -94,19 +94,9 @@ export default function Capturelist() {
     setEditingGroupId(editingGroupId === groupId ? null : groupId)
   }
 
-  const updateGroupTitle = (groupId: number, newTitle: string) => {
-    setGroups(groups.map(g => 
-      g.id === groupId ? { ...g, title: newTitle, isEditing: false } : g
-    ))
-    setEditingGroupId(null)
-  }
-
   const openActionPlan = (group: Group) => {
     setSelectedGroupForPlan(group); // Set the selected group
-
-   
-    setShowActionPlan(true)
-    
+    setShowActionPlan(true);
     // Voeg deze regel toe om de acties naar het actieplan te kopiëren
     addActionsFromBook(group.actions);
   };
@@ -152,12 +142,16 @@ export default function Capturelist() {
     ))
   }
 
-// Example of using addActionsFromBook
-const handleAddGroupActions = (group: Group) => {
-  addActionsFromBook(group.actions);
-};
+  const handleActionPlanClose = (deletedGroupId?: number) => {
+    if (deletedGroupId) {
+      setGroups(prevGroups => prevGroups.filter(group => group.id !== deletedGroupId));
+    }
+    setShowActionPlan(false);
+    setSelectedGroupForPlan(null);
+  };
 
-const addActionsFromBook = (actions) => {
+
+const addActionsFromBook = (actions: Action[]) => {
   if (!actions || actions.length === 0) return; // Exit if no actions are provided
 
   // Map actions into the format required for `massiveActions`
@@ -309,7 +303,10 @@ useEffect(() => {
       </div>
       
       {showActionPlan && selectedGroupForPlan && (
-        <ActionPlanPanel group={selectedGroupForPlan} onClose={() => setShowActionPlan(false)} />
+        <ActionPlanPanel 
+          group={selectedGroupForPlan} 
+          onClose={handleActionPlanClose} 
+        />
       )}
     </div>
   )
