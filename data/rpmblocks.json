@@ -1,0 +1,116 @@
+[
+  {
+    "id": "1",
+    "result": "Increase productivity",
+    "purposes": [
+      "Optimize work schedule",
+      "Improve focus"
+    ],
+    "massiveActions": [
+      {
+        "id": "101",
+        "text": "Complete project report",
+        "leverage": "High",
+        "durationAmount": 2,
+        "durationUnit": "hr",
+        "priority": 1,
+        "key": "✔",
+        "category": "Work"
+      }
+    ]
+  },
+  {
+    "actions": [
+      {
+        "id": 1732002118264.6091,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      }
+    ],
+    "result": "test",
+    "id": "1732002121642"
+  },
+  {
+    "actions": [
+      {
+        "id": 1732002118264.6091,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      }
+    ],
+    "result": "test",
+    "id": "1732002793890"
+  },
+  {
+    "actions": [
+      {
+        "id": 1732002118264.6091,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      }
+    ],
+    "result": "test",
+    "id": "1732002883563"
+  },
+  {
+    "actions": [
+      {
+        "id": 1732009195044.8162,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      }
+    ],
+    "result": "test",
+    "category": "",
+    "type": "Day",
+    "id": "1732009196614"
+  },
+  {
+    "actions": [
+      {
+        "id": 1732009195044.8162,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      },
+      {
+        "id": 1732009234352.1484,
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "category": "Fitness"
+      }
+    ],
+    "result": "test",
+    "category": "Fitness",
+    "type": "Category",
+    "id": "1732009237084"
+  }
+]
