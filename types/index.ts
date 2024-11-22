@@ -51,11 +51,16 @@ export interface RoleFormData {
 
 // Type for the RPM Block
 export type RpmBlock = {
+  id: string; // Unique identifier for the action
   result: string; // The result or goal associated with this block
   purposes: string[]; // List of purposes associated with this block
   massiveActions: MassiveAction[]; // List of massive actions within this block
   category: string; // Category the action belongs to
-  type: "time" | "project" | "day" | "week" | "month" | "quater"};
+  type: "time" | "project" | "day" | "week" | "month" | "quater"
+  createdAt: Date;
+  updatedAt: Date;
+  saved: boolean;
+};
 
 // Type for an individual massive action
 export type MassiveAction = {

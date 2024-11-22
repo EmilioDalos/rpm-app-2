@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -48,21 +49,58 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
   }, [])
 
   useEffect(() => {
-    if (group?.actions?.length) {
-      const newActions = group.actions.map((action) => ({
-        id: Date.now() + Math.random(),
+    if (!group || !group.id) {
+      console.warn('Group did load!'); // Early exit if group is invalid
+      return;
+    }
+  
+    const savedData = localStorage.getItem(`actionPlan-${group.id}`);
+    console.log(`SavedData actionPlan-${group.id}`, savedData);
+  
+    if (savedData) {
+      console.log('Saved Data Found'); // Load data from localStorage
+      try {
+        const parsedData = JSON.parse(savedData);
+        setMassiveActions(parsedData.massiveActions || []);
+        setPurposes(parsedData.purposes || []);
+        setResult(parsedData.result || '');
+      } catch (error) {
+        console.error('Error parsing saved data:', error);
+      }
+    } else if (group?.actions?.length) {
+      console.log('Data was leeg. Initializing group actions.'); // Initialize with group actions
+      const newActions = group.actions.map((action, index) => ({
+        id: Date.now() + index,
         text: action.text,
         leverage: '',
         durationAmount: 0,
         durationUnit: 'min',
-        priority: massiveActions.length + 1,
+        priority: index + 1,
         key: '✘',
         category: selectedCategory || '',
-      }))
-      setMassiveActions([...massiveActions, ...newActions])
-      setResult(group.title)
+      }));
+  
+      setMassiveActions(newActions);
+      setResult(group.title);
+  
+      const initialData = { massiveActions: newActions, purposes: [], result: group.title };
+      localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(initialData));
+      console.log('Initialized and saved new data:', initialData);
     }
-  }, [group, selectedCategory])
+  }, [group, selectedCategory]);
+  
+  // Save to localStorage only when state is fully initialized
+  useEffect(() => {
+    if (!massiveActions.length && !purposes.length && !result) {
+      console.log('State not yet initialized. Skipping save.');
+      return;
+    }
+  
+    const dataToSave = { massiveActions, purposes, result };
+    localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(dataToSave));
+    console.log(`Saved actionPlan-${group.id}:`, dataToSave);
+  }, [massiveActions, purposes, result, group.id]);
+  
 
   const addMassiveAction = () => {
     const newAction: ActionPlan = {
@@ -87,6 +125,21 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
     setMassiveActions(updatedActions)
   }
 
+  const updateRpmBlocksInLocalStorage = (newBlock: any) => {
+    // Haal bestaande rpmBlocks op uit localStorage
+    const savedBlocks = localStorage.getItem('rpmBlocks');
+    const rpmBlocks = savedBlocks ? JSON.parse(savedBlocks) : []; // Parse de opgeslagen blocks of gebruik een lege array
+  
+    // Voeg het nieuwe blok toe aan de array
+    const updatedBlocks = [...rpmBlocks, newBlock];
+  
+    // Sla de bijgewerkte array op in localStorage
+    localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
+  
+    // Log voor debugging
+    console.log('Updated rpmBlocks in localStorage:', updatedBlocks);
+  };
+
   const handleSave = async () => {
     try {
       const rpmBlockData = {
@@ -94,6 +147,9 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
         result,
         category: selectedCategory,
         type: selectedOption,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        saved : true
       };
 
       const response = await fetch('api/rpmblocks', {
@@ -111,8 +167,16 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
       const data = await response.json();
       console.log('Actieplan succesvol opgeslagen:', data);
 
-      console.log('Sluit het ActionPlanPanel');
+  
+      localStorage.removeItem(`actionPlan-${group.id}`);
+
       onClose(group.id);
+      console.log('Sluit het ActionPlanPanel');
+
+       // Verwijder het blok uit de rpmBlocks in localStorage
+    const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
+    const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
+    localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
 
 
     // Zorg ervoor dat de parent component ook de nieuwe groepen ontvangt
@@ -162,6 +226,28 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
     }
   }
 
+  const handleCapturelistClick = () => {
+    const newBlock = {
+      id: Date.now(),
+      actions: massiveActions,
+      result,
+      category: selectedCategory,
+      type: selectedOption,
+      saved: false,
+    };
+  
+    // Update localStorage
+    const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
+    localStorage.setItem('rpmBlocks', JSON.stringify([newBlock ,...existingBlocks ]));
+  
+    // Emit custom event
+    const event = new CustomEvent('rpmBlocksUpdated');
+    window.dispatchEvent(event);
+  
+    // Sluit het paneel
+    onClose();
+  };
+
   const { totalTime, totalMustTime } = calculateTotalTime()
 
   return (
@@ -169,10 +255,10 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
       <div className="flex flex-grow overflow-hidden">
         {/* Capturelist Return Bar */}
         <div
-          className="bg-gray-900 text-white w-16 flex items-center justify-center cursor-pointer"
-          onClick={onClose}
-          title="Terug naar Capturelist"
-        >
+  className="bg-gray-900 text-white w-16 flex items-center justify-center cursor-pointer"
+  onClick={handleCapturelistClick}
+  title="Terug naar Capturelist"
+>
           <span className="transform -rotate-90 text-xs font-bold tracking-widest">CAPTURELIST</span>
         </div>
         
@@ -280,7 +366,7 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
                     </Button>
                   </div>
                 ))}
-                <Button onClick={addPurpose} className="mt-2"><Plus className="h-4 w-4 mr-1" /> Add Purpose</Button>
+                <Button  className="mt-2"><Plus className="h-4 w-4 mr-1" /> Add Purpose</Button>
               </div>
             </div>
           </div>
