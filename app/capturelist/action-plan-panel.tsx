@@ -50,7 +50,7 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
 
   useEffect(() => {
     if (!group || !group.id) {
-      console.warn('Group did load!'); // Early exit if group is invalid
+      console.warn('Group did not load properly!'); // Early exit if group is invalid
       return;
     }
   
@@ -68,7 +68,7 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
         console.error('Error parsing saved data:', error);
       }
     } else if (group?.actions?.length) {
-      console.log('Data was leeg. Initializing group actions.'); // Initialize with group actions
+      console.log('Data was empty. Initializing group actions.'); // Initialize with group actions
       const newActions = group.actions.map((action, index) => ({
         id: Date.now() + index,
         text: action.text,
@@ -83,23 +83,36 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
       setMassiveActions(newActions);
       setResult(group.title);
   
-      const initialData = { massiveActions: newActions, purposes: [], result: group.title };
+      const initialData = {
+        id: group.id, // Add group.id to the initialized data
+        massiveActions: newActions,
+        purposes: [],
+        result: group.title,
+      };
+  
       localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(initialData));
       console.log('Initialized and saved new data:', initialData);
     }
   }, [group, selectedCategory]);
   
-  // Save to localStorage only when state is fully initialized
-  useEffect(() => {
-    if (!massiveActions.length && !purposes.length && !result) {
-      console.log('State not yet initialized. Skipping save.');
-      return;
-    }
   
-    const dataToSave = { massiveActions, purposes, result };
-    localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(dataToSave));
-    console.log(`Saved actionPlan-${group.id}:`, dataToSave);
-  }, [massiveActions, purposes, result, group.id]);
+ // Save to localStorage only when state is fully initialized
+useEffect(() => {
+  if (!massiveActions.length && !purposes.length && !result) {
+    console.log('State not yet initialized. Skipping save.');
+    return;
+  }
+
+  const dataToSave = {
+    id: group.id, // Add the group ID here
+    massiveActions,
+    purposes,
+    result,
+  };
+
+  localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(dataToSave));
+  console.log(`Saved actionPlan-${group.id}:`, dataToSave);
+}, [massiveActions, purposes, result, group.id]);
   
 
   const addMassiveAction = () => {
@@ -228,7 +241,7 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
 
   const handleCapturelistClick = () => {
     const newBlock = {
-      id: Date.now(),
+      id: group.id, // Gebruik het ID van de groep/actionPlan
       actions: massiveActions,
       result,
       category: selectedCategory,
@@ -236,18 +249,35 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
       saved: false,
     };
   
-    // Update localStorage
+    // Haal bestaande rpmBlocks op uit localStorage
     const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
-    localStorage.setItem('rpmBlocks', JSON.stringify([newBlock ,...existingBlocks ]));
+  
+    // Controleer of het blok al bestaat
+    const existingBlockIndex = existingBlocks.findIndex((block: any) => block.id === newBlock.id);
+  
+    if (existingBlockIndex !== -1) {
+      // Vervang het bestaande blok
+      existingBlocks[existingBlockIndex] = newBlock;
+    } else {
+      // Voeg het nieuwe blok toe als het niet bestaat
+      existingBlocks.push(newBlock);
+    }
+  
+    // Sla de bijgewerkte lijst op in localStorage
+    localStorage.setItem('rpmBlocks', JSON.stringify(existingBlocks));
   
     // Emit custom event
     const event = new CustomEvent('rpmBlocksUpdated');
     window.dispatchEvent(event);
   
+    console.log('Updated rpmBlocks:', existingBlocks);
+  
     // Sluit het paneel
     onClose();
   };
-
+  
+  
+    
   const { totalTime, totalMustTime } = calculateTotalTime()
 
   return (
