@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import { RpmBlock } from '@/types';
 
 export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
@@ -20,23 +21,44 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
           (block) => !localBlocksArray.some((localBlock) => localBlock.id === block.id)
         ),
       ];
-  
-      // Update de state en localStorage met de gecombineerde blocks
+
+      // Update de state en localStorage met de gesorteerde blocks
       setStoredBlocks(combinedBlocks);
       localStorage.setItem('rpmBlocks', JSON.stringify(combinedBlocks));
     };
-  
+
     // Bij eerste render en wanneer de props veranderen, laad en combineer blocks
     reloadCombinedBlocks();
-  
+
     // Luisteren naar het custom event 'rpmBlocksUpdated' voor real-time updates
     window.addEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
-  
+
     return () => {
       window.removeEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
     };
   }, [blocks]);
-  
+
+  const handleDelete = async (id: string, isSaved: boolean) => {
+    try {
+      if (isSaved) {
+        // Voor opgeslagen regels: Verwijderen via de API
+        const response = await fetch(`/api/rpmblocks/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error deleting RPM Block: ${response.statusText}`);
+        }
+      }
+
+      // Voor beide gevallen: Verwijderen uit localStorage en state
+      const updatedBlocks = storedBlocks.filter((block) => block.id !== id);
+      setStoredBlocks(updatedBlocks);
+      localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
+    } catch (error) {
+      console.error(`Error deleting RPM Block with ID ${id}:`, error);
+    }
+  };
 
   const loadMore = () => {
     setVisibleBlocks((prevVisible) => Math.min(prevVisible + 8, storedBlocks.length));
@@ -48,9 +70,8 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
 
       <div className="space-y-2">
         {storedBlocks.slice(0, visibleBlocks).map((block, index) => (
-          <a
+          <div
             key={block.id}
-            href={`/rpm-plan/${block.id}`}
             className={`block p-3 rounded-lg transition-colors ${
               block.saved
                 ? index % 2 === 0
@@ -68,40 +89,16 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                 <span className="text-sm">
                   {block.createdAt ? new Date(block.createdAt).toLocaleDateString('en-US') : 'Date not available'}
                 </span>
-                {block.saved ? (
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                )}
+                <Button
+                  onClick={() => handleDelete(block.id, block.saved)}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </a>
+          </div>
         ))}
       </div>
       {visibleBlocks < storedBlocks.length && (

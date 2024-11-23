@@ -155,56 +155,55 @@ useEffect(() => {
 
   const handleSave = async () => {
     try {
-      const rpmBlockData = {
+      const newBlock = {
+        id: group.id,
         actions: massiveActions,
         result,
         category: selectedCategory,
         type: selectedOption,
         createdAt: new Date(),
         updatedAt: new Date(),
-        saved : true
+        saved: true,
       };
-
+  
+      // Verstuur het blok naar de server
       const response = await fetch('api/rpmblocks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(rpmBlockData),
+        body: JSON.stringify(newBlock),
       });
-
-      if (!response.ok) {
-        throw new Error('Netwerkfout bij het opslaan van het actieplan');
-      }
-
-      const data = await response.json();
-      console.log('Actieplan succesvol opgeslagen:', data);
-
   
+      if (!response.ok) {
+        throw new Error('Fout bij het opslaan van het actieplan.');
+      }
+  
+      console.log('Actieplan succesvol opgeslagen:', newBlock);
+  
+      // Verwijder het blok uit de rpmBlocks in localStorage
+      const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
+      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
+      localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
+  
+      console.log(`Blok verwijderd uit rpmBlocks:`, newBlock.id);
+
       localStorage.removeItem(`actionPlan-${group.id}`);
 
+       // Emit custom event
+      const event = new CustomEvent('rpmBlocksUpdated');
+      window.dispatchEvent(event);
+  
+    console.log('Updated rpmBlocks:', existingBlocks);
+  
+      // Sluit het paneel
       onClose(group.id);
-      console.log('Sluit het ActionPlanPanel');
-
-       // Verwijder het blok uit de rpmBlocks in localStorage
-    const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
-    const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
-    localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
-
-
-    // Zorg ervoor dat de parent component ook de nieuwe groepen ontvangt
-     onClose(); // Verwijder deze regel, omdat onClose geen argumenten verwacht
-
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Fout bij het opslaan van het actieplan:', error.message);
-      } else {
-        console.error('Fout bij het opslaan van het actieplan:', error);
-      }
+  
+    } catch (error) {
+      console.error('Fout bij het opslaan van het actieplan:', error);
     }
-  }
-
-
+  };
+  
   const removeMassiveAction = (index: number) => {
     setMassiveActions(massiveActions.filter((_, i) => i !== index))
     
@@ -257,11 +256,11 @@ useEffect(() => {
   
     if (existingBlockIndex !== -1) {
       // Vervang het bestaande blok
-      existingBlocks[existingBlockIndex] = newBlock;
-    } else {
-      // Voeg het nieuwe blok toe als het niet bestaat
-      existingBlocks.push(newBlock);
+      existingBlocks.splice(existingBlockIndex, 1); // Verwijder het oude blok
     }
+  
+    // Voeg het nieuwe blok toe aan het begin van de lijst
+    existingBlocks.unshift(newBlock);
   
     // Sla de bijgewerkte lijst op in localStorage
     localStorage.setItem('rpmBlocks', JSON.stringify(existingBlocks));
@@ -276,8 +275,6 @@ useEffect(() => {
     onClose();
   };
   
-  
-    
   const { totalTime, totalMustTime } = calculateTotalTime()
 
   return (
