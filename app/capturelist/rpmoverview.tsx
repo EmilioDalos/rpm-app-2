@@ -1,12 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, BookOpen } from 'lucide-react';
 import { RpmBlock } from '@/types';
+import ActionPlanPanel from './action-plan-panel';
 
 export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const [visibleBlocks, setVisibleBlocks] = useState(8);
   const [storedBlocks, setStoredBlocks] = useState<RpmBlock[]>([]);
+  const [selectedBlock, setSelectedBlock] = useState<RpmBlock | null>(null);
+
 
   // Combineer blocks uit props en localStorage
   useEffect(() => {
@@ -64,6 +67,14 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
     setVisibleBlocks((prevVisible) => Math.min(prevVisible + 8, storedBlocks.length));
   };
 
+  const openActionPlan = (block: RpmBlock) => {
+    setSelectedBlock(block); // Stel het geselecteerde block in om door te geven aan het panel
+  };
+
+  const closeActionPlan = () => {
+    setSelectedBlock(null); // Sluit het panel door de geselecteerde block te resetten
+  };
+
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">RPM List</h1>
@@ -89,6 +100,44 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                 <span className="text-sm">
                   {block.createdAt ? new Date(block.createdAt).toLocaleDateString('en-US') : 'Date not available'}
                 </span>
+                {block.saved ? (
+                  <svg
+                    className="w-5 h-5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                )}
+               <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openActionPlan(block)}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </Button>
                 <Button
                   onClick={() => handleDelete(block.id, block.saved)}
                   variant="ghost"
@@ -107,6 +156,9 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
             Meer laden
           </Button>
         </div>
+      )}
+      {selectedBlock && (
+        <ActionPlanPanel selectedBlock={selectedBlock} onClose={closeActionPlan} />
       )}
     </div>
   );

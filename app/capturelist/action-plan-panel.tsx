@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -25,9 +24,15 @@ type ActionPlanPanelProps = {
     actions: { id: number; text: string; checked: boolean }[]
   }
   onClose: (deletedGroupId?: number) => void
+  selectedBlock?: {
+    id: number;
+    actions: ActionPlan[];
+    result: string;
+    category: string;
+  }
 }
 
-export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps) {
+export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps) {
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
   const [result, setResult] = useState('')
@@ -49,70 +54,80 @@ export default function ActionPlanPanel({ group, onClose}: ActionPlanPanelProps)
   }, [])
 
   useEffect(() => {
-    if (!group || !group.id) {
-      console.warn('Group did not load properly!'); // Early exit if group is invalid
+    const dataSource = group?.id ? group : selectedBlock;
+  
+    if (!dataSource?.id) {
+      console.warn('Neither group nor selectedBlock loaded properly!');
       return;
     }
   
-    const savedData = localStorage.getItem(`actionPlan-${group.id}`);
-    console.log(`SavedData actionPlan-${group.id}`, savedData);
+    const initializeData = () => {
+      const storageKey = `actionPlan-${dataSource.id}`;
+      const savedData = localStorage.getItem(storageKey);
   
-    if (savedData) {
-      console.log('Saved Data Found'); // Load data from localStorage
-      try {
-        const parsedData = JSON.parse(savedData);
-        setMassiveActions(parsedData.massiveActions || []);
-        setPurposes(parsedData.purposes || []);
-        setResult(parsedData.result || '');
-      } catch (error) {
-        console.error('Error parsing saved data:', error);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          setMassiveActions(parsedData.massiveActions || []);
+          setPurposes(parsedData.purposes || []);
+          setResult(parsedData.result || '');
+          console.log(`Loaded saved data for ${storageKey}:`, parsedData);
+        } catch (error) {
+          console.error('Error parsing saved data:', error);
+        }
+      } else if (dataSource.actions?.length) {
+        const newActions = dataSource.actions.map((action, index) => ({
+          id: Date.now() + index,
+          text: action.text,
+          leverage: '',
+          durationAmount: 0,
+          durationUnit: 'min',
+          priority: index + 1,
+          key: '✘',
+          category: selectedCategory || '',
+        }));
+  
+        const initialData = {
+          id: dataSource.id,
+          massiveActions: newActions,
+          purposes: [],
+          result: dataSource.title || '',
+        };
+  
+        setMassiveActions(newActions);
+        setResult(dataSource.title || '');
+        localStorage.setItem(storageKey, JSON.stringify(initialData));
+        console.log(`Initialized and saved new data for ${storageKey}:`, initialData);
       }
-    } else if (group?.actions?.length) {
-      console.log('Data was empty. Initializing group actions.'); // Initialize with group actions
-      const newActions = group.actions.map((action, index) => ({
-        id: Date.now() + index,
-        text: action.text,
-        leverage: '',
-        durationAmount: 0,
-        durationUnit: 'min',
-        priority: index + 1,
-        key: '✘',
-        category: selectedCategory || '',
-      }));
+    };
   
-      setMassiveActions(newActions);
-      setResult(group.title);
+    initializeData();
+  }, [group, selectedBlock, selectedCategory]);
   
-      const initialData = {
-        id: group.id, // Add group.id to the initialized data
-        massiveActions: newActions,
-        purposes: [],
-        result: group.title,
+  useEffect(() => {
+    const dataSource = group?.id ? group : selectedBlock;
+  
+    if (!dataSource?.id || (!massiveActions.length && !purposes.length && !result)) {
+      console.log('State not yet initialized. Skipping save.');
+      return;
+    }
+  
+    const saveData = () => {
+      const storageKey = `actionPlan-${dataSource.id}`;
+      const dataToSave = {
+        id: dataSource.id,
+        massiveActions,
+        purposes,
+        result,
       };
   
-      localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(initialData));
-      console.log('Initialized and saved new data:', initialData);
-    }
-  }, [group, selectedCategory]);
+      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      console.log(`Saved ${storageKey}:`, dataToSave);
+    };
   
+    saveData();
+  }, [massiveActions, purposes, result, group, selectedBlock]);
   
- // Save to localStorage only when state is fully initialized
-useEffect(() => {
-  if (!massiveActions.length && !purposes.length && !result) {
-    console.log('State not yet initialized. Skipping save.');
-    return;
-  }
-
-  const dataToSave = {
-    id: group.id, // Add the group ID here
-    massiveActions,
-    purposes,
-    result,
-  };
-
-  localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(dataToSave));
-  console.log(`Saved actionPlan-${group.id}:`, dataToSave);
-}, [massiveActions, purposes, result, group.id]);
   
 
   const addMassiveAction = () => {
@@ -138,25 +153,17 @@ useEffect(() => {
     setMassiveActions(updatedActions)
   }
 
-  const updateRpmBlocksInLocalStorage = (newBlock: any) => {
-    // Haal bestaande rpmBlocks op uit localStorage
-    const savedBlocks = localStorage.getItem('rpmBlocks');
-    const rpmBlocks = savedBlocks ? JSON.parse(savedBlocks) : []; // Parse de opgeslagen blocks of gebruik een lege array
-  
-    // Voeg het nieuwe blok toe aan de array
-    const updatedBlocks = [...rpmBlocks, newBlock];
-  
-    // Sla de bijgewerkte array op in localStorage
-    localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
-  
-    // Log voor debugging
-    console.log('Updated rpmBlocks in localStorage:', updatedBlocks);
-  };
-
   const handleSave = async () => {
     try {
+      // Determine the source: group or selectedBlock
+      const source = group?.id ? group : selectedBlock;
+  
+      if (!source?.id) {
+        throw new Error('Neither group nor selectedBlock has a valid ID.');
+      }
+  
       const newBlock = {
-        id: group.id,
+        id: source.id,
         actions: massiveActions,
         result,
         category: selectedCategory,
@@ -166,44 +173,94 @@ useEffect(() => {
         saved: true,
       };
   
-      // Verstuur het blok naar de server
-      const response = await fetch('api/rpmblocks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newBlock),
-      });
+      // Check if selectedBlock exists and decide between PUT or POST
+      let response;
+      if (selectedBlock) {
+        console.log('Checking if selectedBlock exists...');
+        response = await fetch(`api/rpmblocks/${selectedBlock.id}`, {
+          method: 'GET',
+        });
   
-      if (!response.ok) {
-        throw new Error('Fout bij het opslaan van het actieplan.');
+        if (response.ok) {
+          console.log('selectedBlock exists. Updating with PUT...');
+          // Update the record using PUT
+          response = await fetch(`api/rpmblocks/${selectedBlock.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newBlock),
+          });
+        } else if (response.status === 404) {
+          console.log('selectedBlock not found. Creating with POST...');
+          // Create a new record using POST
+          response = await fetch('api/rpmblocks', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newBlock),
+          });
+        }
+      } else {
+        // Default behavior for group: Always create a new record using POST
+        console.log('Group detected. Creating new record with POST...');
+        response = await fetch('api/rpmblocks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newBlock),
+        });
       }
   
-      console.log('Actieplan succesvol opgeslagen:', newBlock);
+      if (!response.ok) {
+        throw new Error('Error saving the action plan.');
+      }
   
-      // Verwijder het blok uit de rpmBlocks in localStorage
-      const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
-      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
-      localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
+      console.log('Action plan successfully saved:', newBlock);
   
-      console.log(`Blok verwijderd uit rpmBlocks:`, newBlock.id);
+      // Remove the block from rpmBlocks in localStorage
+try {
+  const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
 
-      localStorage.removeItem(`actionPlan-${group.id}`);
 
-       // Emit custom event
+  console.log('Block existingBlocks:', existingBlocks);
+
+  // Remove the old block if it exists
+const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
+
+// Add the selectedBlock or newBlock back into the list
+updatedBlocks.unshift(newBlock);
+
+// Save the updated blocks back to localStorage
+localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
+
+console.log('Updated rpmBlocks:', updatedBlocks);
+
+
+  console.log('Block successfully removed from localStorage:', newBlock.id);
+} catch (error) {
+  console.error('Error removing block from localStorage:', error);
+}
+  
+
+      // Remove the corresponding action plan from localStorage
+      localStorage.removeItem(`actionPlan-${source.id}`);
+  
+      // Emit custom event
       const event = new CustomEvent('rpmBlocksUpdated');
       window.dispatchEvent(event);
   
-    console.log('Updated rpmBlocks:', existingBlocks);
-  
-      // Sluit het paneel
-      onClose(group.id);
-  
+      // Close the panel
+      onClose(source.id);
     } catch (error) {
-      console.error('Fout bij het opslaan van het actieplan:', error);
+      console.error('Error saving the action plan:', error);
     }
   };
   
+  
+
   const removeMassiveAction = (index: number) => {
     setMassiveActions(massiveActions.filter((_, i) => i !== index))
     
@@ -239,8 +296,17 @@ useEffect(() => {
   }
 
   const handleCapturelistClick = () => {
+    // Determine the source (group or selectedBlock)
+    const source = group?.id ? group : selectedBlock;
+  
+    if (!source?.id) {
+      console.warn('Neither group nor selectedBlock provided a valid ID!');
+      return;
+    }
+  
+    // Create a new block based on the selected source
     const newBlock = {
-      id: group.id, // Gebruik het ID van de groep/actionPlan
+      id: source.id,
       actions: massiveActions,
       result,
       category: selectedCategory,
@@ -248,21 +314,21 @@ useEffect(() => {
       saved: false,
     };
   
-    // Haal bestaande rpmBlocks op uit localStorage
+    // Retrieve existing rpmBlocks from localStorage
     const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
   
-    // Controleer of het blok al bestaat
+    // Check if the block already exists
     const existingBlockIndex = existingBlocks.findIndex((block: any) => block.id === newBlock.id);
   
     if (existingBlockIndex !== -1) {
-      // Vervang het bestaande blok
-      existingBlocks.splice(existingBlockIndex, 1); // Verwijder het oude blok
+      // Replace the existing block
+      existingBlocks.splice(existingBlockIndex, 1); // Remove the old block
     }
   
-    // Voeg het nieuwe blok toe aan het begin van de lijst
+    // Add the new block at the beginning of the list
     existingBlocks.unshift(newBlock);
   
-    // Sla de bijgewerkte lijst op in localStorage
+    // Save the updated list to localStorage
     localStorage.setItem('rpmBlocks', JSON.stringify(existingBlocks));
   
     // Emit custom event
@@ -271,11 +337,25 @@ useEffect(() => {
   
     console.log('Updated rpmBlocks:', existingBlocks);
   
-    // Sluit het paneel
+    // Close the panel
     onClose();
   };
   
   const { totalTime, totalMustTime } = calculateTotalTime()
+
+  useEffect(() => {
+    console.log('Selected rpmBlock:', selectedBlock);
+
+    if (selectedBlock) {
+      // Gebruik selectedBlock om de initiële waarden in te stellen
+      setMassiveActions(selectedBlock.actions || []);
+      setResult(selectedBlock.result || '');
+      setSelectedCategory(selectedBlock.category || '');
+      console.log('Selected : rpmblock filled');
+
+      // ... andere initiële instellingen indien nodig ...
+    }
+  }, [selectedBlock]);
 
   return (
     <div className="fixed inset-0 bg-gray-1000 bg-opacity-75 flex flex-col">
@@ -293,7 +373,7 @@ useEffect(() => {
         <div className="flex-grow bg-white shadow-lg overflow-hidden flex flex-col">
           {/* Main Content */}
           <div className="flex-grow p-8 overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">{group.title} - Massive Action Plan</h2>
+            <h2 className="text-2xl font-bold mb-4"> Massive Action Plan</h2>
 
             {/* Column Layout */}
             <div className="flex justify-between gap-4">
