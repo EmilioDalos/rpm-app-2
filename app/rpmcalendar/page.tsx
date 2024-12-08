@@ -1,11 +1,10 @@
 import RpmCalendar from '@/components/rpmcalendar/rpm-calendar'
-import { Header } from "@/components/layout/header";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100">
-      <Header />
+    <main className="min-h-screen p-4">
       <RpmCalendar isDropDisabled={false} />
     </main>
   )
 }
+

@@ -8,32 +8,57 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { CalendarDay } from './calendar-day'
-import { ActionPopup } from './action-popup'
-import { ActionItem } from './action-item'
-import { CategoryBar } from './category-bar'
+import CalendarDay from './calendar-day'
+import ActionPopup from './action-popup'
+import ActionItem from './action-item'
+import CategoryBar from './category-bar'
 import { Checkbox } from "@/components/ui/checkbox"
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-export type Category = {
+export interface Category {
   id: string;
   name: string;
-  color: string;
-  projects: RpmBlock[];
-};
+  type: "personal" | "professional";
+  description: string;
+  vision: string;
+  purpose: string;
+  roles: Role[];
+  threeToThrive: string[];
+  resources: string;
+  results: string[];
+  actionPlans: string[];
+  imageBlob: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export type RpmBlock = {
+export interface Role {
+  id: string;
+  categoryId: string;
+  name: string;
+  purpose: string;
+  description: string;
+  coreQualities: string[];
+  identityStatement: string;
+  incantations: string[];
+  imageBlob: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RpmBlock {
   id: string;
   result: string;
   purposes: string[];
   massiveActions: MassiveAction[];
+  category: string;
   type: "time" | "project" | "day" | "week" | "month" | "quater";
   createdAt: Date;
   updatedAt: Date;
   saved: boolean;
-};
+}
 
-export type MassiveAction = {
+export interface MassiveAction {
   id: string;
   text: string;
   leverage: string;
@@ -41,98 +66,109 @@ export type MassiveAction = {
   durationUnit: 'min' | 'hr' | 'd' | 'wk' | 'mo';
   priority: number;
   key: '✘' | '✔' | 'O' | '➜';
-  notes?: string;
-  color: string;
-  missedDate?: Date;
-};
-
-const categoryColors = [
-  'bg-red-200',
-  'bg-blue-200',
-  'bg-green-200',
-  'bg-yellow-200',
-  'bg-purple-200',
-  'bg-pink-200',
-  'bg-indigo-200',
-  'bg-orange-200',
-];
+}
 
 const RpmCalendar: React.FC = () => {
-  const [date, setDate] = useState<Date>(new Date())
-  const [actionAssignments, setActionAssignments] = useState<{[key: string]: MassiveAction[]}>({})
-  const [currentDate] = useState<Date>(new Date())
-  const [selectedAction, setSelectedAction] = useState<MassiveAction | null>(null)
-  const [isPopupOpen, setIsPopupOpen] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: '1',
-      name: 'Persoonlijke ontwikkeling',
-      color: categoryColors[0],
-      projects: [
-        {
-          id: '1',
-          result: 'Verbeter productiviteit',
-          purposes: ['Meer tijd voor familie', 'Verhoog werkplezier'],
-          massiveActions: [
-            { id: '1', text: 'Implementeer time-blocking', leverage: 'High', durationAmount: 2, durationUnit: 'hr', priority: 1, key: '➜', color: categoryColors[0] },
-            { id: '2', text: 'Leer snellezen', leverage: 'Medium', durationAmount: 30, durationUnit: 'min', priority: 2, key: 'O', color: categoryColors[0] },
-          ],
-          type: 'month',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          saved: true,
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [rpmBlocks, setRpmBlocks] = useState<RpmBlock[]>([]);
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+  });
+  const [actionAssignments, setActionAssignments] = useState<{[key: string]: MassiveAction[]}>({});
+  const [selectedAction, setSelectedAction] = useState<MassiveAction | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchRpmBlocks();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error('Received data is not an array');
+      }
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Optionally, you can set an error state here to display to the user
+      // setError('Failed to fetch categories. Please try again later.');
+    }
+  };
+
+  const fetchRpmBlocks = async () => {
+    try {
+      const response = await fetch('/api/rpmblocks');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error('Received data is not an array');
+      }
+      setRpmBlocks(data);
+    } catch (error) {
+      console.error('Error fetching RPM blocks:', error);
+      // Optionally, you can set an error state here to display to the user
+      // setError('Failed to fetch RPM blocks. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateRpmBlock = async (updatedBlock: RpmBlock) => {
+    try {
+      const response = await fetch(`/api/rpmblocks/${updatedBlock.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ],
-    },
-    {
-      id: '2',
-      name: 'Gezondheid',
-      color: categoryColors[1],
-      projects: [
-        {
-          id: '2',
-          result: 'Verbeter gezondheid',
-          purposes: ['Meer energie', 'Betere concentratie'],
-          massiveActions: [
-            { id: '3', text: 'Dagelijks 30 minuten bewegen', leverage: 'High', durationAmount: 30, durationUnit: 'min', priority: 1, key: '➜', color: categoryColors[1] },
-            { id: '4', text: 'Gezond ontbijt voorbereiden', leverage: 'Medium', durationAmount: 15, durationUnit: 'min', priority: 2, key: 'O', color: categoryColors[1] },
-          ],
-          type: 'week',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          saved: true,
-        },
-      ],
-    },
-  ])
+        body: JSON.stringify(updatedBlock),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update RPM block');
+      }
+      const updatedData: RpmBlock = await response.json();
+      setRpmBlocks(prevBlocks => 
+        prevBlocks.map(block => block.id === updatedData.id ? updatedData : block)
+      );
+    } catch (error) {
+      console.error('Error updating RPM block:', error);
+    }
+  };
 
   useEffect(() => {
     moveUncompletedTasksToTaskList();
-  }, [date]);
+  }, [currentWeekStart]);
 
   const moveUncompletedTasksToTaskList = () => {
-    const today = new Date(new Date().setHours(0, 0, 0, 0));
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const updatedAssignments = { ...actionAssignments };
-    const updatedCategories = [...categories];
+    const updatedRpmBlocks = [...rpmBlocks];
 
     Object.entries(updatedAssignments).forEach(([dateKey, actions]) => {
       const [year, month, day] = dateKey.split('-').map(Number);
       const actionDate = new Date(year, month - 1, day);
 
-      if (actionDate < today) {
+      if (actionDate < todayDate) {
         actions.forEach(action => {
           if (action.key !== '✔') {
             // Move uncompleted action back to task list
-            for (const category of updatedCategories) {
-              for (const project of category.projects) {
-                const actionIndex = project.massiveActions.findIndex(a => a.id === action.id);
-                if (actionIndex !== -1) {
-                  const updatedAction = { ...action, missedDate: actionDate };
-                  project.massiveActions.push(updatedAction);
-                  break;
-                }
+            for (const block of updatedRpmBlocks) {
+              const actionIndex = block.massiveActions.findIndex(a => a.id === action.id);
+              if (actionIndex !== -1) {
+                const updatedAction = { ...action, key: '✘' as const };
+                block.massiveActions.push(updatedAction);
+                break;
               }
             }
           }
@@ -143,15 +179,16 @@ const RpmCalendar: React.FC = () => {
     });
 
     setActionAssignments(updatedAssignments);
-    setCategories(updatedCategories);
+    setRpmBlocks(updatedRpmBlocks);
   };
 
   const handleDrop = (item: MassiveAction, dateKey: string) => {
     const [year, month, day] = dateKey.split('-').map(Number);
     const dropDate = new Date(year, month - 1, day);
-    const today = new Date(new Date().setHours(0, 0, 0, 0));
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    if (dropDate >= today) {
+    if (dropDate >= todayDate) {
       setActionAssignments(prev => {
         const updatedAssignments = { ...prev }
         if (!updatedAssignments[dateKey]) {
@@ -164,13 +201,10 @@ const RpmCalendar: React.FC = () => {
       })
 
       // Remove the action from the RPM block
-      setCategories(prev => prev.map(category => ({
-        ...category,
-        projects: category.projects.map(project => ({
-          ...project,
-          massiveActions: project.massiveActions.filter(action => action.id !== item.id)
-        }))
-      })))
+      setRpmBlocks(prev => prev.map(block => ({
+        ...block,
+        massiveActions: block.massiveActions.filter(action => action.id !== item.id)
+      })));
     }
   }
 
@@ -178,15 +212,6 @@ const RpmCalendar: React.FC = () => {
     return Object.values(actionAssignments).some(
       actions => actions.some(action => action.id === actionId)
     );
-  };
-
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const getCurrentMonthYear = () => {
-    const months = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
-    return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const handleActionClick = (action: MassiveAction) => {
@@ -205,40 +230,39 @@ const RpmCalendar: React.FC = () => {
       return updatedAssignments;
     });
 
-    setCategories(prev => prev.map(category => ({
-      ...category,
-      projects: category.projects.map(project => ({
-        ...project,
-        massiveActions: project.massiveActions.map(action => 
-          action.id === updatedAction.id ? updatedAction : action
-        )
-      }))
+    setRpmBlocks(prev => prev.map(block => ({
+      ...block,
+      massiveActions: block.massiveActions.map(action => 
+        action.id === updatedAction.id ? updatedAction : action
+      )
     })));
+
+    // Update the RPM block on the server
+    const updatedBlock = rpmBlocks.find(block => 
+      block.massiveActions.some(action => action.id === updatedAction.id)
+    );
+    if (updatedBlock) {
+      updateRpmBlock(updatedBlock);
+    }
   };
 
   const renderCalendar = () => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-
     const calendarDays = [];
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      calendarDays.push(<div key={`empty-${i}`} className="h-32 border rounded-md p-1 bg-muted"></div>);
-    }
+    for (let i = 0; i < 28; i++) {
+      const currentDate = new Date(currentWeekStart);
+      currentDate.setDate(currentWeekStart.getDate() + i);
+      const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+      const isCurrentDay = currentDate.toDateString() === todayDate.toDateString();
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = `${year}-${month + 1}-${day}`;
-      const isCurrentDay = day === currentDate.getDate() && 
-                           month === currentDate.getMonth() && 
-                           year === currentDate.getFullYear();
       calendarDays.push(
         <CalendarDay 
           key={dateKey} 
-          day={day}
-          month={month}
-          year={year}
+          day={currentDate.getDate()}
+          month={currentDate.getMonth()}
+          year={currentDate.getFullYear()}
           actions={actionAssignments[dateKey] || []}
           dateKey={dateKey}
           isCurrentDay={isCurrentDay}
@@ -251,20 +275,34 @@ const RpmCalendar: React.FC = () => {
     return calendarDays;
   };
 
-  const handlePreviousMonth = () => {
-    setDate(prevDate => {
+  const handlePreviousWeek = () => {
+    setCurrentWeekStart(prevDate => {
       const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() - 1);
+      newDate.setDate(newDate.getDate() - 7);
       return newDate;
     });
   };
 
-  const handleNextMonth = () => {
-    setDate(prevDate => {
+  const handleNextWeek = () => {
+    setCurrentWeekStart(prevDate => {
       const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() + 1);
+      newDate.setDate(newDate.getDate() + 7);
       return newDate;
     });
+  };
+
+  const getCurrentWeekRange = () => {
+    const endOfWeek = new Date(currentWeekStart);
+    endOfWeek.setDate(currentWeekStart.getDate() + 27);
+    
+    // Use a specific locale and format options to ensure consistency
+    const dateFormatOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'numeric', 
+      day: 'numeric'
+    };
+    
+    return `${currentWeekStart.toLocaleDateString('en-GB', dateFormatOptions)} - ${endOfWeek.toLocaleDateString('en-GB', dateFormatOptions)}`;
   };
 
   const handleCategoryClick = (categoryId: string) => {
@@ -284,13 +322,14 @@ const RpmCalendar: React.FC = () => {
         <div className="w-1/4 p-4 border-r">
           <ScrollArea className="h-[calc(100vh-2rem)]">
             <h2 className="text-2xl font-bold mb-4">RPM Plannen</h2>
-            {categories.map((category) => (
-              <div key={category.id} className={`mb-6 ${activeCategory === category.id || activeCategory === null ? '' : 'hidden'}`}>
-                <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
-                {category.projects.map((project) => (
-                  <Card key={project.id} className={`mb-4 ${category.color}`}>
+            {isLoading ? (
+              <div>Loading...</div>
+            ) : (
+              (rpmBlocks || []).map((block) => (
+                <div key={block.id} className={`mb-6 ${activeCategory === block.category || activeCategory === null ? '' : 'hidden'}`}>
+                  <Card className={`mb-4`}>
                     <CardHeader>
-                      <CardTitle>{project.result}</CardTitle>
+                      <CardTitle>{block.result}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <Accordion type="single" collapsible>
@@ -298,40 +337,40 @@ const RpmCalendar: React.FC = () => {
                           <AccordionTrigger>Doelen</AccordionTrigger>
                           <AccordionContent>
                             <ul className="list-disc pl-4">
-                              {project.purposes.map((purpose, index) => (
-                                <li key={`purpose-${project.id}-${index}`}>{purpose}</li>
-                              ))}
+                              {block.purposes?.map((purpose, index) => (
+                                <li key={`purpose-${block.id}-${index}`}>{purpose}</li>
+                              )) || []}
                             </ul>
                           </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="actions">
                           <AccordionTrigger>Acties</AccordionTrigger>
                           <AccordionContent>
-                            {project.massiveActions.map((action) => (
+                            {block.massiveActions?.map((action) => (
                               <ActionItem
                                 key={action.id}
                                 action={action}
                                 onClick={() => handleActionClick(action)}
                                 isPlanned={isActionPlanned(action.id)}
                               />
-                            ))}
+                            )) || []}
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            ))}
+                </div>
+              ))
+            )}
           </ScrollArea>
         </div>
         <div className="w-3/4 p-4 overflow-auto">
           <div className="flex justify-between items-center mb-4">
-            <Button onClick={handlePreviousMonth} variant="outline" size="icon">
+            <Button onClick={handlePreviousWeek} variant="outline" size="icon">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-2xl font-bold">{getCurrentMonthYear()}</h2>
-            <Button onClick={handleNextMonth} variant="outline" size="icon">
+            <h2 className="text-2xl font-bold">{getCurrentWeekRange()}</h2>
+            <Button onClick={handleNextWeek} variant="outline" size="icon">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

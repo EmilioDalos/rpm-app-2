@@ -9,7 +9,7 @@ interface ActionItemProps {
   isPlanned: boolean
 }
 
-export const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) => {
+const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'action',
     item: action,
@@ -46,4 +46,6 @@ export const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlann
     </div>
   )
 }
+
+export default ActionItem
 

@@ -1,6 +1,5 @@
 import React from 'react'
 import { useDrop } from 'react-dnd'
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MassiveAction } from './rpm-calendar'
 import { cn } from "@/lib/utils"
@@ -16,7 +15,7 @@ interface CalendarDayProps {
   onDrop: (item: MassiveAction, dateKey: string) => void
 }
 
-export const CalendarDay: React.FC<CalendarDayProps> = ({ 
+const CalendarDay: React.FC<CalendarDayProps> = ({ 
   day, 
   month,
   year,
@@ -26,7 +25,8 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
   onActionClick,
   onDrop
 }) => {
-  const isPastDay = new Date(year, month, day) < new Date(new Date().setHours(0, 0, 0, 0));
+  const date = new Date(year, month, day);
+  const isPastDay = date < new Date(new Date().setHours(0, 0, 0, 0));
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'action',
@@ -57,20 +57,16 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
         {actions.map((action) => (
           <div
             key={action.id}
-            className={`mb-1 p-1 border border-primary/20 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 ${action.color}`}
+            className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 ${action.color}`}
             onClick={() => onActionClick(action)}
           >
-            <div className="flex items-center justify-between">
-              <Badge variant={action.key === '✔' ? 'default' : 'secondary'} className="text-xs">
-                {action.key}
-              </Badge>
-              <span className="text-xs font-medium">{action.durationAmount} {action.durationUnit}</span>
-            </div>
-            <p className="text-xs font-medium mt-1 line-clamp-2">{action.text}</p>
+            <p className="text-xs font-medium line-clamp-2">{action.text}</p>
           </div>
         ))}
       </ScrollArea>
     </div>
   )
 }
+
+export default CalendarDay
 

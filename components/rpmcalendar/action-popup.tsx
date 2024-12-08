@@ -1,71 +1,51 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { useDrag } from 'react-dnd'
 import { Badge } from "@/components/ui/badge"
 import { MassiveAction } from './rpm-calendar'
-import { Checkbox } from "@/components/ui/checkbox"
 
-interface ActionPopupProps {
+interface ActionItemProps {
   action: MassiveAction
-  isOpen: boolean
-  onClose: () => void
-  onUpdate: (updatedAction: MassiveAction) => void
+  onClick: () => void
+  isPlanned: boolean
 }
 
-export const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUpdate }) => {
-  const [notes, setNotes] = React.useState(action.notes || '')
-  const [isCompleted, setIsCompleted] = React.useState(action.key === '✔')
-
-  const handleUpdate = () => {
-    onUpdate({
-      ...action,
-      notes,
-      key: isCompleted ? '✔' : action.key
-    })
-    onClose()
-  }
+const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'action',
+    item: action,
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }))
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{action.text}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="flex items-center gap-2">
-            <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>{action.key}</Badge>
-            <span className="text-sm">{action.durationAmount} {action.durationUnit} - {action.leverage}</span>
-          </div>
-          {action.missedDate && (
-            <div className="text-sm text-red-500">
-              Niet opgepakt op: {action.missedDate.toLocaleDateString()}
-            </div>
-          )}
-          <Textarea
-            placeholder="Voeg notities toe..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="completed"
-              checked={isCompleted}
-              onCheckedChange={setIsCompleted}
-            />
-            <label
-              htmlFor="completed"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Actie voltooid
-            </label>
-          </div>
+    <div
+      ref={drag}
+      className={`mb-2 p-2 rounded-md shadow-sm cursor-move ${action.color} ${
+        isDragging ? 'opacity-50' : ''
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between">
+        <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
+          {action.key}
+        </Badge>
+        <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
+      </div>
+      <p className="text-sm font-medium mt-1">{action.text}</p>
+      {isPlanned && (
+        <Badge variant="outline" className="mt-1">
+          Gepland
+        </Badge>
+      )}
+      {action.missedDate && (
+        <div className="text-xs text-red-500 mt-1">
+          Niet opgepakt op: {action.missedDate.toLocaleDateString()}
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleUpdate}>Opslaan</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   )
 }
+
+export default ActionItem
 
