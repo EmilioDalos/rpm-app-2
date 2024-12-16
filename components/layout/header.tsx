@@ -21,10 +21,14 @@ export function Header() {
           <Link href="/capturelist" passHref>
             <Button variant="ghost">Capture list</Button>
             </Link>
+          <Link href="/rpmcalendar" passHref>
+            <Button variant="ghost">Calendar</Button>
+            </Link>
+            
           <Link href="/categories" passHref>
             <Button variant="ghost">Categories</Button>
             </Link>
-            <Link href="/roles" passHref>
+          <Link href="/roles" passHref>
             <Button variant="ghost">Roles</Button>
             </Link>
             <Button variant="ghost">Settings</Button>

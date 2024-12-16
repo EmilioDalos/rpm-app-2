@@ -47,7 +47,6 @@ export default function Capturelist() {
   const [selectedGroupForPlan, setSelectedGroupForPlan] = useState<Group | null>(null);
   const [viewingGroup, setViewingGroup] = useState<number | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
-  const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   // Load actions and groups from localStorage on mount
   useEffect(() => {

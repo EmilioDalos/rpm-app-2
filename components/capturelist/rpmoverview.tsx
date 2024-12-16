@@ -139,7 +139,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                   <BookOpen className="h-4 w-4" />
                 </Button>
                 <Button
-                  onClick={() => handleDelete(block.id, block.saved)}
+                  onClick={() => handleDelete(block.id, block.saved ?? false)}
                   variant="ghost"
                   size="sm"
                 >

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 
-import Capturelist from './capturelist'
+import Capturelist from '@/components/capturelist/capturelist'
 import { Header } from "@/components/layout/header";
-import RpmOverview from './rpmoverview'
+import RpmOverview from '@/components/capturelist/rpmoverview'
 
 
 

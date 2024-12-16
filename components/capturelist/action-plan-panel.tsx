@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, Trash2 } from 'lucide-react'
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RpmBlock } from '@/types'
 
 type ActionPlan = {
   id: number;
@@ -15,21 +16,23 @@ type ActionPlan = {
   durationUnit: string;
   priority: number;
   key: string;
+  category: string;
 };
 
 type ActionPlanPanelProps = {
-  group: {
+  group?: {
     id: number
     title: string
     actions: { id: number; text: string; checked: boolean }[]
   }
   onClose: (deletedGroupId?: number) => void
-  selectedBlock?: {
-    id: number;
-    actions: ActionPlan[];
-    result: string;
-    category: string;
-  }
+  selectedBlock?: RpmBlock
+}
+
+interface Group {
+  id: number;
+  title: string;
+  actions: { id: number; text: string; checked: boolean; }[];
 }
 
 export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps) {
@@ -75,8 +78,8 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         } catch (error) {
           console.error('Error parsing saved data:', error);
         }
-      } else if (dataSource.actions?.length) {
-        const newActions = dataSource.actions.map((action, index) => ({
+      } else if (isGroup(dataSource) ? dataSource.actions?.length : dataSource.massiveActions?.length) {
+        const newActions = (isGroup(dataSource) ? dataSource.actions : dataSource.massiveActions)?.map((action, index) => ({
           id: Date.now() + index,
           text: action.text,
           leverage: '',
@@ -89,13 +92,13 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   
         const initialData = {
           id: dataSource.id,
-          massiveActions: newActions,
+          actions: newActions,
           purposes: [],
-          result: dataSource.title || '',
+          result: isGroup(dataSource) ? dataSource.title : dataSource.result || '',
         };
   
         setMassiveActions(newActions);
-        setResult(dataSource.title || '');
+        setResult(isGroup(dataSource) ? dataSource.title : dataSource.result || '');
         localStorage.setItem(storageKey, JSON.stringify(initialData));
         console.log(`Initialized and saved new data for ${storageKey}:`, initialData);
       }
@@ -139,11 +142,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       durationUnit: 'min',
       priority: massiveActions.length + 1,
       key: '✘',
-
+      category: selectedCategory || '',
     }
     setMassiveActions([...massiveActions, newAction])
-    setResult(group.title)
-   
+    if (group?.title) {
+      setResult(group.title)
+    }
   }
 
   const updateMassiveAction = (index: number, updatedAction: Partial<ActionPlan>) => {
@@ -164,7 +168,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   
       const newBlock = {
         id: source.id,
-        actions: massiveActions,
+        massiveActions: massiveActions,
         result,
         category: selectedCategory,
         type: selectedOption,
@@ -253,7 +257,7 @@ console.log('Updated rpmBlocks:', updatedBlocks);
       window.dispatchEvent(event);
   
       // Close the panel
-      onClose(source.id);
+      onClose(typeof source.id === 'string' ? parseInt(source.id) : source.id);
     } catch (error) {
       console.error('Error saving the action plan:', error);
     }
@@ -307,7 +311,7 @@ console.log('Updated rpmBlocks:', updatedBlocks);
     // Create a new block based on the selected source
     const newBlock = {
       id: source.id,
-      actions: massiveActions,
+      massiveActions: massiveActions,
       result,
       category: selectedCategory,
       type: selectedOption,
@@ -346,14 +350,14 @@ console.log('Updated rpmBlocks:', updatedBlocks);
   useEffect(() => {
     console.log('Selected rpmBlock:', selectedBlock);
 
-    if (selectedBlock) {
-      // Gebruik selectedBlock om de initiële waarden in te stellen
-      setMassiveActions(selectedBlock.actions || []);
+    if (selectedBlock?.massiveActions) {
+      setMassiveActions(selectedBlock.massiveActions.map(action => ({
+        ...action,
+        id: typeof action.id === 'string' ? parseInt(action.id) : action.id,
+        category: selectedCategory || ''
+      })));
       setResult(selectedBlock.result || '');
       setSelectedCategory(selectedBlock.category || '');
-      console.log('Selected : rpmblock filled');
-
-      // ... andere initiële instellingen indien nodig ...
     }
   }, [selectedBlock]);
 
@@ -532,4 +536,9 @@ console.log('Updated rpmBlocks:', updatedBlocks);
          
     </div>
   )
+}
+
+// Type guard function
+function isGroup(data: any): data is Group {
+  return 'title' in data;
 }

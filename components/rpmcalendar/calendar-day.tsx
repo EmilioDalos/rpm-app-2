@@ -1,17 +1,17 @@
 import React from 'react'
 import { useDrop } from 'react-dnd'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { MassiveAction } from './rpm-calendar'
+import { MassiveAction, CalendarEvent } from '@/types'
 import { cn } from "@/lib/utils"
 
 interface CalendarDayProps {
   day: number
   month: number
   year: number
-  actions: MassiveAction[]
+  events: CalendarEvent[]
   dateKey: string
   isCurrentDay: boolean
-  onActionClick: (action: MassiveAction) => void
+  onActionClick: (action: { id: string; text: string; color?: string }) => void
   onDrop: (item: MassiveAction, dateKey: string) => void
 }
 
@@ -19,7 +19,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   day, 
   month,
   year,
-  actions, 
+  events, 
   dateKey, 
   isCurrentDay, 
   onActionClick,
@@ -54,14 +54,16 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
         {day}
       </div>
       <ScrollArea className="h-24">
-        {actions.map((action) => (
-          <div
-            key={action.id}
-            className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 ${action.color}`}
-            onClick={() => onActionClick(action)}
-          >
-            <p className="text-xs font-medium line-clamp-2">{action.text}</p>
-          </div>
+        {events.map((event) => (
+          event.actions.map((action) => (
+            <div
+              key={action.id}
+              className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 ${action.color || ''}`}
+              onClick={() => onActionClick({ id: action.id, text: action.text, color: action.color })}
+            >
+              <p className="text-xs font-medium line-clamp-2">{action.text}</p>
+            </div>
+          ))
         ))}
       </ScrollArea>
     </div>

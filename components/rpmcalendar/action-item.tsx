@@ -1,7 +1,7 @@
 import React from 'react'
 import { useDrag } from 'react-dnd'
 import { Badge } from "@/components/ui/badge"
-import { MassiveAction } from './rpm-calendar'
+import { MassiveAction } from '@/types';
 
 interface ActionItemProps {
   action: MassiveAction

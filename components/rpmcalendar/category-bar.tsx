@@ -1,7 +1,7 @@
 import React from 'react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Category } from './rpm-calendar'
+import { Category } from '@/types';
 import Link from 'next/link'
 
 interface CategoryBarProps {

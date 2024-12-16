@@ -3,50 +3,39 @@
     "id": "1732384831800",
     "actions": [
       {
-        "id": 1732384793033,
+        "id": 1733741193825,
         "text": "test",
         "leverage": "",
         "durationAmount": 0,
         "durationUnit": "min",
         "priority": 1,
         "key": "✘",
-        "category": ""
+        "category": "Health"
+      },
+      {
+        "id": 1733741200009,
+        "text": "test2",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "category": "Health"
       }
     ],
-    "result": "graaerr",
-    "category": "",
+    "result": "een heel mooi doel",
+    "category": "Health",
     "type": "Day",
-    "createdAt": "2024-11-23T18:00:31.266Z",
-    "updatedAt": "2024-11-23T18:00:31.266Z",
+    "createdAt": "2024-12-09T10:46:45.258Z",
+    "updatedAt": "2024-12-09T10:46:45.258Z",
     "saved": true
   },
   {
     "id": "1732396519341",
-    "actions": [
+    "massiveActions": [
       {
-        "id": 1732396493849,
+        "id": 1734263987692,
         "text": "test",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "category": ""
-      }
-    ],
-    "result": "testgroep",
-    "category": "",
-    "type": "Day",
-    "createdAt": "2024-11-23T21:15:19.333Z",
-    "updatedAt": "2024-11-23T21:15:19.333Z",
-    "saved": true
-  },
-  {
-    "id": "1732398004404",
-    "actions": [
-      {
-        "id": 1732222444606,
-        "text": "te",
         "leverage": "",
         "durationAmount": 0,
         "durationUnit": "min",
@@ -55,20 +44,82 @@
         "category": ""
       },
       {
-        "id": 1732222454044,
+        "id": 1734263991001,
+        "text": "test action",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "category": ""
+      },
+      {
+        "id": 1734269729633,
+        "text": "test 2",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 3,
+        "key": "✘",
+        "category": ""
+      },
+      {
+        "id": 1734269734378,
         "text": "",
         "leverage": "",
-        "durationAmount": 2,
-        "durationUnit": "hr",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 4,
+        "key": "✘",
+        "category": ""
+      }
+    ],
+    "result": "testgroep",
+    "category": "",
+    "type": "Day",
+    "createdAt": "2024-12-15T13:35:35.731Z",
+    "updatedAt": "2024-12-15T13:35:35.731Z",
+    "saved": true
+  },
+  {
+    "id": "1732398004404",
+    "massiveActions": [
+      {
+        "id": 1733742169688,
+        "text": "doctor bellen",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": ""
+      },
+      {
+        "id": 1733742180032,
+        "text": "Bruidloft organiseren",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
         "priority": 2,
-        "key": "✘"
+        "key": "✘",
+        "category": ""
+      },
+      {
+        "id": 1734264061343,
+        "text": "",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 3,
+        "key": "✘",
+        "category": ""
       }
     ],
     "result": "ik hou van camila met hart en ziel",
     "category": "",
     "type": "Day",
-    "createdAt": "2024-11-23T23:52:20.860Z",
-    "updatedAt": "2024-11-23T23:52:20.860Z",
+    "createdAt": "2024-12-15T12:01:05.083Z",
+    "updatedAt": "2024-12-15T12:01:05.083Z",
     "saved": true
   },
   {

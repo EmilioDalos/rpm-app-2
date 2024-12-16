@@ -8,7 +8,7 @@ export interface Category {
   roles: Role[];
   threeToThrive: string[];
   resources: string;
-  results[]: string; //result, date to achieve
+  results: string[];
   actionPlans: string[];
   imageBlob: string;
   createdAt: Date;
@@ -50,55 +50,45 @@ export interface RoleFormData {
 
 
 // Type for the RPM Block
-export type RpmBlock = {
-  id: string; // Unique identifier for the action
-  result: string; // The result or goal associated with this block
-  purposes: string[]; // List of purposes associated with this block
-  massiveActions: MassiveAction[]; // List of massive actions within this block
-  category: string; // Category the action belongs to
-  type: "time" | "project" | "day" | "week" | "month" | "quater"
-  createdAt: Date;
-  updatedAt: Date;
-  saved: boolean;
-};
+export interface RpmBlock {
+  id: string;
+  result: string;
+  purposes: string[];
+  massiveActions: MassiveAction[];
+  category: string;
+  type: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  saved?: boolean;
+}
 
 // Type for an individual massive action
-export type MassiveAction = {
-  id: string; // Unique identifier for the action
-  text: string; // Description or title of the action
-  leverage: string; // Impact level (e.g., "High", "Low")
-  durationAmount: number; // Time required for the action
-  durationUnit: 'min' | 'hr' | 'd' | 'wk' | 'mo'; // Unit of duration
-  priority: number; // Priority level
-  key: '✘' | '✔' | 'O' | '➜'; // Status key
-};
-
-// Zorg ervoor dat ActionPlan de juiste type verwijzing heeft
-type ActionPlan = {
-  id: number;
+export interface MassiveAction {
+  id: string;
   text: string;
   leverage: string;
   durationAmount: number;
   durationUnit: string;
   priority: number;
+  notes : string;
   key: string;
-  category: string;
-  type: RpmBlock['type']; // Gebruik de type definitie van RpmBlock
+  color :string;
+  missedDate?: Date;
 }
 
-const addMassiveAction = () => {
-  const newAction: ActionPlan = {
-    id: Date.now(),
-    text: '',
-    leverage: '',
-    durationAmount: 0,
-    durationUnit: 'min',
-    priority: massiveActions.length + 1,
-    key: '✘',
-    category: selectedCategory || '',
-    type: selectedOption || 'time', // Voeg de geselecteerde optie toe als type, met een standaardwaarde
-  }
-  setMassiveActions([...massiveActions, newAction])
-  setResult(group.title)
+export interface CalendarEvent {
+  id: string;
+  date: string; // ISO 8601 formatted date
+  actions: Array<{
+    id: string; // MassiveAction ID
+    text: string; // Beschrijving van de actie
+    color?: string; // Optioneel: kleur voor weergave in de kalender
+  }>;
+  categoryId?: string; // Optioneel: koppeling met categorie
+  notes?: string; // Notities bij de dag
+  createdAt?: Date;
+  updatedAt?: Date;
 }
+
+
 
