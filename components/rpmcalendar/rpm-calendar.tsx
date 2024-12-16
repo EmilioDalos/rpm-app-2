@@ -17,6 +17,7 @@ import { enGB } from 'date-fns/locale';
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent } from '@/types';
 
+
 interface RpmCalendarProps {
   isDropDisabled: boolean;
 }
@@ -63,8 +64,28 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const fetchCalendarEvents = async () => {
     try {
       const response = await fetch('/api/calendar-events');
-      const data = await response.json();
+      const data: CalendarEvent[] = await response.json();
       setCalendarEvents(data);
+  
+      // Map de data naar een object van het type { [key: string]: MassiveAction[] }
+      const assignments = data.reduce((acc: { [key: string]: MassiveAction[] }, event) => {
+        acc[event.date] = event.actions.map((action) => ({
+          id: action.id,
+          text: action.text,
+          color: action.color || '#000000', // Standaardkleur indien niet opgegeven
+          leverage: 'default leverage', // Voeg standaardwaarde toe
+          durationAmount: 1, // Voeg standaardwaarde toe
+          durationUnit: 'hour', // Voeg standaardwaarde toe
+          priority: 0, // Voeg standaardwaarde toe
+          category: 'default category', // Voeg standaardwaarde toe
+          notes: '', // Voeg standaardwaarde toe
+          key: 'pending', // Voeg standaardwaarde toe
+        }));
+        return acc;
+      }, {});
+  
+      // Update de state
+      setActionAssignments(assignments);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
     }
@@ -121,7 +142,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         }
       } else {
         updatedEvents.push({
-          id: `${dateKey}-${item.id}`, // Ensure unique ID
+          id: `${dateKey}-${item.id}`,
           date: dateKey,
           actions: [{ id: item.id, text: item.text, color: item.color }],
         });
@@ -144,6 +165,32 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }).catch((error) => console.error('Error saving action:', error));
   };
 
+  const handleActionRemove = (actionId: string, dateKey: string) => {
+    setActionAssignments((prev) => {
+      const updatedAssignments = { ...prev };
+      if (updatedAssignments[dateKey]) {
+        updatedAssignments[dateKey] = updatedAssignments[dateKey].filter((action) => action.id !== actionId);
+      }
+      return updatedAssignments;
+    });
+  
+    setCalendarEvents((prevEvents) =>
+      prevEvents.map((event) =>
+        event.date === dateKey
+          ? {
+              ...event,
+              actions: event.actions.filter((action) => action.id !== actionId),
+            }
+          : event
+      )
+    );
+  
+    // Optioneel: Verwijder de actie op de backend
+    fetch(`/api/calendar-events/${dateKey}/actions/${actionId}`, {
+      method: 'DELETE',
+    }).catch((error) => console.error('Error deleting action:', error));
+  };
+
   const renderCalendar = () => {
     const calendarDays = [];
     const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
@@ -158,7 +205,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
       calendarDays.push(
         <CalendarDay
-          key={dateKey}
           day={currentDate.getDate()}
           month={currentDate.getMonth()}
           year={currentDate.getFullYear()}
@@ -167,11 +213,18 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           isCurrentDay={isCurrentDay}
           onActionClick={setSelectedAction}
           onDrop={handleDrop}
+          onActionRemove={handleActionRemove}
         />
       );
     }
 
     return calendarDays;
+  };
+
+  const isActionPlanned = (actionId: string) => {
+    return Object.values(actionAssignments).some((actions) =>
+      actions.some((action) => action.id === actionId)
+    );
   };
 
   return (
@@ -209,7 +262,11 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                           <ActionItem
                             key={`${block.id}-${action.id}`}
                             action={action}
-                            onClick={setSelectedAction}
+                            isPlanned={isActionPlanned(action.id)}
+                            onClick={() => {
+                              setSelectedAction(action);
+                              setIsPopupOpen(true);
+                            }}
                           />
                         ))}
                       </AccordionContent>
