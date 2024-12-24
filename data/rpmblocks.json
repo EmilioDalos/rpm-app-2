@@ -31,57 +31,6 @@
     "saved": true
   },
   {
-    "id": "1732396519341",
-    "massiveActions": [
-      {
-        "id": 1734263987692,
-        "text": "test",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "category": ""
-      },
-      {
-        "id": 1734263991001,
-        "text": "test action",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 2,
-        "key": "✘",
-        "category": ""
-      },
-      {
-        "id": 1734269729633,
-        "text": "test 2",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 3,
-        "key": "✘",
-        "category": ""
-      },
-      {
-        "id": 1734269734378,
-        "text": "",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 4,
-        "key": "✘",
-        "category": ""
-      }
-    ],
-    "result": "testgroep",
-    "category": "",
-    "type": "Day",
-    "createdAt": "2024-12-15T13:35:35.731Z",
-    "updatedAt": "2024-12-15T13:35:35.731Z",
-    "saved": true
-  },
-  {
     "id": "1732398004404",
     "massiveActions": [
       {
@@ -101,16 +50,6 @@
         "durationAmount": 0,
         "durationUnit": "min",
         "priority": 2,
-        "key": "✘",
-        "category": ""
-      },
-      {
-        "id": 1734264061343,
-        "text": "",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 3,
         "key": "✘",
         "category": ""
       }

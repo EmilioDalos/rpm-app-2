@@ -72,8 +72,14 @@ export interface MassiveAction {
   priority: number;
   notes : string;
   key: string;
-  color :string;
+  color? :string;
   missedDate?: Date;
+}
+
+interface Note {
+  id: string;
+  text: string;
+  createdAt: string;
 }
 
 export interface CalendarEvent {
@@ -85,7 +91,7 @@ export interface CalendarEvent {
     color?: string; // Optioneel: kleur voor weergave in de kalender
   }>;
   categoryId?: string; // Optioneel: koppeling met categorie
-  notes?: string; // Notities bij de dag
+  notes?: Note[]; // Notities bij de dag
   createdAt?: Date;
   updatedAt?: Date;
 }

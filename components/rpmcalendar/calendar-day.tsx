@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
+
 interface CalendarDayProps {
   day: number;
   month: number;
@@ -13,7 +14,7 @@ interface CalendarDayProps {
   events: CalendarEvent[];
   dateKey: string;
   isCurrentDay: boolean;
-  onActionClick: (action: { id: string; text: string; color?: string }) => void;
+  onActionClick: (action: { id: string; text: string; color?: string } ) => void;
   onDrop: (item: MassiveAction, dateKey: string) => void;
   onActionRemove: (actionId: string, dateKey: string) => void;
 }
@@ -69,11 +70,12 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       <div className={cn('font-bold mb-1 text-sm', isCurrentDay && 'text-primary')}>{day}</div>
       <ScrollArea className="h-24">
         {events.map((event) =>
-          event.actions.map((action) => (
+          event.actions.map((action, actionId) => (
             <div
-              key={action.id}
+              key={`${event.date}-${action.id}-${actionId}`}
               className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 flex justify-between items-center ${action.color || ''}`}
-            >
+              onClick={() => onActionClick({ id: action.id, text: action.text, color: action.color })}
+              >
               <p
                 className="text-xs font-medium line-clamp-2"
                 onClick={() => onActionClick({ id: action.id, text: action.text, color: action.color })}
@@ -82,7 +84,10 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
               </p>
               <button
                 className="text-black text-xs ml-2 hover:text-gray-500 font-light"
-                onClick={() => confirmRemoveAction(action.id, dateKey)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  confirmRemoveAction(action.id, dateKey);
+                }}
               >
                 ✖
               </button>

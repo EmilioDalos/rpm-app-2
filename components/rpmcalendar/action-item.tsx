@@ -20,17 +20,19 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) =
 
   return (
     <div
-      ref={drag}
-      className={`mb-2 p-2 rounded-md shadow-sm cursor-move ${action.color} ${
-        isDragging ? 'opacity-50' : ''
-      }`}
+      ref={!isPlanned ? drag : null} // Alleen ref toewijzen als de actie niet gepland is
+      className={`mb-2 p-2 rounded-md shadow-sm ${
+        isPlanned ? 'cursor-default' : 'cursor-move'
+      } ${isDragging ? 'opacity-50' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
         <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
           {action.key}
         </Badge>
-        <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
+        <span className="text-xs">
+          {action.durationAmount} {action.durationUnit}
+        </span>
       </div>
       <p className="text-sm font-medium mt-1">{action.text}</p>
       {isPlanned && (
