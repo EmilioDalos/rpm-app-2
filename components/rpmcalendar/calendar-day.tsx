@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-
 interface CalendarDayProps {
   day: number;
   month: number;
@@ -14,7 +13,7 @@ interface CalendarDayProps {
   events: CalendarEvent[];
   dateKey: string;
   isCurrentDay: boolean;
-  onActionClick: (action: { id: string; text: string; color?: string } ) => void;
+  onActionClick: (action: { id: string; text: string; color?: string }) => void;
   onDrop: (item: MassiveAction, dateKey: string) => void;
   onActionRemove: (actionId: string, dateKey: string) => void;
 }
@@ -43,6 +42,19 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       isOver: !!monitor.isOver(),
     }),
   }));
+
+  const isDateInRange = (action: MassiveAction, currentDate: string) => {
+    if (!action.isDateRange || !action.startDate || !action.endDate) return false;
+  
+    // Converteer currentDate naar een Date-object
+    const currentDateObject = new Date(currentDate);
+  
+    // Vergelijk de datums
+    return (
+      currentDateObject >= new Date(action.startDate) &&
+      currentDateObject <= new Date(action.endDate)
+    );
+  };
 
   const confirmRemoveAction = (actionId: string, dateKey: string) => {
     setActionToRemove({ id: actionId, dateKey });

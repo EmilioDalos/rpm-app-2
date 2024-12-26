@@ -10,6 +10,7 @@ interface ActionItemProps {
 }
 
 const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) => {
+  console.log("is planned"+isPlanned)
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'action',
     item: action,

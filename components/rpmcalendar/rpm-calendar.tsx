@@ -8,12 +8,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import CalendarDay from './calendar-day';
-import ActionPopup from './action-popup';
+const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false })
 import ActionItem from './action-item';
 import CategoryBar from './category-bar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { enGB } from 'date-fns/locale';
+import dynamic from 'next/dynamic';
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent } from '@/types';
 
@@ -24,12 +25,12 @@ interface RpmCalendarProps {
 function convertToMassiveAction(action: { id: string; text: string; color?: string }): MassiveAction {
   return {
     ...action,
-    color: action.color || '#000000', // Default color if undefined
-    leverage: 'default leverage',     // Provide appropriate default values
+    color: action.color || '#000000',
+    leverage: 'default leverage',
     durationAmount: 1,
     durationUnit: 'hour',
     priority: 0,
-    notes: '',
+    notes: [], // Initialiseer als lege array van Note[]
     key: 'pending',
   };
 }
@@ -74,16 +75,31 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const fetchCalendarEvents = async () => {
+    console.log('Fetching calendar events...');
     try {
       const response = await fetch('/api/calendar-events');
       const data = await response.json();
-      setCalendarEvents(Array.isArray(data) ? data : []);
+      console.log('Raw calendar events from API:', data);
+  
+      const events = Array.isArray(data)
+        ? data.map((event) => ({
+            ...event,
+            actions: event.actions.map((action: { text: any; color: any; }) => ({
+              ...action,
+              text: action.text || '',
+              color: action.color || '',
+            })),
+          }))
+        : [];
+  
+      console.log('Processed calendar events:', events);
+      setCalendarEvents(events);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       setCalendarEvents([]);
     }
   };
-
+  
   const handleActionClick = (action: { id: string; text: string; color?: string }) => {
     const massiveAction = convertToMassiveAction(action);
     setSelectedAction(massiveAction);
@@ -109,18 +125,56 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         ),
       }))
     );
+
+    // Update the action in the calendarEvents
+    setCalendarEvents((prev) =>
+      prev.map((event) => ({
+        ...event,
+        actions: event.actions.map((action) =>
+          action.id === updatedAction.id
+            ? {
+                ...action,
+                notes: updatedAction.notes,
+                key: updatedAction.key,
+              }
+            : action
+        ),
+      }))
+    );
+
+    // Save the updated action to the backend
+    fetch(`/api/actions/${updatedAction.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedAction),
+    }).catch((error) => console.error('Error updating action:', error));
   };
 
   const handleDrop = (item: MassiveAction, dateKey: string) => {
     setActionAssignments((prev) => {
       const updatedAssignments = { ...prev };
   
+      if (item.isDateRange && item.startDate && item.endDate) {
+        let currentDate = new Date(item.startDate);
+        const endDate = new Date(item.endDate);
+        
+        while (currentDate <= endDate) {
+          const currentDateKey = currentDate.toISOString().split('T')[0];
+          if (!updatedAssignments[currentDateKey]) {
+            updatedAssignments[currentDateKey] = [];
+          }
+          if (!updatedAssignments[currentDateKey].some((action) => action.id === item.id)) {
+            updatedAssignments[currentDateKey].push(item);
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else {
       if (!updatedAssignments[dateKey]) {
         updatedAssignments[dateKey] = [];
       }
-  
       if (!updatedAssignments[dateKey].some((action) => action.id === item.id)) {
         updatedAssignments[dateKey].push(item);
+        }
       }
   
       return updatedAssignments;
@@ -128,6 +182,44 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   
     setCalendarEvents((prevEvents) => {
       const updatedEvents = [...prevEvents];
+      
+      if (item.isDateRange && item.startDate && item.endDate) {
+        let currentDate = new Date(item.startDate);
+        const endDate = new Date(item.endDate);
+        
+        while (currentDate <= endDate) {
+          const currentDateKey = currentDate.toISOString().split('T')[0];
+          const existingEventIndex = updatedEvents.findIndex((event) => event.date === currentDateKey);
+  
+          if (existingEventIndex >= 0) {
+            const existingEvent = updatedEvents[existingEventIndex];
+            if (!existingEvent.actions.some((action) => action.id === item.id)) {
+              existingEvent.actions.push({
+                id: item.id,
+                text: item.text,
+                color: item.color,
+                isDateRange: item.isDateRange,
+                startDate: item.startDate,
+                endDate: item.endDate,
+              });
+            }
+          } else {
+            updatedEvents.push({
+              id: `${currentDateKey}-${item.id}`,
+              date: currentDateKey,
+              actions: [{
+                id: item.id,
+                text: item.text,
+                color: item.color,
+                isDateRange: item.isDateRange,
+                startDate: item.startDate,
+                endDate: item.endDate,
+              }],
+            });
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else {
       const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
   
       if (existingEventIndex >= 0) {
@@ -145,6 +237,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           date: dateKey,
           actions: [{ id: item.id, text: item.text, color: item.color }],
         });
+        }
       }
   
       return updatedEvents;
@@ -215,7 +308,11 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     return calendarDays;
   };
 
+  
+
   const isActionPlanned = (actionId: string) => {
+    console.log("actionId"+actionId)
+    
     return Object.values(actionAssignments).some((actions) =>
       actions.some((action) => action.id === actionId)
     );

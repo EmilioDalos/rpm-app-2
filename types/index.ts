@@ -70,15 +70,35 @@ export interface MassiveAction {
   durationAmount: number;
   durationUnit: string;
   priority: number;
-  notes : string;
+  notes: Note[]; // Verander 'string' naar 'Note[]'
   key: string;
-  color? :string;
+  color?: string;
   missedDate?: Date;
+  startDate?: Date;
+  endDate?: Date;
+  isDateRange?: boolean;
 }
 
 interface Note {
   id: string;
   text: string;
+  type?: 'progress' | 'remark'; // Optionele categorisering
+  //Het veld type?: 'progress' | 'remark'; is bedoeld als een optionele categorisering van de notities die je toevoegt, zodat je later gemakkelijk onderscheid kunt maken tussen verschillende soorten informatie.
+  metrics?: Array<{
+    name: string;
+    value: number;
+    unit?: string;
+    timestamp?: string;
+    /* TODO implementatie :<div>
+  {metrics?.map((metric, index) => (
+    <div key={index} className="metric-item">
+      <p>{metric.name}: {metric.value} {metric.unit || ''}</p>
+      {metric.timestamp && <span>{new Date(metric.timestamp).toLocaleString()}</span>}
+    </div>
+  ))}
+</div> 
+*/
+  }>;
   createdAt: string;
 }
 
@@ -89,6 +109,9 @@ export interface CalendarEvent {
     id: string; // MassiveAction ID
     text: string; // Beschrijving van de actie
     color?: string; // Optioneel: kleur voor weergave in de kalender
+    startDate?: Date; // Optioneel: startdatum voor reeks
+    endDate?: Date; // Optioneel: einddatum voor reeks
+    isDateRange?: boolean; // Optioneel: of dit een datumreeks is
   }>;
   categoryId?: string; // Optioneel: koppeling met categorie
   notes?: Note[]; // Notities bij de dag

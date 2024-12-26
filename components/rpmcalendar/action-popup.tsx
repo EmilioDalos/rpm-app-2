@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { MassiveAction } from '@/types'
-import { Checkbox } from "@/components/ui/checkbox"
-import { MoreHorizontal, Pencil, X } from 'lucide-react'
-import { format } from 'date-fns'
-import { nl } from 'date-fns/locale'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import dynamic from 'next/dynamic'
+import React, { useState, useEffect, useCallback } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MassiveAction } from '@/types';
+import { Checkbox } from "@/components/ui/checkbox";
+import { MoreHorizontal, Pencil, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { nl } from 'date-fns/locale';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import dynamic from 'next/dynamic';
 
-const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false })
+const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
 
 interface Note {
   id: string;
@@ -30,17 +33,26 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
   const [newNote, setNewNote] = useState('')
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
+  const [startDate, setStartDate] = useState(action.startDate || '')
+  const [endDate, setEndDate] = useState(action.endDate || '')
 
   useEffect(() => {
-    setNotes(Array.isArray(action.notes) ? action.notes : []);
-    setIsCompleted(action.key === '✔');
-  }, [action]);
+    setNotes(action.notes || [])
+    setIsCompleted(action.key === '✔')
+    setIsDateRange(action.isDateRange || false)
+    setStartDate(action.startDate || '')
+    setEndDate(action.endDate || '')
+  }, [action])
   
   const handleUpdate = () => {
     onUpdate({
       ...action,
       notes,
-      key: isCompleted ? '✔' : action.key
+      key: isCompleted ? '✔' : action.key,
+      isDateRange,
+      startDate: isDateRange ? (startDate ? new Date(startDate) : undefined) : undefined,
+      endDate: isDateRange ? (endDate ? new Date(endDate) : undefined) : undefined,
     });
     onClose();
   };
@@ -88,7 +100,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
             <Checkbox
               id="completed"
               checked={isCompleted}
-              onCheckedChange={setIsCompleted}
+              onCheckedChange={(checked) => setIsCompleted(checked === true)}
             />
             <label
               htmlFor="completed"
@@ -97,6 +109,36 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
               Actie voltooid
             </label>
           </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="date-range"
+              checked={isDateRange}
+              onCheckedChange={setIsDateRange}
+            />
+            <Label htmlFor="date-range">Actie over meerdere dagen</Label>
+          </div>
+          {isDateRange && (
+           <div className="grid grid-cols-2 gap-4">
+           <div className="flex flex-col space-y-2">
+             <Label htmlFor="start-date">Startdatum</Label>
+             <Input
+               id="start-date"
+               type="date"
+               value={startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate}
+               onChange={(e) => setStartDate(e.target.value)}
+             />
+           </div>
+           <div className="flex flex-col space-y-2">
+             <Label htmlFor="end-date">Einddatum</Label>
+             <Input
+               id="end-date"
+               type="date"
+               value={endDate instanceof Date ? endDate.toISOString().split('T')[0] : endDate}
+               onChange={(e) => setEndDate(e.target.value)}
+             />
+           </div>
+         </div>
+          )}
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
             <div className="h-[200px] w-full rounded-md border p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
