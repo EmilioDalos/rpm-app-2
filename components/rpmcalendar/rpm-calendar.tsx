@@ -94,6 +94,26 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   
       console.log('Processed calendar events:', events);
       setCalendarEvents(events);
+
+      // Map de data naar een object van het type { [key: string]: MassiveAction[] }
+      const assignments = data.reduce((acc: { [key: string]: MassiveAction[] }, event: CalendarEvent) => {
+        acc[event.date] = event.actions.map((action) => ({
+          id: action.id,
+          text: action.text,
+          color: action.color || '#000000', // Standaardkleur indien niet opgegeven
+          leverage: 'default leverage', // Voeg standaardwaarde toe
+          durationAmount: 1, // Voeg standaardwaarde toe
+          durationUnit: 'hour', // Voeg standaardwaarde toe
+          priority: 0, // Voeg standaardwaarde toe
+          category: 'default category', // Voeg standaardwaarde toe
+          notes: [], // Initialiseer als lege array van type Note[]
+          key: 'pending', // Voeg standaardwaarde toe
+        }));
+        return acc;
+      }, {});
+      // Update de state
+      setActionAssignments(assignments);
+
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       setCalendarEvents([]);
