@@ -1,7 +1,7 @@
 [
   {
-    "id": "2025-01-11-1733742169688",
-    "date": "2025-01-11",
+    "id": "2024-12-28-1733742169688",
+    "date": "2024-12-28",
     "actions": [
       {
         "id": 1733742169688,
@@ -11,7 +11,63 @@
         "durationUnit": "min",
         "priority": 1,
         "key": "✘",
-        "category": ""
+        "category": "",
+        "notes": [],
+        "isDateRange": true
+      }
+    ]
+  },
+  {
+    "id": "2024-12-29-1733742169688",
+    "date": "2024-12-29",
+    "actions": [
+      {
+        "id": 1733742169688,
+        "text": "doctor bellen",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": [],
+        "isDateRange": true
+      }
+    ]
+  },
+  {
+    "id": "2024-12-30-1733742169688",
+    "date": "2024-12-30",
+    "actions": [
+      {
+        "id": 1733742169688,
+        "text": "doctor bellen",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": [],
+        "isDateRange": true
+      }
+    ]
+  },
+  {
+    "id": "2024-12-31-1733742169688",
+    "date": "2024-12-31",
+    "actions": [
+      {
+        "id": 1733742169688,
+        "text": "doctor bellen",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": [],
+        "isDateRange": true
       }
     ]
   }

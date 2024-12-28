@@ -41,6 +41,11 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) =
           Gepland
         </Badge>
       )}
+       {action.isDateRange && (
+        <Badge variant="outline" className="mt-1">
+          Gepland meerdere Dagen
+        </Badge>
+      )}
       {action.missedDate && (
         <div className="text-xs text-red-500 mt-1">
           Niet opgepakt op: {action.missedDate.toLocaleDateString()}
