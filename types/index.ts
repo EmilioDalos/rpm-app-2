@@ -62,24 +62,25 @@ export interface RpmBlock {
   saved?: boolean;
 }
 
-// Type for an individual massive action
 export interface MassiveAction {
-  id: string;
-  text: string;
-  leverage: string;
-  durationAmount: number;
-  durationUnit: string;
-  priority: number;
-  notes: Note[]; // Verander 'string' naar 'Note[]'
-  key: string;
-  color?: string;
-  missedDate?: Date;
-  startDate?: Date;
-  endDate?: Date;
-  isDateRange?: boolean;
+  id: string; // Unieke ID voor de actie
+  text: string; // Beschrijving van de actie
+  color?: string; // Optioneel: kleur voor visuele representatie
+  leverage: string; // Impact of effect van de actie
+  durationAmount: number; // Duur van de actie
+  durationUnit: string; // Eenheid van duur: "min", "hour", "day"
+  priority: number; // Prioriteit van de actie
+  notes: Note[]; // Notities gekoppeld aan de actie
+  key: string; // Status zoals "✔" of "pending"
+  startDate?: string; // Optioneel: ISO 8601 datum voor start van de actie
+  endDate?: string; // Optioneel: ISO 8601 datum voor einde van de actie
+  isDateRange?: boolean; // Of de actie over meerdere dagen gaat
+  missedDate?: string; // Datum waarop de actie niet werd opgepakt
+  createdAt?: string; // Datum van aanmaak van de actie
+  updatedAt?: string; // Laatst bijgewerkt datum
 }
 
-interface Note {
+export interface Note {
   id: string;
   text: string;
   type?: 'progress' | 'remark'; // Optionele categorisering
@@ -103,20 +104,11 @@ interface Note {
 }
 
 export interface CalendarEvent {
-  id: string;
-  date: string; // ISO 8601 formatted date
-  actions: Array<{
-    id: string; // MassiveAction ID
-    text: string; // Beschrijving van de actie
-    color?: string; // Optioneel: kleur voor weergave in de kalender
-    startDate?: Date; // Optioneel: startdatum voor reeks
-    endDate?: Date; // Optioneel: einddatum voor reeks
-    isDateRange?: boolean; // Optioneel: of dit een datumreeks is
-  }>;
-  categoryId?: string; // Optioneel: koppeling met categorie
-  notes?: Note[]; // Notities bij de dag
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: string; // Unieke ID voor de kalendergebeurtenis
+  date: string; // ISO 8601 datum waarop de gebeurtenis plaatsvindt
+  actions: MassiveAction[]; // Lijst van acties die op deze dag plaatsvinden
+  createdAt?: string; // Datum van aanmaak van de gebeurtenis
+  updatedAt?: string; // Laatst bijgewerkt datum
 }
 
 

@@ -48,7 +48,7 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) =
       )}
       {action.missedDate && (
         <div className="text-xs text-red-500 mt-1">
-          Niet opgepakt op: {action.missedDate.toLocaleDateString()}
+          Niet opgepakt op: {action.missedDate.toString()}
         </div>
       )}
     </div>

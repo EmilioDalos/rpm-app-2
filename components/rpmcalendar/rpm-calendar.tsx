@@ -16,23 +16,10 @@ import { format } from 'date-fns';
 import { enGB } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
 
-import { Category, RpmBlock, MassiveAction, CalendarEvent } from '@/types';
+import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
 
 interface RpmCalendarProps {
   isDropDisabled: boolean;
-}
-
-function convertToMassiveAction(action: { id: string; text: string; color?: string }): MassiveAction {
-  return {
-    ...action,
-    color: action.color || '#000000',
-    leverage: 'default leverage',
-    durationAmount: 1,
-    durationUnit: 'hour',
-    priority: 0,
-    notes: [], // Initialiseer als lege array van Note[]
-    key: 'pending',
-  };
 }
 
 const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
@@ -43,10 +30,10 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
   });
-  const [actionAssignments, setActionAssignments] = useState<{ [key: string]: MassiveAction[] }>({});
   const [selectedAction, setSelectedAction] = useState<MassiveAction | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -75,380 +62,164 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const fetchCalendarEvents = async () => {
-    console.log('Fetching calendar events...');
     try {
       const response = await fetch('/api/calendar-events');
       const data = await response.json();
-  
-      console.log('Raw calendar events from API:', data);
-  
-      const expandedEvents: CalendarEvent[] = [];
-  
-      data.forEach((event: CalendarEvent) => {
-        event.actions.forEach((action) => {
-          const actionStartDate = action.startDate ? new Date(`${action.startDate}T00:00:00Z`) : null;
-          const actionEndDate = action.endDate ? new Date(`${action.endDate}T00:00:00Z`) : null;
-  
-          // Verwerk acties over meerdere dagen
-          if (actionStartDate && actionEndDate) {
-            let currentDate = new Date(actionStartDate);
-            while (currentDate <= actionEndDate) {
-              const dateKey = currentDate.toISOString().split('T')[0];
-              const existingEvent = expandedEvents.find((e) => e.date === dateKey);
-  
-              if (existingEvent) {
-                existingEvent.actions.push({ ...action });
-              } else {
-                expandedEvents.push({
-                  id: `${dateKey}-${action.id}`,
-                  date: dateKey,
-                  actions: [{ ...action }],
-                });
-              }
-              currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-            }
-          } else {
-            // Verwerk acties met een enkele datum of zonder datum
-            const dateKey = event.date || 'unknown';
-            const existingEvent = expandedEvents.find((e) => e.date === dateKey);
-  
-            if (existingEvent) {
-              existingEvent.actions.push({ ...action });
-            } else {
-              expandedEvents.push({
-                id: `${event.date}-${action.id}`,
-                date: event.date,
-                actions: [{ ...action }],
-              });
-            }
-          }
-  
-          // Verwerk notities
-          if (action.notes && action.notes.length > 0) {
-            action.notes.forEach((note) => {
-              const noteDate = note.createdAt
-                ? new Date(note.createdAt).toISOString().split('T')[0]
-                : 'unknown';
-              const existingEvent = expandedEvents.find((e) => e.date === noteDate);
-  
-              if (existingEvent) {
-                const actionIndex = existingEvent.actions.findIndex((a) => a.id === action.id);
-                if (actionIndex >= 0) {
-                  // Voeg de notitie toe aan een bestaande actie
-                  existingEvent.actions[actionIndex].notes = [
-                    ...(existingEvent.actions[actionIndex].notes || []),
-                    note,
-                  ];
-                } else {
-                  // Voeg een nieuwe actie toe met de notitie
-                  existingEvent.actions.push({
-                    ...action,
-                    notes: [note],
-                  });
-                }
-              } else {
-                // Maak een nieuwe dagentry voor de notitie
-                expandedEvents.push({
-                  id: `${noteDate}-note-${action.id}`,
-                  date: noteDate,
-                  actions: [
-                    {
-                      ...action,
-                      notes: [note],
-                    },
-                  ],
-                });
-              }
-            });
-          }
-        });
-      });
-  
-      console.log('Expanded calendar events:', expandedEvents);
-  
-      // Genereer actionAssignments van expandedEvents
-      const assignments = expandedEvents.reduce((acc: { [key: string]: MassiveAction[] }, event) => {
-        acc[event.date] = event.actions.map((action) => ({
-          id: action.id,
-          text: action.text,
-          color: action.color || '#000000',
-          leverage: action.leverage || '',
-          durationAmount: action.durationAmount || 0,
-          durationUnit: action.durationUnit || 'min',
-          priority: action.priority || 0,
-          notes: action.notes || [],
-          key: action.key || 'pending',
-          startDate: action.startDate ? new Date(`${action.startDate}T00:00:00Z`) : undefined,
-          endDate: action.endDate ? new Date(`${action.endDate}T00:00:00Z`) : undefined,
-          isDateRange: action.startDate && action.endDate ? true : false,
-        }));
-        return acc;
-      }, {});
-  
-      // Update de states
-      setCalendarEvents(expandedEvents);
-      setActionAssignments(assignments);
-  
-      console.log('Action assignments:', assignments);
+      setCalendarEvents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       setCalendarEvents([]);
     }
   };
-  
-  const handleActionClick = (action: { id: string; text: string; color?: string }) => {
-    const massiveAction = convertToMassiveAction(action);
-    setSelectedAction(massiveAction);
+
+  const handleActionClick = (action: MassiveAction, dateKey: string) => {
+    setSelectedAction(action);
+    setSelectedDateKey(dateKey);
     setIsPopupOpen(true);
   };
 
-  const handleActionUpdate = async (updatedAction: MassiveAction) => {
+  const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
     try {
-      if (updatedAction.startDate && updatedAction.endDate) {
-        // Verwerk actie over meerdere dagen
-        let currentDate = new Date(updatedAction.startDate);
-        const endDate = new Date(updatedAction.endDate);
-  
-        while (currentDate <= endDate) {
-          const dateKey = currentDate.toISOString().split('T')[0];
-  
-          const actionPayload = {
-            ...updatedAction,
-            startDate: undefined, // Startdatum niet opnieuw doorgeven per dag
-            endDate: undefined,   // Einddatum niet opnieuw doorgeven per dag
-          };
-  
-          // Controleer of de actie al bestaat om te bepalen of het een PUT of POST moet zijn
-          const response = await fetch(`/api/calendar-events/${dateKey}/actions/${updatedAction.id}`);
-          if (response.ok) {
-            // Gebruik PUT als de actie al bestaat
-            await fetch(`/api/calendar-events/${dateKey}/actions/${updatedAction.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(actionPayload),
-            });
-            console.log(`Action updated for date ${dateKey}:`, actionPayload);
-          } else {
-            // Gebruik POST als de actie nieuw is
-            await fetch('/api/calendar-events', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                dateKey,
-                action: actionPayload,
-              }),
-            });
-            console.log(`New action created for date ${dateKey}:`, actionPayload);
+      await updateCalendarEvent(dateKey, updatedAction);
+
+      setCalendarEvents((prevEvents) =>
+        prevEvents.map((event) => {
+          if (event.date === dateKey) {
+            return {
+              ...event,
+              actions: event.actions.map((action) =>
+                action.id === updatedAction.id ? updatedAction : action
+              ),
+              updatedAt: new Date().toISOString()
+            };
           }
-  
-          currentDate.setDate(currentDate.getDate() + 1); // Ga naar de volgende dag
-        }
-      } else {
-        // Verwerk een enkelvoudige datumactie
-        const dateKey = updatedAction.startDate
-          ? updatedAction.startDate.toISOString().split('T')[0]
-          : 'unknown';
-  
-        const actionPayload = {
-          ...updatedAction,
-          startDate: updatedAction.startDate?.toISOString(),
-          endDate: updatedAction.endDate?.toISOString(),
-        };
-  
-        // Controleer of de actie al bestaat om te bepalen of het een PUT of POST moet zijn
-        const response = await fetch(`/api/calendar-events/${dateKey}/actions/${updatedAction.id}`);
-        if (response.ok) {
-          // Gebruik PUT als de actie al bestaat
-          await fetch(`/api/calendar-events/${dateKey}/actions/${updatedAction.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(actionPayload),
-          });
-          console.log(`Action updated for date ${dateKey}:`, actionPayload);
-        } else {
-          // Gebruik POST als de actie nieuw is
-          await fetch('/api/calendar-events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              dateKey,
-              action: actionPayload,
-            }),
-          });
-          console.log(`New action created for date ${dateKey}:`, actionPayload);
-        }
-      }
-  
-      // Vernieuw de kalender na het bijwerken
+          return event;
+        })
+      );
+
       await fetchCalendarEvents();
     } catch (error) {
       console.error('Error updating action:', error);
     }
   };
-  
-  const handleDrop = (item: MassiveAction, dateKey: string) => {
-    setActionAssignments((prev) => {
-      const updatedAssignments = { ...prev };
-  
-      if (item.isDateRange && item.startDate && item.endDate) {
-        let currentDate = new Date(item.startDate);
-        const endDate = new Date(item.endDate);
-        
-        while (currentDate <= endDate) {
-          const currentDateKey = currentDate.toISOString().split('T')[0];
-          if (!updatedAssignments[currentDateKey]) {
-            updatedAssignments[currentDateKey] = [];
-          }
-          if (!updatedAssignments[currentDateKey].some((action) => action.id === item.id)) {
-            updatedAssignments[currentDateKey].push(item);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      } else {
-      if (!updatedAssignments[dateKey]) {
-        updatedAssignments[dateKey] = [];
-      }
-      if (!updatedAssignments[dateKey].some((action) => action.id === item.id)) {
-        updatedAssignments[dateKey].push(item);
-        }
-      }
-  
-      return updatedAssignments;
+
+  const updateCalendarEvent = async (dateKey: string, action: MassiveAction) => {
+    const response = await fetch(`/api/calendar-events/${dateKey}/actions/${action.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
     });
-  
+
+    if (!response.ok) {
+      throw new Error('Failed to update calendar event');
+    }
+  };
+
+  const handleDrop = async (item: MassiveAction, dateKey: string) => {
+    const newAction: MassiveAction = {
+      ...item,
+      leverage: item.leverage || '',
+      durationAmount: item.durationAmount || 0,
+      durationUnit: item.durationUnit || 'min',
+      priority: item.priority || 1,
+      key: item.key || '✘',
+      notes: item.notes || [],
+      isDateRange: item.isDateRange || false,
+      color: item.color || '#000000',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
     setCalendarEvents((prevEvents) => {
       const updatedEvents = [...prevEvents];
-      
-      if (item.isDateRange && item.startDate && item.endDate) {
-        let currentDate = new Date(item.startDate);
-        const endDate = new Date(item.endDate);
-        
-        while (currentDate <= endDate) {
-          const currentDateKey = currentDate.toISOString().split('T')[0];
-          const existingEventIndex = updatedEvents.findIndex((event) => event.date === currentDateKey);
-  
-          if (existingEventIndex >= 0) {
-            const existingEvent = updatedEvents[existingEventIndex];
-            if (!existingEvent.actions.some((action) => action.id === item.id)) {
-              existingEvent.actions.push({
-                id: item.id,
-                text: item.text,
-                color: item.color,
-                isDateRange: item.isDateRange,
-                startDate: item.startDate,
-                endDate: item.endDate,
-              });
-            }
-          } else {
-            updatedEvents.push({
-              id: `${currentDateKey}-${item.id}`,
-              date: currentDateKey,
-              actions: [{
-                id: item.id,
-                text: item.text,
-                color: item.color,
-                isDateRange: item.isDateRange,
-                startDate: item.startDate,
-                endDate: item.endDate,
-              }],
-            });
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      } else {
       const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
-  
+
       if (existingEventIndex >= 0) {
-        const existingEvent = updatedEvents[existingEventIndex];
-        if (!existingEvent.actions.some((action) => action.id === item.id)) {
-          existingEvent.actions.push({
-            id: item.id,
-            text: item.text,
-            color: item.color,
-          });
+        if (!updatedEvents[existingEventIndex].actions.some((action) => action.id === newAction.id)) {
+          updatedEvents[existingEventIndex].actions.push(newAction);
+          updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
         }
       } else {
         updatedEvents.push({
-          id: `${dateKey}-${item.id}`,
+          id: `${dateKey}-${newAction.id}`,
           date: dateKey,
-          actions: [{ id: item.id, text: item.text, color: item.color }],
+          actions: [newAction],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
-        }
       }
-  
+
       return updatedEvents;
     });
 
-    fetch('/api/calendar-events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dateKey, action: item }),
-    }).catch((error) => console.error('Error saving action:', error));
+    try {
+      await fetch('/api/calendar-events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dateKey, action: newAction }),
+      });
+    } catch (error) {
+      console.error('Error saving action:', error);
+    }
   };
 
-  const handleActionRemove = (actionId: string, dateKey: string) => {
-    setActionAssignments((prev) => {
-      const updatedAssignments = { ...prev };
-      if (updatedAssignments[dateKey]) {
-        updatedAssignments[dateKey] = updatedAssignments[dateKey].filter((action) => action.id !== actionId);
-      }
-      return updatedAssignments;
-    });
-  
+  const handleActionRemove = async (actionId: string, dateKey: string) => {
     setCalendarEvents((prevEvents) =>
-      prevEvents.map((event) =>
-        event.date === dateKey
-          ? {
-              ...event,
-              actions: event.actions.filter((action) => action.id !== actionId),
-            }
-          : event
-      )
+      prevEvents.map((event) => {
+        if (event.date === dateKey) {
+          return {
+            ...event,
+            actions: event.actions.filter((action) => action.id !== actionId),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return event;
+      })
     );
   
-    fetch(`/api/calendar-events/${dateKey}/actions/${actionId}`, {
-      method: 'DELETE',
-    }).catch((error) => console.error('Error deleting action:', error));
+    try {
+      await fetch(`/api/calendar-events/${dateKey}/actions/${actionId}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      console.error('Error deleting action:', error);
+    }
   };
 
   const renderCalendar = () => {
     const calendarDays = [];
-    const todayDate = new Date(new Date().toISOString().split('T')[0]); // Forceer UTC voor vandaag
-  
+    const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
+
     for (let i = 0; i < 28; i++) {
       const currentDate = new Date(currentWeekStart);
-      currentDate.setUTCDate(currentWeekStart.getUTCDate() + i); // Gebruik UTC voor het berekenen van de dagen
-      const dateKey = currentDate.toISOString().split('T')[0]; // Forceer UTC
-      const isCurrentDay = todayDate.toISOString().split('T')[0] === dateKey; // Controleer in UTC
-  
+      currentDate.setDate(currentWeekStart.getDate() + i);
+      const dateKey = currentDate.toISOString().split('T')[0];
+      const isCurrentDay = currentDate.getTime() === todayDate.getTime();
+
       const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
-  
+
       calendarDays.push(
         <CalendarDay
           key={dateKey}
-          day={currentDate.getUTCDate()} // Gebruik UTC voor dagweergave
-          month={currentDate.getUTCMonth()}
-          year={currentDate.getUTCFullYear()}
+          day={currentDate.getDate()}
+          month={currentDate.getMonth()}
+          year={currentDate.getFullYear()}
           events={eventsForDay}
           dateKey={dateKey}
           isCurrentDay={isCurrentDay}
-          onActionClick={handleActionClick}
+          onActionClick={(action) => handleActionClick(action, dateKey)}
           onDrop={handleDrop}
           onActionRemove={handleActionRemove}
         />
       );
     }
-  
+
     return calendarDays;
   };
 
-  
-
   const isActionPlanned = (actionId: string) => {
-    console.log("actionId"+actionId)
-    
-    return Object.values(actionAssignments).some((actions) =>
-      actions.some((action) => action.id === actionId)
+    return calendarEvents.some((event) => 
+      event.actions.some((action) => action.id === actionId)
     );
   };
 
@@ -515,11 +286,15 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
         </div>
       </div>
-      {selectedAction && isPopupOpen && (
+      {selectedAction && isPopupOpen && selectedDateKey && (
         <ActionPopup
           action={selectedAction}
+          dateKey={selectedDateKey}
           isOpen={isPopupOpen}
-          onClose={() => setIsPopupOpen(false)}
+          onClose={() => {
+            setIsPopupOpen(false);
+            setSelectedDateKey(null);
+          }}
           onUpdate={handleActionUpdate}
         />
       )}

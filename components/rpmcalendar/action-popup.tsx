@@ -1,35 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MassiveAction } from '@/types';
-import { Checkbox } from "@/components/ui/checkbox";
-import { MoreHorizontal, Pencil, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import dynamic from 'next/dynamic';
-
-const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
-
-interface Note {
-  id: string;
-  text: string;
-  createdAt: string;
-}
+import React, { useState, useEffect, useCallback } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { MassiveAction, Note } from '@/types'
+import { Checkbox } from "@/components/ui/checkbox"
+import { MoreHorizontal, Pencil, X } from 'lucide-react'
+import { format } from 'date-fns'
+import { nl } from 'date-fns/locale'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface ActionPopupProps {
   action: MassiveAction
+  dateKey: string
   isOpen: boolean
   onClose: () => void
-  onUpdate: (updatedAction: MassiveAction) => void
+  onUpdate: (updatedAction: MassiveAction, dateKey: string) => void
 }
 
-const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUpdate }) => {
-  const [notes, setNotes] = useState<Note[]>(Array.isArray(action.notes) ? action.notes : []);
+const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate }) => {
+  const [notes, setNotes] = useState<Note[]>(action.notes || [])
   const [newNote, setNewNote] = useState('')
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
@@ -44,18 +39,14 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
     setStartDate(action.startDate || '')
     setEndDate(action.endDate || '')
   }, [action])
-  
-  const handleUpdate = () => {
-    onUpdate({
-      ...action,
-      notes,
-      key: isCompleted ? '✔' : action.key,
-      isDateRange,
-      startDate: isDateRange ? (startDate ? new Date(startDate) : undefined) : undefined,
-      endDate: isDateRange ? (endDate ? new Date(endDate) : undefined) : undefined,
-    });
-    onClose();
-  };
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: newNote,
+    onUpdate: ({ editor }) => {
+      setNewNote(editor.getHTML());
+    },
+  })
 
   const addNote = useCallback(() => {
     if (newNote.trim()) {
@@ -66,8 +57,11 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
       }
       setNotes(prevNotes => [...prevNotes, newNoteObj])
       setNewNote('')
+      if (editor) {
+        editor.commands.setContent('')
+      }
     }
-  }, [newNote])
+  }, [newNote, editor])
 
   const updateNote = useCallback((id: string, newText: string) => {
     setNotes(prevNotes => prevNotes.map(note =>
@@ -79,6 +73,20 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
   const deleteNote = useCallback((id: string) => {
     setNotes(prevNotes => prevNotes.filter(note => note.id !== id))
   }, [])
+
+  const handleUpdate = () => {
+    const updatedAction: MassiveAction = {
+      ...action,
+      key: isCompleted ? '✔' : action.key,
+      notes,
+      isDateRange,
+      startDate,
+      endDate,
+      updatedAt: new Date().toISOString()
+    }
+    onUpdate(updatedAction, dateKey)
+    onClose()
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -100,7 +108,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
             <Checkbox
               id="completed"
               checked={isCompleted}
-              onCheckedChange={(checked) => setIsCompleted(checked === true)}
+              onCheckedChange={setIsCompleted}
             />
             <label
               htmlFor="completed"
@@ -118,30 +126,30 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
             <Label htmlFor="date-range">Actie over meerdere dagen</Label>
           </div>
           {isDateRange && (
-           <div className="grid grid-cols-2 gap-4">
-           <div className="flex flex-col space-y-2">
-             <Label htmlFor="start-date">Startdatum</Label>
-             <Input
-               id="start-date"
-               type="date"
-               value={startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate}
-               onChange={(e) => setStartDate(e.target.value)}
-             />
-           </div>
-           <div className="flex flex-col space-y-2">
-             <Label htmlFor="end-date">Einddatum</Label>
-             <Input
-               id="end-date"
-               type="date"
-               value={endDate instanceof Date ? endDate.toISOString().split('T')[0] : endDate}
-               onChange={(e) => setEndDate(e.target.value)}
-             />
-           </div>
-         </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="start-date">Startdatum</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="end-date">Einddatum</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
           )}
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
-            <div className="h-[200px] w-full rounded-md border p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
               {notes.map((note) => (
                 <div key={note.id} className="mb-4 last:mb-0 bg-gray-100 p-3 rounded-md">
                   <div className="flex items-center justify-between">
@@ -168,17 +176,10 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
                   </div>
                   {editingNoteId === note.id ? (
                     <div className="mt-2">
-                      <Tiptap
-                        content={note.text}
-                        onUpdate={(newContent) => updateNote(note.id, newContent)}
-                      />
+                      <EditorContent editor={editor} />
                       <div className="mt-2 flex justify-end space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => setEditingNoteId(null)}>
-                          Annuleren
-                        </Button>
-                        <Button size="sm" onClick={() => setEditingNoteId(null)}>
-                          Opslaan
-                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingNoteId(null)}>Annuleren</Button>
+                        <Button size="sm" onClick={() => updateNote(note.id, editor?.getHTML() || '')}>Opslaan</Button>
                       </div>
                     </div>
                   ) : (
@@ -186,17 +187,11 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, isOpen, onClose, onUp
                   )}
                 </div>
               ))}
-            </div>
+            </ScrollArea>
           </div>
           <div>
-            <Tiptap
-              content={newNote}
-              onUpdate={setNewNote}
-              placeholder="Voeg een nieuwe notitie toe..."
-            />
-            <Button onClick={addNote} className="mt-2">
-              Notitie toevoegen
-            </Button>
+            <EditorContent editor={editor} />
+            <Button onClick={addNote} className="mt-2">Notitie toevoegen</Button>
           </div>
         </div>
         <DialogFooter>
