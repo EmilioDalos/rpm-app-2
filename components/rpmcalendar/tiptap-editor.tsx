@@ -72,3 +72,4 @@ const Tiptap: React.FC<TiptapProps> = ({ content, onUpdate, placeholder }) => {
 }
 
 export default Tiptap
+

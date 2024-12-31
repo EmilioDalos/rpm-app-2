@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,12 +8,13 @@ import { MoreHorizontal, Pencil, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import dynamic from 'next/dynamic'
+
+const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
 
 interface ActionPopupProps {
   action: MassiveAction
@@ -31,6 +32,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
   const [startDate, setStartDate] = useState(action.startDate || '')
   const [endDate, setEndDate] = useState(action.endDate || '')
+  const tiptapRef = useRef<{ editor: ReturnType<typeof useEditor> | null }>(null)
 
   useEffect(() => {
     setNotes(action.notes || [])
@@ -40,13 +42,6 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
     setEndDate(action.endDate || '')
   }, [action])
 
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: newNote,
-    onUpdate: ({ editor }) => {
-      setNewNote(editor.getHTML());
-    },
-  })
 
   const addNote = useCallback(() => {
     if (newNote.trim()) {
@@ -57,11 +52,11 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
       }
       setNotes(prevNotes => [...prevNotes, newNoteObj])
       setNewNote('')
-      if (editor) {
-        editor.commands.setContent('')
+      if (tiptapRef.current && tiptapRef.current.editor) {
+        tiptapRef.current.editor.commands.setContent('')
       }
     }
-  }, [newNote, editor])
+  }, [newNote])
 
   const updateNote = useCallback((id: string, newText: string) => {
     setNotes(prevNotes => prevNotes.map(note =>
@@ -176,10 +171,14 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
                   </div>
                   {editingNoteId === note.id ? (
                     <div className="mt-2">
-                      <EditorContent editor={editor} />
+                      <Tiptap
+                        content={note.text}
+                        onUpdate={(content) => updateNote(note.id, content)}
+                        placeholder="Bewerk de notitie..."
+                      />
                       <div className="mt-2 flex justify-end space-x-2">
                         <Button size="sm" variant="outline" onClick={() => setEditingNoteId(null)}>Annuleren</Button>
-                        <Button size="sm" onClick={() => updateNote(note.id, editor?.getHTML() || '')}>Opslaan</Button>
+                        <Button size="sm" onClick={() => setEditingNoteId(null)}>Opslaan</Button>
                       </div>
                     </div>
                   ) : (
@@ -190,8 +189,15 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
             </ScrollArea>
           </div>
           <div>
-            <EditorContent editor={editor} />
-            <Button onClick={addNote} className="mt-2">Notitie toevoegen</Button>
+            <Tiptap
+              key={notes.length}
+              content={''}
+              onUpdate={setNewNote}
+              placeholder="Voeg een nieuwe notitie toe..."
+            />
+            <Button onClick={addNote} className="mt-2">
+              Notitie toevoegen
+            </Button>
           </div>
         </div>
         <DialogFooter>
