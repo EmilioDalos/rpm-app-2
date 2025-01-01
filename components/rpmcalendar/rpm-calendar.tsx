@@ -8,7 +8,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import CalendarDay from './calendar-day';
-const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false })
 import ActionItem from './action-item';
 import CategoryBar from './category-bar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -17,6 +16,8 @@ import { enGB } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
+
+const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false });
 
 interface RpmCalendarProps {
   isDropDisabled: boolean;
@@ -116,6 +117,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
+    const category = categories.find(c => c.id === item.categoryId);
     const newAction: MassiveAction = {
       ...item,
       leverage: item.leverage || '',
@@ -125,7 +127,8 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       key: item.key || '✘',
       notes: item.notes || [],
       isDateRange: item.isDateRange || false,
-      color: item.color || '#000000',
+      color: category?.color || '#000000',
+      categoryId: item.categoryId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -223,6 +226,10 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     );
   };
 
+  const filteredRpmBlocks = activeCategory
+    ? rpmBlocks.filter(block => block.categoryId === activeCategory)
+    : rpmBlocks;
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex h-screen">
@@ -233,8 +240,12 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         />
         <div className="w-1/4 p-4 border-r">
           <ScrollArea className="h-[calc(100vh-2rem)]">
-            <h2 className="text-2xl font-bold mb-4">RPM Plannen</h2>
-            {rpmBlocks.map((block) => (
+            <h2 className="text-2xl font-bold mb-4">
+              {activeCategory 
+                ? `RPM Plannen - ${categories.find(c => c.id === activeCategory)?.name}` 
+                : 'Alle RPM Plannen'}
+            </h2>
+            {filteredRpmBlocks?.map((block) => (
               <Card key={block.id} className="mb-4">
                 <CardHeader>
                   <CardTitle>{block.result}</CardTitle>

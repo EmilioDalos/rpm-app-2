@@ -55,7 +55,7 @@ export interface RpmBlock {
   result: string;
   purposes: string[];
   massiveActions: MassiveAction[];
-  category: string;
+  categoryId: string;
   type: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -72,12 +72,14 @@ export interface MassiveAction {
   priority: number; // Prioriteit van de actie
   notes: Note[]; // Notities gekoppeld aan de actie
   key: string; // Status zoals "✔" of "pending"
+  categoryId: string; // CategoryId voor ook het tonen van de category in de kalender TODO
   startDate?: string; // Optioneel: ISO 8601 datum voor start van de actie
   endDate?: string; // Optioneel: ISO 8601 datum voor einde van de actie
   isDateRange?: boolean; // Of de actie over meerdere dagen gaat
   missedDate?: string; // Datum waarop de actie niet werd opgepakt
   createdAt?: string; // Datum van aanmaak van de actie
   updatedAt?: string; // Laatst bijgewerkt datum
+
 }
 
 export interface Note {
@@ -106,7 +108,7 @@ export interface Note {
 export interface CalendarEvent {
   id: string; // Unieke ID voor de kalendergebeurtenis
   date: string; // ISO 8601 datum waarop de gebeurtenis plaatsvindt
-  actions: MassiveAction[]; // Lijst van acties die op deze dag plaatsvinden
+  massiveActions: MassiveAction[]; // Lijst van acties die op deze dag plaatsvinden
   createdAt?: string; // Datum van aanmaak van de gebeurtenis
   updatedAt?: string; // Laatst bijgewerkt datum
 }

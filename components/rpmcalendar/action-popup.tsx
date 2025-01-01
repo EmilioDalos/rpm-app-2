@@ -32,7 +32,6 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
   const [startDate, setStartDate] = useState(action.startDate || '')
   const [endDate, setEndDate] = useState(action.endDate || '')
-  const tiptapRef = useRef<{ editor: ReturnType<typeof useEditor> | null }>(null)
 
   useEffect(() => {
     setNotes(action.notes || [])

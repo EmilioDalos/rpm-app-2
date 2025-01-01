@@ -55,8 +55,45 @@
         "updatedAt": "2024-12-31T18:15:07.475Z",
         "startDate": "",
         "endDate": ""
+      },
+      {
+        "id": 1733742180032,
+        "text": "Bruidloft organiseren",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "categoryId": "456",
+        "notes": [],
+        "isDateRange": false,
+        "color": "#000000",
+        "createdAt": "2025-01-01T15:14:18.913Z",
+        "updatedAt": "2025-01-01T15:14:18.913Z"
       }
     ],
     "updatedAt": "2024-12-31T18:15:07.475Z"
+  },
+  {
+    "id": "2025-01-04-1733741193825",
+    "date": "2025-01-04",
+    "actions": [
+      {
+        "id": 1733741193825,
+        "text": "test",
+        "leverage": "",
+        "categoryId": "123",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "Health",
+        "notes": [],
+        "isDateRange": false,
+        "color": "#000000",
+        "createdAt": "2025-01-01T15:15:54.662Z",
+        "updatedAt": "2025-01-01T15:15:54.662Z"
+      }
+    ]
   }
 ]

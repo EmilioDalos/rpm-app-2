@@ -1,11 +1,12 @@
 [
   {
     "id": "1732384831800",
-    "actions": [
+    "massiveActions": [
       {
         "id": 1733741193825,
         "text": "test",
         "leverage": "",
+        "categoryId": "123",
         "durationAmount": 0,
         "durationUnit": "min",
         "priority": 1,
@@ -15,16 +16,16 @@
       {
         "id": 1733741200009,
         "text": "test2",
+        "categoryId": "123",
         "leverage": "",
         "durationAmount": 0,
         "durationUnit": "min",
         "priority": 2,
-        "key": "✘",
-        "category": "Health"
+        "key": "✘"
       }
     ],
     "result": "een heel mooi doel",
-    "category": "Health",
+    "categoryId": "123",
     "type": "Day",
     "createdAt": "2024-12-09T10:46:45.258Z",
     "updatedAt": "2024-12-09T10:46:45.258Z",
@@ -41,7 +42,7 @@
         "durationUnit": "min",
         "priority": 1,
         "key": "✘",
-        "category": ""
+        "categoryId": "456"
       },
       {
         "id": 1733742180032,
@@ -51,35 +52,14 @@
         "durationUnit": "min",
         "priority": 2,
         "key": "✘",
-        "category": ""
+        "categoryId": "456"
       }
     ],
     "result": "ik hou van camila met hart en ziel",
-    "category": "",
+    "categoryId": "456",
     "type": "Day",
     "createdAt": "2024-12-15T12:01:05.083Z",
     "updatedAt": "2024-12-15T12:01:05.083Z",
-    "saved": true
-  },
-  {
-    "id": "1732405767025",
-    "actions": [
-      {
-        "id": 1732405747206,
-        "text": "df",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "category": ""
-      }
-    ],
-    "result": "dfds. dfs",
-    "category": "",
-    "type": "Day",
-    "createdAt": "2024-11-23T23:49:27.002Z",
-    "updatedAt": "2024-11-23T23:49:27.002Z",
     "saved": true
   }
 ]
