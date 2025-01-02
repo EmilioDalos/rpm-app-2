@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     // Zoek de actie binnen het event
-    const actionIndex = calendarEvents[eventIndex].actions.findIndex(
+    const actionIndex = calendarEvents[eventIndex].massiveActions.findIndex(
       (action: any) => action.id === actionIdNumber
     );
     if (actionIndex === -1) {
@@ -64,8 +64,8 @@ export async function PUT(
     const { action: updatedAction } = await req.json();
 
     // Update de actie
-    calendarEvents[eventIndex].actions[actionIndex] = {
-      ...calendarEvents[eventIndex].actions[actionIndex],
+    calendarEvents[eventIndex].massiveActions[actionIndex] = {
+      ...calendarEvents[eventIndex].massiveActions[actionIndex],
       ...updatedAction,
       updatedAt: new Date().toISOString(),
     };
@@ -83,13 +83,12 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { dateKey: string; actionId: string } }
-) {
-  const { dateKey, actionId } = params;
-
+export async function DELETE(req: Request, context: { params: { dateKey: string; actionId: string } }) {
   try {
+    // Gebruik `await` bij het destructureren van `params`
+    const { dateKey, actionId } = await context.params;
+
+    // Lees de kalendergebeurtenissen
     const calendarEvents = await readCalendarEvents();
 
     // Vind het event op basis van dateKey
@@ -101,10 +100,10 @@ export async function DELETE(
 
     const event = calendarEvents[eventIndex];
     // Verwijder de actie met het gegeven actionId
-    event.actions = event.actions.filter((action: any) => action.id !== parseInt(actionId, 10));
+    event.massiveActions = event.massiveActions.filter((action: any) => action.id !== parseInt(actionId, 10));
 
     // Als er geen acties meer over zijn, verwijder het hele event
-    if (event.actions.length === 0) {
+    if (event.massiveActions.length === 0) {
       calendarEvents.splice(eventIndex, 1);
     }
 
@@ -134,7 +133,7 @@ export async function GET(
     }
 
     // Zoek de actie binnen het event
-    const action = event.actions.find((action: any) => action.id === parseInt(actionId, 10));
+    const action = event.massiveActions.find((action: any) => action.id === parseInt(actionId, 10));
 
     if (!action) {
       return NextResponse.json({ error: 'Action not found' }, { status: 404 });

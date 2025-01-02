@@ -51,9 +51,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
       }
       setNotes(prevNotes => [...prevNotes, newNoteObj])
       setNewNote('')
-      if (tiptapRef.current && tiptapRef.current.editor) {
-        tiptapRef.current.editor.commands.setContent('')
-      }
+    
     }
   }, [newNote])
 

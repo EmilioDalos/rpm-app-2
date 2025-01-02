@@ -1,60 +1,22 @@
 [
   {
-    "id": "2025-01-11-1733742169688",
+    "id": "2025-01-11-1733741200009",
     "date": "2025-01-11",
-    "actions": [
+    "massiveActions": [
       {
-        "id": 1733742169688,
-        "text": "doctor bellen",
+        "id": 1733741200009,
+        "text": "test2",
+        "categoryId": "123",
         "leverage": "",
         "durationAmount": 0,
         "durationUnit": "min",
-        "priority": 1,
+        "priority": 2,
         "key": "✘",
-        "category": "",
-        "notes": [
-          {
-            "id": "1735588316396",
-            "text": "<p>tea</p>",
-            "createdAt": "2024-12-30T19:51:56.396Z"
-          },
-          {
-            "id": "1735588581615",
-            "text": "<p>test2</p>",
-            "createdAt": "2024-12-30T19:56:21.615Z"
-          },
-          {
-            "id": "1735588626819",
-            "text": "<p>test</p>",
-            "createdAt": "2024-12-30T19:57:06.819Z"
-          },
-          {
-            "id": "1735597325687",
-            "text": "<ol><li><p>sdds</p></li></ol>",
-            "createdAt": "2024-12-30T22:22:05.687Z"
-          },
-          {
-            "id": "1735667021625",
-            "text": "<p>test7</p>",
-            "createdAt": "2024-12-31T17:43:41.625Z"
-          },
-          {
-            "id": "1735667738825",
-            "text": "<p>test8</p>",
-            "createdAt": "2024-12-31T17:55:38.825Z"
-          },
-          {
-            "id": "1735668903718",
-            "text": "<p>ik hou van camila</p>",
-            "createdAt": "2024-12-31T18:15:03.718Z"
-          }
-        ],
+        "notes": [],
         "isDateRange": false,
-        "color": "#000000",
-        "createdAt": "2024-12-30T19:31:37.473Z",
-        "updatedAt": "2024-12-31T18:15:07.475Z",
-        "startDate": "",
-        "endDate": ""
+        "color": "#e0e0e0",
+        "createdAt": "2025-01-02T21:11:02.530Z",
+        "updatedAt": "2025-01-02T21:11:02.530Z"
       },
       {
         "id": 1733742180032,
@@ -67,32 +29,9 @@
         "categoryId": "456",
         "notes": [],
         "isDateRange": false,
-        "color": "#000000",
-        "createdAt": "2025-01-01T15:14:18.913Z",
-        "updatedAt": "2025-01-01T15:14:18.913Z"
-      }
-    ],
-    "updatedAt": "2024-12-31T18:15:07.475Z"
-  },
-  {
-    "id": "2025-01-04-1733741193825",
-    "date": "2025-01-04",
-    "actions": [
-      {
-        "id": 1733741193825,
-        "text": "test",
-        "leverage": "",
-        "categoryId": "123",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "category": "Health",
-        "notes": [],
-        "isDateRange": false,
-        "color": "#000000",
-        "createdAt": "2025-01-01T15:15:54.662Z",
-        "updatedAt": "2025-01-01T15:15:54.662Z"
+        "color": "#e0e0e0",
+        "createdAt": "2025-01-02T21:11:42.728Z",
+        "updatedAt": "2025-01-02T21:11:42.728Z"
       }
     ]
   }

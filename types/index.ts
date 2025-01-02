@@ -9,6 +9,7 @@ export interface Category {
   threeToThrive: string[];
   resources: string;
   results: string[];
+  color?: string;
   actionPlans: string[];
   imageBlob: string;
   createdAt: Date;

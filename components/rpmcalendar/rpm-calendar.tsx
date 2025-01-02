@@ -88,7 +88,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           if (event.date === dateKey) {
             return {
               ...event,
-              actions: event.actions.map((action) =>
+              massiveActions: event.massiveActions.map((action) =>
                 action.id === updatedAction.id ? updatedAction : action
               ),
               updatedAt: new Date().toISOString()
@@ -127,7 +127,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       key: item.key || '✘',
       notes: item.notes || [],
       isDateRange: item.isDateRange || false,
-      color: category?.color || '#000000',
+      color: category?.color || '#e0e0e0',
       categoryId: item.categoryId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -138,20 +138,24 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
 
       if (existingEventIndex >= 0) {
-        if (!updatedEvents[existingEventIndex].actions.some((action) => action.id === newAction.id)) {
-          updatedEvents[existingEventIndex].actions.push(newAction);
+        // Zorg ervoor dat massiveActions bestaat en een array is
+        if (!updatedEvents[existingEventIndex].massiveActions) {
+          updatedEvents[existingEventIndex].massiveActions = [];
+        }
+      
+        if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
+          updatedEvents[existingEventIndex].massiveActions.push(newAction);
           updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
         }
       } else {
         updatedEvents.push({
           id: `${dateKey}-${newAction.id}`,
           date: dateKey,
-          actions: [newAction],
+          massiveActions: [newAction], // Zorg ervoor dat massiveActions wordt geïnitialiseerd als een array
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
       }
-
       return updatedEvents;
     });
 
@@ -172,7 +176,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         if (event.date === dateKey) {
           return {
             ...event,
-            actions: event.actions.filter((action) => action.id !== actionId),
+            massiveActions: event.massiveActions.filter((action) => action.id !== actionId),
             updatedAt: new Date().toISOString()
           };
         }
@@ -221,8 +225,8 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const isActionPlanned = (actionId: string) => {
-    return calendarEvents.some((event) => 
-      event.actions.some((action) => action.id === actionId)
+    return calendarEvents?.some((event) => 
+      event.massiveActions?.some((action) => action.id === actionId)
     );
   };
 

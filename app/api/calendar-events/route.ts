@@ -16,31 +16,46 @@ import { NextResponse } from 'next/server';
      }
    }
 
-   // POST: Add a new calendar event
    export async function POST(request: Request) {
-     try {
-       const { dateKey, action } = await request.json();
-       const fileContents = await fs.readFile(dataFilePath, 'utf8');
-       const events = JSON.parse(fileContents);
-
-       const eventIndex = events.findIndex(event => event.date === dateKey);
-       if (eventIndex === -1) {
-         events.push({
-           id: `${dateKey}-${action.id}`,
-           date: dateKey,
-           actions: [action],
-         });
-       } else {
-         events[eventIndex].actions.push(action);
-       }
-
-       await fs.writeFile(dataFilePath, JSON.stringify(events, null, 2));
-       return NextResponse.json({ success: true });
-     } catch (error) {
-       console.error('Error saving calendar event:', error);
-       return NextResponse.json({ error: 'Failed to save the action' }, { status: 500 });
-     }
-   }
+    try {
+      const { dateKey, action } = await request.json();
+      const fileContents = await fs.readFile(dataFilePath, 'utf8');
+      const events = JSON.parse(fileContents);
+  
+      const eventIndex = events.findIndex((event: any) => event.date === dateKey);
+  
+      if (eventIndex === -1) {
+        // Event voor deze datum bestaat niet, voeg nieuw event toe
+        events.push({
+          id: `${dateKey}-${action.id}`,
+          date: dateKey,
+          massiveActions: [action], // Consistent gebruik van massiveActions
+        });
+      } else {
+        // Event bestaat, voeg actie toe
+        if (!events[eventIndex].massiveActions) {
+          events[eventIndex].massiveActions = []; // Zorg dat massiveActions bestaat
+        }
+  
+        // Controleer of actie al bestaat
+        const actionExists = events[eventIndex].massiveActions.some(
+          (existingAction: any) => existingAction.id === action.id
+        );
+  
+        if (!actionExists) {
+          events[eventIndex].massiveActions.push(action);
+        }
+      }
+  
+      // Schrijf bijgewerkte evenementen terug naar het bestand
+      await fs.writeFile(dataFilePath, JSON.stringify(events, null, 2));
+  
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Error saving calendar event:', error);
+      return NextResponse.json({ error: 'Failed to save the action' }, { status: 500 });
+    }
+  }
 
    // PUT: Update an existing calendar event by ID
    export async function PUT(request: Request) {
