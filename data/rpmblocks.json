@@ -1,65 +1,65 @@
-[
-  {
-    "id": "1732384831800",
-    "massiveActions": [
-      {
-        "id": 1733741193825,
-        "text": "test",
-        "leverage": "",
-        "categoryId": "123",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "category": "Health"
-      },
-      {
-        "id": 1733741200009,
-        "text": "test2",
-        "categoryId": "123",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 2,
-        "key": "✘"
-      }
-    ],
-    "result": "een heel mooi doel",
-    "categoryId": "123",
-    "type": "Day",
-    "createdAt": "2024-12-09T10:46:45.258Z",
-    "updatedAt": "2024-12-09T10:46:45.258Z",
-    "saved": true
-  },
-  {
-    "id": "1732398004404",
-    "massiveActions": [
-      {
-        "id": 1733742169688,
-        "text": "doctor bellen",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 1,
-        "key": "✘",
-        "categoryId": "456"
-      },
-      {
-        "id": 1733742180032,
-        "text": "Bruidloft organiseren",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 2,
-        "key": "✘",
-        "categoryId": "456"
-      }
-    ],
-    "result": "ik hou van camila met hart en ziel",
-    "categoryId": "456",
-    "type": "Day",
-    "createdAt": "2024-12-15T12:01:05.083Z",
-    "updatedAt": "2024-12-15T12:01:05.083Z",
-    "saved": true
-  }
-]
+{
+  "rpmBlocks": [
+    {
+      "id": "block-001",
+      "result": "Verbeterde fysieke kracht en spiergroei door consistent trainen",
+      "purposes": [
+        "Gezondheid en fitheid verbeteren",
+        "Fysieke kracht en balans versterken",
+        "Discipline opbouwen en consistentie behouden",
+        "Vooruitgang en voldoening ervaren"
+      ],
+      "massiveActions": [
+        {
+          "id": "action-001",
+          "text": "Trainingsschema volgen voor borst, schouders en triceps",
+          "color": "blue",
+          "leverage": "Grotere kracht en spierdefinitie",
+          "durationAmount": 6,
+          "durationUnit": "week",
+          "priority": 1,
+          "notes": [
+            {
+              "id": "note-001",
+              "text": "Voeg progressief 1,25-2,5 kg toe per twee weken bij compound-oefeningen",
+              "type": "progress",
+              "createdAt": "2025-01-05T00:00:00Z"
+            }
+          ],
+          "categoryId": "category-001",
+          "startDate": "2025-01-05T00:00:00Z",
+          "endDate": "2025-02-16T00:00:00Z",
+          "isDateRange": true,
+          "createdAt": "2025-01-05T00:00:00Z"
+        },
+        {
+          "id": "action-002",
+          "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
+          "color": "green",
+          "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
+          "durationAmount": 6,
+          "durationUnit": "week",
+          "priority": 1,
+          "notes": [
+            {
+              "id": "note-002",
+              "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
+              "type": "progress",
+              "createdAt": "2025-01-05T00:00:00Z"
+            }
+          ],
+          "categoryId": "category-002",
+          "startDate": "2025-01-06T00:00:00Z",
+          "endDate": "2025-02-17T00:00:00Z",
+          "isDateRange": true,
+          "createdAt": "2025-01-05T00:00:00Z"
+        }
+      ],
+      "categoryId": "training",
+      "type": "physical_fitness",
+      "createdAt": "2025-01-05T00:00:00Z",
+      "updatedAt": "2025-01-05T00:00:00Z",
+      "saved": true
+    }
+  ]
+}
