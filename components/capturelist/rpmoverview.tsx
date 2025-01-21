@@ -9,15 +9,13 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const [visibleBlocks, setVisibleBlocks] = useState(8);
   const [storedBlocks, setStoredBlocks] = useState<RpmBlock[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<RpmBlock | null>(null);
+  const [showActionPlan, setShowActionPlan] = useState(false);
 
-
-  // Combineer blocks uit props en localStorage
   useEffect(() => {
     const reloadCombinedBlocks = () => {
       const localBlocks = localStorage.getItem('rpmBlocks');
       const localBlocksArray: RpmBlock[] = localBlocks ? JSON.parse(localBlocks) : [];
   
-      // Combineer de blocks, waarbij duplicaten op basis van ID worden vermeden
       const combinedBlocks = [
         ...localBlocksArray,
         ...blocks.filter(
@@ -25,15 +23,12 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
         ),
       ];
 
-      // Update de state en localStorage met de gesorteerde blocks
       setStoredBlocks(combinedBlocks);
       localStorage.setItem('rpmBlocks', JSON.stringify(combinedBlocks));
     };
 
-    // Bij eerste render en wanneer de props veranderen, laad en combineer blocks
     reloadCombinedBlocks();
 
-    // Luisteren naar het custom event 'rpmBlocksUpdated' voor real-time updates
     window.addEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
 
     return () => {
@@ -44,7 +39,6 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const handleDelete = async (id: string, isSaved: boolean) => {
     try {
       if (isSaved) {
-        // Voor opgeslagen regels: Verwijderen via de API
         const response = await fetch(`/api/rpmblocks/${id}`, {
           method: 'DELETE',
         });
@@ -54,7 +48,6 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
         }
       }
 
-      // Voor beide gevallen: Verwijderen uit localStorage en state
       const updatedBlocks = storedBlocks.filter((block) => block.id !== id);
       setStoredBlocks(updatedBlocks);
       localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
@@ -68,11 +61,13 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   };
 
   const openActionPlan = (block: RpmBlock) => {
-    setSelectedBlock(block); // Stel het geselecteerde block in om door te geven aan het panel
+    setSelectedBlock(block);
+    setShowActionPlan(true);
   };
 
   const closeActionPlan = () => {
-    setSelectedBlock(null); // Sluit het panel door de geselecteerde block te resetten
+    setSelectedBlock(null);
+    setShowActionPlan(false);
   };
 
   return (
@@ -131,7 +126,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                     />
                   </svg>
                 )}
-               <Button
+                <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => openActionPlan(block)}
@@ -157,9 +152,10 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
           </Button>
         </div>
       )}
-      {selectedBlock && (
+      {showActionPlan && selectedBlock && (
         <ActionPlanPanel selectedBlock={selectedBlock} onClose={closeActionPlan} />
       )}
     </div>
   );
 }
+

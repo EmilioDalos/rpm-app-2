@@ -17,21 +17,6 @@
         "color": "#e0e0e0",
         "createdAt": "2025-01-02T21:11:02.530Z",
         "updatedAt": "2025-01-02T21:11:02.530Z"
-      },
-      {
-        "id": 1733742180032,
-        "text": "Bruidloft organiseren",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 2,
-        "key": "✘",
-        "categoryId": "456",
-        "notes": [],
-        "isDateRange": false,
-        "color": "#e0e0e0",
-        "createdAt": "2025-01-02T21:11:42.728Z",
-        "updatedAt": "2025-01-02T21:11:42.728Z"
       }
     ]
   }

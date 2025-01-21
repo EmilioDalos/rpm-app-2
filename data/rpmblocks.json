@@ -35,31 +35,36 @@
     "id": "1732398004404",
     "massiveActions": [
       {
-        "id": 1733742169688,
-        "text": "doctor bellen",
+        "id": 1737372638426,
+        "text": "testerzz",
         "leverage": "",
         "durationAmount": 0,
         "durationUnit": "min",
         "priority": 1,
         "key": "✘",
-        "categoryId": "456"
-      },
-      {
-        "id": 1733742180032,
-        "text": "Bruidloft organiseren",
-        "leverage": "",
-        "durationAmount": 0,
-        "durationUnit": "min",
-        "priority": 2,
-        "key": "✘",
-        "categoryId": "456"
+        "category": ""
       }
     ],
     "result": "ik hou van camila met hart en ziel",
-    "categoryId": "456",
+    "purposes": [
+      "test",
+      "test2"
+    ],
+    "category": "",
     "type": "Day",
-    "createdAt": "2024-12-15T12:01:05.083Z",
-    "updatedAt": "2024-12-15T12:01:05.083Z",
+    "createdAt": "2025-01-21T12:07:33.090Z",
+    "updatedAt": "2025-01-21T12:07:33.090Z",
+    "saved": true
+  },
+  {
+    "id": "1737290493483",
+    "massiveActions": [],
+    "result": "reretrte",
+    "purposes": [],
+    "category": "",
+    "type": "Day",
+    "createdAt": "2025-01-19T12:41:33.382Z",
+    "updatedAt": "2025-01-19T12:41:33.382Z",
     "saved": true
   }
 ]

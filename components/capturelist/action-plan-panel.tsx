@@ -45,6 +45,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedOption, setSelectedOption] = useState<string>('Day')
   
+  //Luisteren naar vensterresizing
   useEffect(() => {
     const handleResize = () => {
       setIsCollapsed(window.innerWidth < 1024)
@@ -54,85 +55,67 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     handleResize()
 
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, []);
 
   useEffect(() => {
     const dataSource = group?.id ? group : selectedBlock;
   
     if (!dataSource?.id) {
-      console.warn('Neither group nor selectedBlock loaded properly!');
+      console.warn('❌ Geen geldige dataSource (group of selectedBlock)!');
       return;
     }
   
-    const initializeData = () => {
-      const storageKey = `actionPlan-${dataSource.id}`;
-      const savedData = localStorage.getItem(storageKey);
+    const storageKey = `actionPlan-${dataSource.id}`;
   
-      if (savedData) {
-        try {
+    const initializeData = async () => {
+      try {
+        // 🔍 Eerst kijken of de data al in localStorage staat
+        const savedData = localStorage.getItem(storageKey);
+        if (savedData) {
+          console.log(`📂 Gegevens gevonden in localStorage voor ${storageKey}:`, JSON.parse(savedData));
+  
+          // Zet de gegevens in de state
           const parsedData = JSON.parse(savedData);
           setMassiveActions(parsedData.massiveActions || []);
           setPurposes(parsedData.purposes || []);
           setResult(parsedData.result || '');
-          console.log(`Loaded saved data for ${storageKey}:`, parsedData);
-        } catch (error) {
-          console.error('Error parsing saved data:', error);
+          setSelectedCategory(parsedData.category || '');
+          return; // ✅ Stop hier als data uit localStorage is geladen
         }
-      } else if (isGroup(dataSource) ? dataSource.actions?.length : dataSource.massiveActions?.length) {
-        const newActions = (isGroup(dataSource) ? dataSource.actions : dataSource.massiveActions)?.map((action, index) => ({
-          id: Date.now() + index,
-          text: action.text,
-          leverage: '',
-          durationAmount: 0,
-          durationUnit: 'min',
-          priority: index + 1,
-          key: '✘',
-          category: selectedCategory || '',
-        }));
   
-        const initialData = {
-          id: dataSource.id,
-          actions: newActions,
-          purposes: [],
-          result: isGroup(dataSource) ? dataSource.title : dataSource.result || '',
-        };
+        console.log(`🔍 Geen localStorage data gevonden. Ophalen via API voor ID: ${dataSource.id}...`);
   
-        setMassiveActions(newActions);
-        setResult(isGroup(dataSource) ? dataSource.title : dataSource.result || '');
-        localStorage.setItem(storageKey, JSON.stringify(initialData));
-        console.log(`Initialized and saved new data for ${storageKey}:`, initialData);
+        // 🟢 API Call als er geen data in localStorage is
+        const response = await fetch(`/api/rpmblocks/${dataSource.id}`, { method: 'GET' });
+  
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.warn(`⚠️ Geen data gevonden in API voor ID ${dataSource.id}, initialiseer een nieuwe actie.`);
+          } else {
+            throw new Error(`🚨 API-fout: ${response.statusText}`);
+          }
+        }
+  
+        // 📥 Data ophalen en opslaan in localStorage
+        const apiData = await response.json();
+        console.log(`✅ Gegevens opgehaald uit API en opgeslagen in localStorage:`, apiData);
+  
+        localStorage.setItem(storageKey, JSON.stringify(apiData));
+  
+        // Zet de opgehaalde gegevens in de state
+        setMassiveActions(apiData.massiveActions || []);
+        setPurposes(apiData.purposes || []);
+        setResult(apiData.result || '');
+        setSelectedCategory(apiData.category || '');
+      } catch (error) {
+        console.error(`❌ Fout bij ophalen of opslaan van data voor ${storageKey}:`, error);
       }
     };
   
     initializeData();
-  }, [group, selectedBlock, selectedCategory]);
+  }, [group, selectedBlock, selectedCategory]); // ✅ Correcte dependencies
   
-  useEffect(() => {
-    const dataSource = group?.id ? group : selectedBlock;
-  
-    if (!dataSource?.id || (!massiveActions.length && !purposes.length && !result)) {
-      console.log('State not yet initialized. Skipping save.');
-      return;
-    }
-  
-    const saveData = () => {
-      const storageKey = `actionPlan-${dataSource.id}`;
-      const dataToSave = {
-        id: dataSource.id,
-        massiveActions,
-        purposes,
-        result,
-      };
-  
-      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-      console.log(`Saved ${storageKey}:`, dataToSave);
-    };
-  
-    saveData();
-  }, [massiveActions, purposes, result, group, selectedBlock]);
-  
-  
-
+  // ✅ Correcte addMassiveAction functie zonder `useEffect` nesting
   const addMassiveAction = () => {
     const newAction: ActionPlan = {
       id: Date.now(),
@@ -143,12 +126,13 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       priority: massiveActions.length + 1,
       key: '✘',
       category: selectedCategory || '',
-    }
-    setMassiveActions([...massiveActions, newAction])
+    };
+    setMassiveActions([...massiveActions, newAction]);
+  
     if (group?.title) {
-      setResult(group.title)
+      setResult(group.title);
     }
-  }
+  };
 
   const updateMassiveAction = (index: number, updatedAction: Partial<ActionPlan>) => {
     const updatedActions = massiveActions.map((action, i) => 
@@ -156,31 +140,55 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     )
     setMassiveActions(updatedActions)
   }
-
+  // scherm wijzigingen automatisch op te slaan in localStorage:
+  useEffect(() => {
+    const source = group?.id ? group : selectedBlock;
+    
+    if (!source?.id) {
+      console.warn('❌ Geen geldige source (group of selectedBlock)!');
+      return;
+    }
+  
+    const storageKey = `actionPlan-${source.id}`;
+  
+    // Opslaan in localStorage
+    localStorage.setItem(storageKey, JSON.stringify({
+      id: source.id,
+      massiveActions,
+      result,
+      purposes, // ✅ Purposes toegevoegd!
+      category: selectedCategory,
+      type: selectedOption,
+      updatedAt: new Date().toISOString()
+    }));
+    
+  
+  }, [massiveActions, result, purposes, selectedCategory, selectedOption]); // ✅ State updates monitoren
+  
   const handleSave = async () => {
     try {
-      // Determine the source: group or selectedBlock
       const source = group?.id ? group : selectedBlock;
   
       if (!source?.id) {
-        throw new Error('Neither group nor selectedBlock has a valid ID.');
+        console.warn('Neither group nor selectedBlock provided a valid ID!');
+        return;
       }
-  
+
       const newBlock = {
         id: source.id,
         massiveActions: massiveActions,
         result,
+        purposes ,
         category: selectedCategory,
         type: selectedOption,
         createdAt: new Date(),
         updatedAt: new Date(),
         saved: true,
       };
-  
-      // Check if selectedBlock exists and decide between PUT or POST
+
       let response;
       if (selectedBlock) {
-        console.log('Checking if selectedBlock exists...');
+        console.log('Checking if selectedBlock exists...GET');
         response = await fetch(`api/rpmblocks/${selectedBlock.id}`, {
           method: 'GET',
         });
@@ -221,41 +229,25 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       if (!response.ok) {
         throw new Error('Error saving the action plan.');
       }
-  
-      console.log('Action plan successfully saved:', newBlock);
-  
-      // Remove the block from rpmBlocks in localStorage
-try {
-  const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
 
+      const savedBlock = await response.json();
+      console.log('Action plan successfully saved:', savedBlock);
 
-  console.log('Block existingBlocks:', existingBlocks);
+      // Update localStorage
+      const existingBlocks = JSON.parse(localStorage.getItem('rpmBlocks') || '[]');
+      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== savedBlock.id);
+      updatedBlocks.unshift(savedBlock);
+      localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
 
-  // Remove the old block if it exists
-const updatedBlocks = existingBlocks.filter((block: any) => block.id !== newBlock.id);
+      // Remove and Set the corresponding action plan from localStorage
+      console.log('Remove and Set the corresponding action plan in localStorage:', savedBlock);
+      localStorage.removeItem(`actionPlan-${savedBlock.id}`);
+      
 
-// Add the selectedBlock or newBlock back into the list
-updatedBlocks.unshift(newBlock);
-
-// Save the updated blocks back to localStorage
-localStorage.setItem('rpmBlocks', JSON.stringify(updatedBlocks));
-
-console.log('Updated rpmBlocks:', updatedBlocks);
-
-
-  console.log('Block successfully removed from localStorage:', newBlock.id);
-} catch (error) {
-  console.error('Error removing block from localStorage:', error);
-}
-  
-
-      // Remove the corresponding action plan from localStorage
-      localStorage.removeItem(`actionPlan-${source.id}`);
-  
       // Emit custom event
       const event = new CustomEvent('rpmBlocksUpdated');
       window.dispatchEvent(event);
-  
+
       // Close the panel
       onClose(typeof source.id === 'string' ? parseInt(source.id) : source.id);
     } catch (error) {
@@ -313,6 +305,7 @@ console.log('Updated rpmBlocks:', updatedBlocks);
       id: source.id,
       massiveActions: massiveActions,
       result,
+      purposes: purposes,
       category: selectedCategory,
       type: selectedOption,
       saved: false,
@@ -328,6 +321,8 @@ console.log('Updated rpmBlocks:', updatedBlocks);
       // Replace the existing block
       existingBlocks.splice(existingBlockIndex, 1); // Remove the old block
     }
+
+    console.info('selectedBlock with new Block' + JSON.stringify(newBlock));
   
     // Add the new block at the beginning of the list
     existingBlocks.unshift(newBlock);
@@ -357,7 +352,8 @@ console.log('Updated rpmBlocks:', updatedBlocks);
         category: selectedCategory || ''
       })));
       setResult(selectedBlock.result || '');
-      setSelectedCategory(selectedBlock.category || '');
+      setPurposes(selectedBlock.purposes);
+      setSelectedCategory(selectedBlock.categoryId || '');
     }
   }, [selectedBlock]);
 
@@ -477,8 +473,10 @@ console.log('Updated rpmBlocks:', updatedBlocks);
                     </Button>
                   </div>
                 ))}
-                <Button  className="mt-2"><Plus className="h-4 w-4 mr-1" /> Add Purpose</Button>
-              </div>
+                <Button onClick={addPurpose} className="mt-2">
+                  <Plus className="h-4 w-4 mr-1" /> Add Purpose
+                </Button>
+                </div>
             </div>
           </div>
         </div>
@@ -542,3 +540,4 @@ console.log('Updated rpmBlocks:', updatedBlocks);
 function isGroup(data: any): data is Group {
   return 'title' in data;
 }
+
