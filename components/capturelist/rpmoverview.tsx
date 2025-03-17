@@ -71,8 +71,15 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">RPM List</h1>
+
+      <div className="grid grid-cols-12 gap-2 mb-2 px-3 font-medium text-sm text-gray-600">
+        <div className="col-span-5 truncate">Result</div>
+        <div className="col-span-2 truncate">Type</div>
+        <div className="col-span-3 truncate">Datum</div>
+        <div className="col-span-2 text-right">Acties</div>
+      </div>
 
       <div className="space-y-2">
         {storedBlocks.slice(0, visibleBlocks).map((block, index) => (
@@ -86,18 +93,16 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                 : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <span className="font-medium">{block.result}</span>
-                <span className="text-sm text-gray-500">{block.type}</span>
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-5 truncate font-medium" title={block.result}>{block.result}</div>
+              <div className="col-span-2 text-sm text-gray-500 truncate overflow-hidden" title={block.type}>{block.type}</div>
+              <div className="col-span-3 text-sm truncate" title={block.createdAt ? new Date(block.createdAt).toLocaleDateString('en-US') : 'Date not available'}>
+                {block.createdAt ? new Date(block.createdAt).toLocaleDateString('en-US') : 'Date not available'}
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm">
-                  {block.createdAt ? new Date(block.createdAt).toLocaleDateString('en-US') : 'Date not available'}
-                </span>
+              <div className="col-span-2 flex items-center justify-end space-x-1">
                 {block.saved ? (
                   <svg
-                    className="w-5 h-5 text-green-500"
+                    className="w-5 h-5 text-green-500 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -112,7 +117,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                   </svg>
                 ) : (
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -130,6 +135,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => openActionPlan(block)}
+                  className="flex-shrink-0 h-8 w-8 p-0"
                 >
                   <BookOpen className="h-4 w-4" />
                 </Button>
@@ -137,6 +143,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
                   onClick={() => handleDelete(block.id, block.saved ?? false)}
                   variant="ghost"
                   size="sm"
+                  className="flex-shrink-0 h-8 w-8 p-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -146,7 +153,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
         ))}
       </div>
       {visibleBlocks < storedBlocks.length && (
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-4">
           <Button onClick={loadMore} variant="outline">
             Meer laden
           </Button>
