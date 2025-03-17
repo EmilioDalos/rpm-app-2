@@ -2,38 +2,52 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import { promises as fs } from 'fs';
 
-const filePath = path.join(process.cwd(), 'data', 'rpmblocks.json');
+const filePath = path.join(process.cwd(), 'data', 'rpmBlocks.json');
 
-// Helper function to read the RPM blocks
+// Helper function to read rpmBlocks
 async function readRpmBlocks() {
-  const data = await fs.readFile(filePath, 'utf8');
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsed = JSON.parse(data);
+    
+    // Controleer of het een array is, zo niet, haal de array uit het object
+    if (Array.isArray(parsed)) {
+      return parsed;
+    } else if (parsed.rpmBlocks && Array.isArray(parsed.rpmBlocks)) {
+      return parsed.rpmBlocks;
+    } else {
+      console.error('Unexpected data structure in rpmBlocks.json:', parsed);
+      return []; // Return empty array as fallback
+    }
+  } catch (error) {
+    console.error('Error reading rpmBlocks:', error);
+    return []; // Return empty array on error
+  }
 }
 
-// Helper function to write to the RPM blocks
-async function writeRpmBlocks(blocks: { id: string; [key: string]: any }[]) {
-  await fs.writeFile(filePath, JSON.stringify(blocks, null, 2));
+// Helper function to write rpmBlocks
+async function writeRpmBlocks(rpmBlocks: { id: string; [key: string]: any }[]) {
+  await fs.writeFile(filePath, JSON.stringify(rpmBlocks, null, 2));
 }
 
-// GET: Fetch a specific RPM block or all blocks
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const id = url.pathname.split('/').pop();
-
-  const blocks = await readRpmBlocks();
- 
-  return NextResponse.json(blocks);
+// GET all rpmBlocks
+export async function GET() {
+  const rpmBlocks = await readRpmBlocks();
+  return NextResponse.json(rpmBlocks);
 }
 
-// POST: Create a new RPM block
+// POST a new rpmBlock
 export async function POST(req: Request) {
   const newBlock = await req.json();
   const blocks = await readRpmBlocks();
-
+  
+  // Ensure blocks is an array
+  const blocksArray = Array.isArray(blocks) ? blocks : [];
+  
   const newBlockWithId = { ...newBlock, id: Date.now().toString() };
-  blocks.push(newBlockWithId);
+  blocksArray.push(newBlockWithId);
 
-  await writeRpmBlocks(blocks);
+  await writeRpmBlocks(blocksArray);
   return NextResponse.json(newBlockWithId, { status: 201 });
 }
 

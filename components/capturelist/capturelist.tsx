@@ -1,156 +1,157 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import {
-  Plus,
-  Trash2,
-  Group,
-  Edit2,
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ArrowLeft,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import ActionPlanPanel from './action-plan-panel';
+import { useState, useEffect } from "react"
+import { Plus, Trash2, Group, Edit2, BookOpen, ChevronDown, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import ActionPlanPanel from "./action-plan-panel"
 
 type Action = {
-  id: number;
-  text: string;
-  checked: boolean;
-  isEditing?: boolean;
-};
+  id: number
+  text: string
+  checked: boolean
+  isEditing?: boolean
+}
 
 type Group = {
-  id: number;
-  title: string;
-  actions: Action[];
-  isEditing: boolean;
-};
+  id: number
+  title: string
+  actions: Action[]
+  isEditing: boolean
+}
 
 export default function Capturelist() {
-  const [actions, setActions] = useState<Action[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [newAction, setNewAction] = useState('');
-  const [groupTitle, setGroupTitle] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [showActionPlan, setShowActionPlan] = useState(false);
-  const [selectedGroupForPlan, setSelectedGroupForPlan] = useState<Group | null>(null);
-  const [viewingGroup, setViewingGroup] = useState<number | null>(null);
-  const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
+  const [actions, setActions] = useState<Action[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
+  const [newAction, setNewAction] = useState("")
+  const [groupTitle, setGroupTitle] = useState("")
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
+  const [showActionPlan, setShowActionPlan] = useState(false)
+  const [selectedGroupForPlan, setSelectedGroupForPlan] = useState<Group | null>(null)
+  const [viewingGroup, setViewingGroup] = useState<number | null>(null)
+  const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
 
   // Load actions and groups from localStorage on mount
   useEffect(() => {
-    const savedActions = localStorage.getItem('actions');
-    const savedGroups = localStorage.getItem('groups');
-    if (savedActions) setActions(JSON.parse(savedActions));
-    if (savedGroups) setGroups(JSON.parse(savedGroups));
-  }, []);
+    const savedActions = localStorage.getItem("actions")
+    const savedGroups = localStorage.getItem("groups")
+    if (savedActions) setActions(JSON.parse(savedActions))
+    if (savedGroups) setGroups(JSON.parse(savedGroups))
+  }, [])
 
   // Save actions and groups to localStorage on state change
   useEffect(() => {
-    localStorage.setItem('actions', JSON.stringify(actions));
-    localStorage.setItem('groups', JSON.stringify(groups));
-  }, [actions, groups]);
+    localStorage.setItem("actions", JSON.stringify(actions))
+    localStorage.setItem("groups", JSON.stringify(groups))
+  }, [actions, groups])
 
   const addAction = () => {
     if (newAction.trim()) {
-      setActions([...actions, { id: Date.now(), text: newAction, checked: false }]);
-      setNewAction('');
+      setActions([...actions, { id: Date.now(), text: newAction, checked: false }])
+      setNewAction("")
     }
-  };
+  }
 
   const removeAction = (id: number) => {
-    setActions(actions.filter((action) => action.id !== id));
-  };
+    setActions(actions.filter((action) => action.id !== id))
+  }
 
   const toggleAction = (id: number) => {
-    setActions(
-      actions.map((action) =>
-        action.id === id ? { ...action, checked: !action.checked } : action
-      )
-    );
-  };
+    setActions(actions.map((action) => (action.id === id ? { ...action, checked: !action.checked } : action)))
+  }
 
   const createGroup = () => {
     if (groupTitle.trim()) {
-      const checkedActions = actions.filter((action) => action.checked);
+      const checkedActions = actions.filter((action) => action.checked)
       const newGroup = {
         id: Date.now(),
         title: groupTitle,
         actions: checkedActions,
         isEditing: false,
-      };
-      setGroups([...groups, newGroup]);
+      }
+      setGroups([...groups, newGroup])
 
       // Remove checked actions from the Capturelist
-      setActions(actions.filter((action) => !action.checked));
-      setGroupTitle(''); // Reset group title input
+      setActions(actions.filter((action) => !action.checked))
+      setGroupTitle("") // Reset group title input
     }
-  };
+  }
 
   const addToGroup = () => {
     if (selectedGroup) {
-      const groupId = parseInt(selectedGroup);
-      const checkedActions = actions.filter((action) => action.checked);
+      const groupId = Number.parseInt(selectedGroup)
+      const checkedActions = actions.filter((action) => action.checked)
       setGroups(
         groups.map((group) =>
-          group.id === groupId
-            ? { ...group, actions: [...group.actions, ...checkedActions] }
-            : group
-        )
-      );
-      setActions(actions.filter((action) => !action.checked));
-      setSelectedGroup(null);
+          group.id === groupId ? { ...group, actions: [...group.actions, ...checkedActions] } : group,
+        ),
+      )
+      setActions(actions.filter((action) => !action.checked))
+      setSelectedGroup(null)
     }
-  };
+  }
 
   const toggleGroupEditing = (groupId: number) => {
-    setEditingGroupId((prevId) => (prevId === groupId ? null : groupId));
-  };
+    setEditingGroupId((prevId) => (prevId === groupId ? null : groupId))
+  }
 
   const updateGroupTitle = (groupId: number, newTitle: string) => {
-    setGroups((prevGroups) =>
-      prevGroups.map((group) =>
-        group.id === groupId ? { ...group, title: newTitle } : group
-      )
-    );
-  };
+    setGroups((prevGroups) => prevGroups.map((group) => (group.id === groupId ? { ...group, title: newTitle } : group)))
+  }
 
   const openActionPlan = (group: Group) => {
+    // Sla de group op in localStorage onder de key actionPlan-<id>
+    const actionPlanData = {
+      id: group.id.toString(),
+      massiveActions: group.actions.map((action) => ({
+        id: action.id.toString(),
+        text: action.text,
+        leverage: "",
+        durationAmount: 0,
+        durationUnit: "min",
+        priority: 0,
+        key: "✘",
+        categoryId: "",
+        notes: [],
+      })),
+      result: group.title,
+      purposes: [`Purpose voor ${group.title}`],
+      categoryId: "",
+      type: "Day",
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Zorg ervoor dat de data correct wordt opgeslagen
+    console.log("Opslaan van group in actionPlan:", actionPlanData);
+    localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(actionPlanData));
+    
+    // Verwijder de group uit het overzicht
+    setGroups(groups.filter((g) => g.id !== group.id));
+    
+    // Open het ActionPlanPanel
     setSelectedGroupForPlan(group);
     setShowActionPlan(true);
-  };
+  }
 
   const toggleGroupView = (groupId: number) => {
-    setViewingGroup((prevViewingGroup) =>
-      prevViewingGroup === groupId ? null : groupId
-    );
-  };
+    setViewingGroup((prevViewingGroup) => (prevViewingGroup === groupId ? null : groupId))
+  }
 
   const deleteGroup = (groupId: number) => {
-    setGroups(groups.filter((group) => group.id !== groupId));
-    if (viewingGroup === groupId) setViewingGroup(null);
-  };
+    setGroups(groups.filter((group) => group.id !== groupId))
+    if (viewingGroup === groupId) setViewingGroup(null)
+  }
 
   const handleActionPlanClose = (deletedGroupId?: number) => {
-    if (deletedGroupId) {
-      setGroups((prevGroups) =>
-        prevGroups.filter((group) => group.id !== deletedGroupId)
-      );
-    }
-    setShowActionPlan(false);
-    setSelectedGroupForPlan(null);
-  };
+    // We verwijderen de group niet meer hier, omdat dit al gebeurt in openActionPlan
+    // if (deletedGroupId) {
+    //   setGroups((prevGroups) => prevGroups.filter((group) => group.id !== deletedGroupId))
+    // }
+    setShowActionPlan(false)
+    setSelectedGroupForPlan(null)
+  }
 
   return (
     <div className="flex">
@@ -176,11 +177,7 @@ export default function Capturelist() {
           {actions.map((action) => (
             <li key={action.id} className="flex items-center justify-between">
               <div className="flex items-center">
-                <Checkbox
-                  checked={action.checked}
-                  onCheckedChange={() => toggleAction(action.id)}
-                  className="mr-2"
-                />
+                <Checkbox checked={action.checked} onCheckedChange={() => toggleAction(action.id)} className="mr-2" />
                 <span>{action.text}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => removeAction(action.id)}>
@@ -192,7 +189,7 @@ export default function Capturelist() {
 
         {/* Add to Group */}
         <div className="flex mb-4">
-          <Select value={selectedGroup || ''} onValueChange={setSelectedGroup}>
+          <Select value={selectedGroup || ""} onValueChange={setSelectedGroup}>
             <SelectTrigger className="w-full mr-2">
               <SelectValue placeholder="Selecteer een groep" />
             </SelectTrigger>
@@ -204,10 +201,7 @@ export default function Capturelist() {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            onClick={addToGroup}
-            disabled={!selectedGroup || !actions.some((a) => a.checked)}
-          >
+          <Button onClick={addToGroup} disabled={!selectedGroup || !actions.some((a) => a.checked)}>
             Toevoegen aan groep
           </Button>
         </div>
@@ -255,25 +249,13 @@ export default function Capturelist() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleGroupEditing(group.id)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => toggleGroupEditing(group.id)}>
                     <Edit2 className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openActionPlan(group)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => openActionPlan(group)}>
                     <BookOpen className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteGroup(group.id)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => deleteGroup(group.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -290,9 +272,7 @@ export default function Capturelist() {
                       </li>
                     ))
                   ) : (
-                    <li className="text-gray-500 italic">
-                      Geen acties in deze groep
-                    </li>
+                    <li className="text-gray-500 italic">Geen acties in deze groep</li>
                   )}
                 </ul>
               )}
@@ -303,11 +283,9 @@ export default function Capturelist() {
 
       {/* Action Plan Panel */}
       {showActionPlan && selectedGroupForPlan && (
-        <ActionPlanPanel
-          group={selectedGroupForPlan}
-          onClose={handleActionPlanClose}
-        />
+        <ActionPlanPanel group={selectedGroupForPlan} onClose={handleActionPlanClose} />
       )}
     </div>
-  );
+  )
 }
+

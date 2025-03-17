@@ -1,65 +1,75 @@
-{
-  "rpmBlocks": [
-    {
-      "id": "block-001",
-      "result": "Verbeterde fysieke kracht en spiergroei door consistent trainen",
-      "purposes": [
-        "Gezondheid en fitheid verbeteren",
-        "Fysieke kracht en balans versterken",
-        "Discipline opbouwen en consistentie behouden",
-        "Vooruitgang en voldoening ervaren"
-      ],
-      "massiveActions": [
-        {
-          "id": "action-001",
-          "text": "Trainingsschema volgen voor borst, schouders en triceps",
-          "color": "blue",
-          "leverage": "Grotere kracht en spierdefinitie",
-          "durationAmount": 6,
-          "durationUnit": "week",
-          "priority": 1,
-          "notes": [
-            {
-              "id": "note-001",
-              "text": "Voeg progressief 1,25-2,5 kg toe per twee weken bij compound-oefeningen",
-              "type": "progress",
-              "createdAt": "2025-01-05T00:00:00Z"
-            }
-          ],
-          "categoryId": "category-001",
-          "startDate": "2025-01-05T00:00:00Z",
-          "endDate": "2025-02-16T00:00:00Z",
-          "isDateRange": true,
-          "createdAt": "2025-01-05T00:00:00Z"
-        },
-        {
-          "id": "action-002",
-          "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
-          "color": "green",
-          "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
-          "durationAmount": 6,
-          "durationUnit": "week",
-          "priority": 1,
-          "notes": [
-            {
-              "id": "note-002",
-              "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
-              "type": "progress",
-              "createdAt": "2025-01-05T00:00:00Z"
-            }
-          ],
-          "categoryId": "category-002",
-          "startDate": "2025-01-06T00:00:00Z",
-          "endDate": "2025-02-17T00:00:00Z",
-          "isDateRange": true,
-          "createdAt": "2025-01-05T00:00:00Z"
-        }
-      ],
-      "categoryId": "training",
-      "type": "physical_fitness",
-      "createdAt": "2025-01-05T00:00:00Z",
-      "updatedAt": "2025-01-05T00:00:00Z",
-      "saved": true
-    }
-  ]
-}
+[
+  {
+    "id": "1741372248154",
+    "massiveActions": [
+      {
+        "id": 1737372638426,
+        "text": "testerzz",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": 1741372262701,
+        "text": "test3",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": 1742022339287,
+        "text": "test4",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 3,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      }
+    ],
+    "result": "ik hou van camila met hart en ziel",
+    "purposes": [
+      "test",
+      "test2"
+    ],
+    "categoryId": "",
+    "type": "Day",
+    "createdAt": "2025-03-15T07:05:55.649Z",
+    "updatedAt": "2025-03-15T07:05:55.649Z",
+    "saved": true
+  },
+  {
+    "id": "1742210486866",
+    "massiveActions": [
+      {
+        "id": "1742210439168",
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 0,
+        "key": "✘",
+        "categoryId": "",
+        "notes": []
+      }
+    ],
+    "result": "testgroep10",
+    "purposes": [
+      "Purpose voor testgroep10"
+    ],
+    "categoryId": "",
+    "type": "Day",
+    "createdAt": "2025-03-17T11:23:43.539Z",
+    "updatedAt": "2025-03-17T11:23:43.539Z",
+    "saved": true
+  }
+]

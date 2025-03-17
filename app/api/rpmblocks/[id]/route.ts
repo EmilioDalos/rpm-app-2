@@ -6,8 +6,23 @@ const filePath = path.join(process.cwd(), 'data', 'rpmBlocks.json');
 
 // Helper function to read rpmBlocks
 async function readRpmBlocks() {
-  const data = await fs.readFile(filePath, 'utf8');
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsed = JSON.parse(data);
+    
+    // Controleer of het een array is, zo niet, haal de array uit het object
+    if (Array.isArray(parsed)) {
+      return parsed;
+    } else if (parsed.rpmBlocks && Array.isArray(parsed.rpmBlocks)) {
+      return parsed.rpmBlocks;
+    } else {
+      console.error('Unexpected data structure in rpmBlocks.json:', parsed);
+      return []; // Return empty array as fallback
+    }
+  } catch (error) {
+    console.error('Error reading rpmBlocks:', error);
+    return []; // Return empty array on error
+  }
 }
 
 // Helper function to write rpmBlocks

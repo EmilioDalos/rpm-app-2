@@ -18,9 +18,9 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   
       const combinedBlocks = [
         ...localBlocksArray,
-        ...blocks.filter(
+        ...(Array.isArray(blocks) ? blocks.filter(
           (block) => !localBlocksArray.some((localBlock) => localBlock.id === block.id)
-        ),
+        ) : []),
       ];
 
       setStoredBlocks(combinedBlocks);
