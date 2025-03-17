@@ -71,5 +71,30 @@
     "createdAt": "2025-03-17T11:23:43.539Z",
     "updatedAt": "2025-03-17T11:23:43.539Z",
     "saved": true
+  },
+  {
+    "id": "1742210971261",
+    "massiveActions": [
+      {
+        "id": "1742210934435",
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 0,
+        "key": "✘",
+        "categoryId": "",
+        "notes": []
+      }
+    ],
+    "result": "testgr11",
+    "purposes": [
+      "Purpose voor testgr11"
+    ],
+    "categoryId": "",
+    "type": "Day",
+    "createdAt": "2025-03-17T11:29:31.021Z",
+    "updatedAt": "2025-03-17T11:29:31.021Z",
+    "saved": true
   }
 ]

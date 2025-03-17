@@ -80,7 +80,11 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       return
     }
 
-    const storageKey = `actionPlan-${dataSource.id}`
+    // Zorg ervoor dat het ID correct wordt gebruikt
+    const sourceId = typeof dataSource.id === 'string' ? dataSource.id : String(dataSource.id)
+    console.log("Loading data with ID:", sourceId)
+
+    const storageKey = `actionPlan-${sourceId}`
     const savedData = localStorage.getItem(storageKey)
 
     console.log(`Laden van data uit localStorage met key: ${storageKey}`, savedData)
@@ -147,11 +151,14 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     const source = group?.id ? group : selectedBlock
     if (!source?.id) return
 
-    const storageKey = `actionPlan-${source.id}`
+    // Zorg ervoor dat het ID correct wordt gebruikt
+    const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+
+    const storageKey = `actionPlan-${sourceId}`
     localStorage.setItem(
       storageKey,
       JSON.stringify({
-        id: source.id,
+        id: sourceId,
         massiveActions,
         result,
         purposes,
@@ -198,8 +205,11 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         return; // Stop de functie als er geen resultaat is
       }
 
+      // Zorg ervoor dat het ID correct wordt overgenomen
+      const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+
       const newBlock = {
-        id: source.id,
+        id: sourceId,
         massiveActions,
         result,
         purposes,
@@ -211,18 +221,19 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       }
 
       console.log("Saving block with data:", newBlock);
+      console.log("Using ID:", sourceId);
 
       let response
       if (selectedBlock) {
         console.log("Checking if selectedBlock exists...GET")
-        response = await fetch(`api/rpmblocks/${selectedBlock.id}`, {
+        response = await fetch(`api/rpmblocks/${sourceId}`, {
           method: "GET",
         })
 
         if (response.ok) {
           console.log("selectedBlock exists. Updating with PUT...")
           // Update the record using PUT
-          response = await fetch(`api/rpmblocks/${selectedBlock.id}`, {
+          response = await fetch(`api/rpmblocks/${sourceId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -261,20 +272,20 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
       // Update localStorage
       const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
-      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== savedBlock.id)
+      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== sourceId)
       updatedBlocks.unshift(savedBlock)
       localStorage.setItem("rpmBlocks", JSON.stringify(updatedBlocks))
 
       // Remove the corresponding action plan from localStorage
       console.log("Remove the corresponding action plan from localStorage:", savedBlock)
-      localStorage.removeItem(`actionPlan-${savedBlock.id}`)
+      localStorage.removeItem(`actionPlan-${sourceId}`)
 
       // Emit custom event
       const event = new CustomEvent("rpmBlocksUpdated")
       window.dispatchEvent(event)
 
       // Close the panel
-      onClose(typeof source.id === "string" ? Number.parseInt(source.id) : source.id)
+      onClose(typeof source.id === "number" ? source.id : Number.parseInt(sourceId))
     } catch (error) {
       console.error("Error saving the action plan:", error)
     }
@@ -331,9 +342,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       console.warn("result is leeg! Voeg eerst een resultaat toe.")
     }
 
+    // Zorg ervoor dat het ID correct wordt overgenomen
+    const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+
     // Create a new block based on the selected source
     const newBlock = {
-      id: source.id,
+      id: sourceId,
       massiveActions: massiveActions,
       result,
       purposes: purposes,
@@ -343,8 +357,10 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       updatedAt: new Date().toISOString(),
     }
 
+    console.log("Saving to rpmBlocks with ID:", sourceId)
+
     // Sla de data op in localStorage onder de key actionPlan-<id>
-    const storageKey = `actionPlan-${source.id}`
+    const storageKey = `actionPlan-${sourceId}`
     localStorage.setItem(storageKey, JSON.stringify(newBlock))
     console.log(`Data opgeslagen in localStorage onder key: ${storageKey}`, newBlock)
 
@@ -352,7 +368,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
 
     // Check if the block already exists
-    const existingBlockIndex = existingBlocks.findIndex((block: any) => block.id === newBlock.id)
+    const existingBlockIndex = existingBlocks.findIndex((block: any) => block.id === sourceId)
 
     if (existingBlockIndex !== -1) {
       // Replace the existing block
