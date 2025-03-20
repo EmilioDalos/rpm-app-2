@@ -142,8 +142,27 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         // Controleer of result aanwezig is en niet leeg is
         setResult(parsedData.result || dataSource.result || "")
         
-        setSelectedCategory(parsedData.categoryId || parsedData.category || dataSource.categoryId || "")
+        // Log alle mogelijke categoryId waarden om te debuggen
+        console.log("CategoryId waarden:", {
+          parsedDataCategoryId: parsedData.categoryId,
+          parsedDataCategory: parsedData.category,
+          dataSourceCategoryId: dataSource.categoryId,
+          selectedCategory: selectedCategory
+        });
+        
+        // Zorg ervoor dat de categoryId wordt ingesteld, met fallbacks
+        const categoryId = parsedData.categoryId || dataSource.categoryId || "";
+        console.log("Using categoryId:", categoryId);
+        setSelectedCategory(categoryId);
+        
+        // Zet de selectedOption correct
         setSelectedOption(parsedData.type || dataSource.type || "Day")
+        
+        // Als er een categoryId is, switch naar Category optie
+        if (categoryId) {
+          console.log("Setting selectedOption to Category because categoryId exists:", categoryId);
+          setSelectedOption("Category");
+        }
       } catch (error) {
         console.error("Fout bij het parsen van data uit localStorage:", error)
         // Fallback naar dataSource bij parse error
@@ -156,6 +175,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         setResult(dataSource.result || "")
         setSelectedCategory(dataSource.categoryId || "")
         setSelectedOption(dataSource.type || "Day")
+        
+        // Als er een categoryId is, switch naar Category optie
+        if (dataSource.categoryId) {
+          console.log("Setting selectedOption to Category because dataSource.categoryId exists:", dataSource.categoryId);
+          setSelectedOption("Category");
+        }
       }
     } else {
       // Geen opgeslagen data gevonden, gebruik dataSource
@@ -169,6 +194,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       setResult(dataSource.result || "")
       setSelectedCategory(dataSource.categoryId || "")
       setSelectedOption(dataSource.type || "Day")
+      
+      // Als er een categoryId is, switch naar Category optie
+      if (dataSource.categoryId) {
+        console.log("Setting selectedOption to Category because dataSource.categoryId exists:", dataSource.categoryId);
+        setSelectedOption("Category");
+      }
     }
   }, [group, selectedBlock])
 
@@ -232,6 +263,15 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
       // Zorg ervoor dat het ID correct wordt overgenomen
       const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+
+      // Controleer categoryId en type (debug logging)
+      console.log("handleSave - Saving with categoryId:", selectedCategory);
+      console.log("handleSave - Saving with type:", selectedOption);
+      
+      // Als selectedOption is "Category" maar er is geen categoryId, geef een waarschuwing
+      if (selectedOption === "Category" && !selectedCategory) {
+        console.warn("Type is Category maar geen categorie geselecteerd!");
+      }
 
       const newBlock = {
         id: sourceId,
@@ -370,6 +410,10 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     // Zorg ervoor dat het ID correct wordt overgenomen
     const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
 
+    // Debug logging
+    console.log("handleCapturelistClick - Saving with categoryId:", selectedCategory);
+    console.log("handleCapturelistClick - Saving with type:", selectedOption);
+
     // Create a new block based on the selected source
     const newBlock = {
       id: sourceId,
@@ -430,7 +474,16 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       )
       setResult(selectedBlock.result || "")
       setPurposes(selectedBlock.purposes || [])
+      
+      // Log alle parameters om te debuggen
+      console.log("Setting categoryId from selectedBlock:", selectedBlock.categoryId);
       setSelectedCategory(selectedBlock.categoryId || "")
+      
+      // Als er een categoryId is, switch naar Category optie
+      if (selectedBlock.categoryId) {
+        console.log("Setting selectedOption to Category because selectedBlock.categoryId exists:", selectedBlock.categoryId);
+        setSelectedOption("Category");
+      }
     }
   }, [selectedBlock])
 
@@ -573,7 +626,13 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           Total Time: {totalTime} Total Must Time: {totalMustTime}
         </h4>
         <div className="flex items-center space-x-2">
-          <Select value={selectedOption} onValueChange={(value) => setSelectedOption(value)}>
+          <Select value={selectedOption} onValueChange={(value) => {
+            setSelectedOption(value);
+            // Als de optie Category is maar er is geen categoryId, toon dan een waarschuwing
+            if (value === "Category" && !selectedCategory) {
+              console.warn("Category option selected but no category ID is set!");
+            }
+          }}>
             <SelectTrigger className="w-[140px] text-xs">
               <SelectValue placeholder="Select timeframe" />
             </SelectTrigger>
@@ -587,8 +646,19 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
             </SelectContent>
           </Select>
 
-          {selectedOption === "Category" && (
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          {/* Toon de categorie selector altijd als selectedOption "Category" is OF als er een categoryId is */}
+          {(selectedOption === "Category" || selectedCategory) && (
+            <Select 
+              value={selectedCategory} 
+              onValueChange={(value) => {
+                console.log("Category changed to:", value);
+                setSelectedCategory(value);
+                // Als de categorie verandert naar een geldige waarde, zorg dat selectedOption op "Category" staat
+                if (value) {
+                  setSelectedOption("Category");
+                }
+              }}
+            >
               <SelectTrigger className="w-[140px] text-xs">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>

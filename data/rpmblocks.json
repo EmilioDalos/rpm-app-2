@@ -42,9 +42,9 @@
       "test2"
     ],
     "categoryId": "1742484569834",
-    "type": "Day",
-    "createdAt": "2025-03-20T15:49:30.614Z",
-    "updatedAt": "2025-03-20T15:49:30.614Z",
+    "type": "Category",
+    "createdAt": "2025-03-20T18:06:41.857Z",
+    "updatedAt": "2025-03-20T18:06:41.857Z",
     "saved": true
   },
   {
@@ -66,10 +66,10 @@
     "purposes": [
       "Purpose voor testgroep10"
     ],
-    "categoryId": "",
-    "type": "Day",
-    "createdAt": "2025-03-17T11:23:43.539Z",
-    "updatedAt": "2025-03-17T11:23:43.539Z",
+    "categoryId": "1742484569834",
+    "type": "Category",
+    "createdAt": "2025-03-20T18:07:39.948Z",
+    "updatedAt": "2025-03-20T18:07:39.948Z",
     "saved": true
   },
   {

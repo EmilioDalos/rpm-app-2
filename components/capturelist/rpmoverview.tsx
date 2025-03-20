@@ -125,51 +125,59 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
       </div>
 
       <div className="grid grid-cols-12 gap-2 mb-2 px-3 font-medium text-sm text-gray-600">
-        <div className="col-span-5 truncate">Result</div>
+        <div className="col-span-4 truncate">Result</div>
         <div className="col-span-2 truncate">Type</div>
-        <div className="col-span-3 truncate">Datum</div>
+        <div className="col-span-2 truncate">Categorie</div>
+        <div className="col-span-2 truncate">Datum</div>
         <div className="col-span-2 text-right">Acties</div>
       </div>
 
       <div className="space-y-2">
-        {storedBlocks.slice(0, visibleBlocks).map((block, index) => (
-          <div
-            key={block.id}
-            className={`block p-3 rounded-lg transition-colors ${
-              block.saved
-                ? index % 2 === 0
-                  ? 'bg-gray-100 hover:bg-gray-200'
-                  : 'bg-gray-200 hover:bg-gray-300'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-            }`}
-          >
-            <div className="grid grid-cols-12 gap-2">
-              <div className="col-span-5 truncate">{block.result}</div>
-              <div className="col-span-2 truncate">{block.type}</div>
-              <div className="col-span-3 truncate">
-                {block.updatedAt ? new Date(block.updatedAt).toLocaleDateString('nl-NL') : '-'}
-              </div>
-              <div className="col-span-2 flex justify-end space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openActionPlan(block)}
-                  title="Open RPM Block"
-                >
-                  <BookOpen className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(block.id, !!block.saved)}
-                  title="Delete RPM Block"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+        {storedBlocks.slice(0, visibleBlocks).map((block, index) => {
+          // Vind de categorie naam op basis van de categoryId
+          const category = categories.find(cat => cat.id === block.categoryId);
+          const categoryName = category ? category.name : "";
+          
+          return (
+            <div
+              key={block.id}
+              className={`block p-3 rounded-lg transition-colors ${
+                block.saved
+                  ? index % 2 === 0
+                    ? 'bg-gray-100 hover:bg-gray-200'
+                    : 'bg-gray-200 hover:bg-gray-300'
+                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-4 truncate">{block.result}</div>
+                <div className="col-span-2 truncate">{block.type}</div>
+                <div className="col-span-2 truncate italic">{categoryName}</div>
+                <div className="col-span-2 truncate">
+                  {block.updatedAt ? new Date(block.updatedAt).toLocaleDateString('nl-NL') : '-'}
+                </div>
+                <div className="col-span-2 flex justify-end space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openActionPlan(block)}
+                    title="Open RPM Block"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(block.id, !!block.saved)}
+                    title="Delete RPM Block"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {storedBlocks.length > visibleBlocks && (
