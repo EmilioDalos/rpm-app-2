@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, ReactElement } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Trash2 } from "lucide-react"
@@ -28,15 +28,40 @@ interface Group {
   actions: { id: number; text: string; checked: boolean; }[];
 }
 
-export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps) {
+export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps): ReactElement {
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
   const [result, setResult] = useState("")
   const [activeColumn, setActiveColumn] = useState("massiveActions")
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [categories] = useState(["Personal", "Work", "Fitness", "Learning"])
+  const [categories, setCategories] = useState<Array<{id: string, name: string, roles?: any[]}>>([])
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedOption, setSelectedOption] = useState<string>("Day")
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        console.log('Fetched categories:', data);
+        
+        // Controleer of we een array van categorieën hebben of een object met een categories property
+        if (data.categories && Array.isArray(data.categories)) {
+          setCategories(data.categories);
+        } else if (Array.isArray(data)) {
+          setCategories(data);
+        } else {
+          setCategories([]);
+          console.error('Unexpected categories data format:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   //Luisteren naar vensterresizing
   useEffect(() => {
@@ -569,8 +594,8 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -585,9 +610,3 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     </div>
   )
 }
-
-// Type guard function
-function isGroup(data: any): data is Group {
-  return "title" in data
-}
-
