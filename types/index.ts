@@ -35,7 +35,14 @@ export interface CategoryFormData {
   name: string;
   type: "personal" | "professional";
   description: string;
+  vision: string;
+  purpose: string;
   roles: { name: string }[];
+  threeToThrive: string[];
+  resources: string;
+  results: string[];
+  actionPlans: string[];
+  imageBlob?: string;
 }
 
 export interface RoleFormData {

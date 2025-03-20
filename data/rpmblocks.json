@@ -3,7 +3,7 @@
     "id": "1741372248154",
     "massiveActions": [
       {
-        "id": 1737372638426,
+        "id": "1737372638426",
         "text": "testerzz",
         "leverage": "",
         "durationAmount": 0,
@@ -14,7 +14,7 @@
         "notes": []
       },
       {
-        "id": 1741372262701,
+        "id": "1741372262701",
         "text": "test3",
         "leverage": "",
         "durationAmount": 0,
@@ -25,7 +25,7 @@
         "notes": []
       },
       {
-        "id": 1742022339287,
+        "id": "1742022339287",
         "text": "test4",
         "leverage": "",
         "durationAmount": 0,
@@ -41,10 +41,10 @@
       "test",
       "test2"
     ],
-    "categoryId": "",
+    "categoryId": "1742484569834",
     "type": "Day",
-    "createdAt": "2025-03-15T07:05:55.649Z",
-    "updatedAt": "2025-03-15T07:05:55.649Z",
+    "createdAt": "2025-03-20T15:49:30.614Z",
+    "updatedAt": "2025-03-20T15:49:30.614Z",
     "saved": true
   },
   {

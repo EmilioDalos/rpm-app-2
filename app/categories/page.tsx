@@ -47,7 +47,9 @@ export default function CategoriesPage() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
+    console.log('handleUpdateCategory - Starting update with category:', updatedCategory);
     try {
+      console.log('handleUpdateCategory - Making PUT request to:', `/api/categories/${updatedCategory.id}`);
       const response = await fetch(`/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
         headers: {
@@ -55,19 +57,23 @@ export default function CategoriesPage() {
         },
         body: JSON.stringify(updatedCategory),
       });
+      console.log('handleUpdateCategory - Response status:', response.status);
+      console.log('handleUpdateCategory - Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
         const updatedData = await response.json();
+        console.log('handleUpdateCategory - Successfully updated category:', updatedData);
         setCategories((prevCategories) =>
           prevCategories.map((cat) =>
             cat.id === updatedData.id ? updatedData : cat
           )
         );
       } else {
-        console.error('Failed to update category');
+        const errorData = await response.json();
+        console.error('handleUpdateCategory - Failed to update category:', errorData);
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('handleUpdateCategory - Error updating category:', error);
     }
   };
 

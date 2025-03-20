@@ -35,11 +35,9 @@ const formSchema = z.object({
   })),
   threeToThrive: z.array(z.string().min(1, "Area cannot be empty")),
   resources: z.string().min(1, "Resources are required"),
-  results: z.array(z.object({
-    result: z.string().min(1, "Result is required"),
-    date: z.string().min(1, "Date is required"),
-  })),
+  results: z.array(z.string().min(1, "Result is required")),
   actionPlans: z.array(z.string().min(1, "Action plan cannot be empty")),
+  imageBlob: z.string().optional(),
 });
 
 interface CategoryDialogProps {
@@ -57,7 +55,7 @@ export function CategoryDialog({
 }: CategoryDialogProps) {
   const [imagePreview, setImagePreview] = useState(category?.imageBlob || "");
 
-  const form = useForm<CategoryFormData & { roles: { name: string }[] }>({
+  const form = useForm<CategoryFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: category?.name || "",
@@ -68,8 +66,9 @@ export function CategoryDialog({
       roles: category?.roles?.map(role => ({ name: role.name })) || [],
       threeToThrive: category?.threeToThrive || [""],
       resources: category?.resources || "",
-      results: category?.results?.map(result => ({ result: result, date: "" })) || [],
+      results: category?.results || [""],
       actionPlans: category?.actionPlans || [""],
+      imageBlob: category?.imageBlob || "",
     },
   });
 
@@ -80,17 +79,17 @@ export function CategoryDialog({
 
   const { fields: threeToThriveFields, append: appendThreeToThrive, remove: removeThreeToThrive } = useFieldArray({
     control: form.control,
-    name: "threeToThrive",
+    name: "threeToThrive" as any,
   });
 
   const { fields: resultFields, append: appendResult, remove: removeResult } = useFieldArray({
     control: form.control,
-    name: "results",
+    name: "results" as any,
   });
 
   const { fields: actionPlanFields, append: appendActionPlan, remove: removeActionPlan } = useFieldArray({
     control: form.control,
-    name: "actionPlans",
+    name: "actionPlans" as any,
   });
 
   useEffect(() => {
@@ -104,52 +103,74 @@ export function CategoryDialog({
         roles: category.roles?.map(role => ({ name: role.name })) || [],
         threeToThrive: category.threeToThrive || [""],
         resources: category.resources,
-        results: category.results?.map(result => ({ result: result.result, date: result.date })) || [],
+        results: category.results || [""],
         actionPlans: category.actionPlans || [""],
+        imageBlob: category.imageBlob || "",
       });
       setImagePreview(category.imageBlob || "");
     }
-  }, [category]);
+  }, [category, form]);
 
-  const onSubmit = (data: CategoryFormData & { roles: { name: string }[] }) => {
-    const roles: Role[] = data.roles.map((role) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      categoryId: category?.id || Math.random().toString(36).substr(2, 9),
-      name: role.name,
-      purpose: "",
-      description: "",
-      coreQualities: [],
-      identityStatement: "",
-      reflection: "",
-      imageBlob: "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
+  const onSubmit = async (data: CategoryFormData) => {
+      
+      // Create roles with required fields
+      const roles = data.roles.map((role) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        categoryId: category?.id || Math.random().toString(36).substr(2, 9),
+        name: role.name,
+        purpose: "",
+        description: "",
+        coreQualities: [],
+        identityStatement: "",
+        reflection: "",
+        imageBlob: "",
+        incantations: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
 
-    const newCategory: Category = {
-      id: category?.id || Math.random().toString(36).substr(2, 9),
-      name: data.name,
-      type: data.type,
-      description: data.description,
-      vision: data.vision,
-      purpose: data.purpose,
-      roles,
-      threeToThrive: data.threeToThrive,
-      resources: data.resources,
-      results: data.results.map(r => ({ result: r.result, date: r.date })),
-      actionPlans: data.actionPlans,
-      imageBlob: imagePreview,
-      createdAt: category?.createdAt || new Date(),
-      updatedAt: new Date(),
-    };
-    onSave(newCategory).then(() => {
-      form.reset();
-      onOpenChange(false);
-    });
+      // Create new category with all required fields
+      const newCategory: Category = {
+        id: category?.id || Math.random().toString(36).substr(2, 9),
+        name: data.name,
+        type: data.type,
+        description: data.description,
+        vision: data.vision,
+        purpose: data.purpose,
+        roles,
+        threeToThrive: data.threeToThrive,
+        resources: data.resources,
+        results: data.results,
+        actionPlans: data.actionPlans,
+        imageBlob: imagePreview,
+        createdAt: category?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+
+      console.log("CategoryDialog - Sending updated data to parent:", newCategory);
+      
+      try {
+        console.log("CategoryDialog - Calling onSave with newCategory");
+        await onSave(newCategory);
+        console.log("CategoryDialog - Category saved successfully");
+        form.reset();
+        onOpenChange(false);
+      } catch (error) {
+        console.error("CategoryDialog - Error saving category:", error);
+        // Log the full error object
+        if (error instanceof Error) {
+          console.error("CategoryDialog - Error details:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+        }
+      }
+   
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-screen overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
         <DialogHeader>
           <DialogTitle>
@@ -317,7 +338,7 @@ export function CategoryDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => appendResult({ result: "", date: "" })}
+                  onClick={() => appendResult("")}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Result
@@ -327,23 +348,11 @@ export function CategoryDialog({
                 <div key={field.id} className="flex items-center gap-2">
                   <FormField
                     control={form.control}
-                    name={`results.${index}.result`}
+                    name={`results.${index}`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
                           <Input placeholder="Result" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`results.${index}.date`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input type="date" placeholder="Date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -443,7 +452,7 @@ export function CategoryDialog({
                 Cancel
               </Button>
               <Button type="submit">Save</Button>
-            </div>
+            </div>    
           </form>
         </Form>
       </DialogContent>

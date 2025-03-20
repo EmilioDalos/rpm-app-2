@@ -34,21 +34,35 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
+  
+  console.log("PUT /api/categories/[id] - ID from URL:", id);
+  console.log("PUT /api/categories/[id] - Request URL:", req.url);
 
-  const updatedCategory = await req.json();
-  const categories = await readCategories();
+  try {
+    const updatedCategory = await req.json();
+    console.log("PUT /api/categories/[id] - Received category data:", updatedCategory);
+    console.log("PUT /api/categories/[id] - Category ID in data:", updatedCategory.id);
+    
+    const categories = await readCategories();
+    console.log("PUT /api/categories/[id] - Existing categories:", categories.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
 
-  const index = categories.findIndex((cat: { id: string; [key: string]: any }) => cat.id === id);
-  if (index !== -1) {
-    categories[index] = { ...updatedCategory, id };
-    await writeCategories(categories);
-    return NextResponse.json(categories[index]);
-  } else {
-    return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    const index = categories.findIndex((cat: { id: string; [key: string]: any }) => cat.id === id);
+    console.log("PUT /api/categories/[id] - Found category at index:", index);
+    
+    if (index !== -1) {
+      console.log("PUT /api/categories/[id] - Updating category with ID:", id);
+      categories[index] = { ...updatedCategory, id };
+      await writeCategories(categories);
+      return NextResponse.json(categories[index]);
+    } else {
+      console.log("PUT /api/categories/[id] - Category not found with ID:", id);
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+  } catch (error) {
+    console.error("PUT /api/categories/[id] - Error:", error);
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
-
-
 
 export async function DELETE(req: Request) {
   const url = new URL(req.url);

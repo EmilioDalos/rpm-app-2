@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,12 +18,23 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Role, RoleFormData } from "@/types";
+import { Role } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+
+// Define our own RoleFormData to match the form fields
+interface RoleFormData {
+  name: string;
+  description: string;
+  purpose: string;
+  coreQualities: string[];
+  identityStatement: string;
+  incantations: string[];
+  categoryId: string;
+  imageBlob: string;
+}
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -49,7 +61,7 @@ export function RoleDialog({
   role,
 }: RoleDialogProps) {
   const [imagePreview, setImagePreview] = useState(role?.imageBlob || "");
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Array<{id: string, name: string}>>([]);
 
   const form = useForm<RoleFormData>({
     resolver: zodResolver(formSchema),
@@ -67,12 +79,12 @@ export function RoleDialog({
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "coreQualities",
+    name: "coreQualities" as any,
   });
 
   const { fields: incantationFields, append: appendIncantation, remove: removeIncantation } = useFieldArray({
     control: form.control,
-    name: "incantations",
+    name: "incantations" as any,
   });
 
   useEffect(() => {
@@ -81,23 +93,43 @@ export function RoleDialog({
         const response = await fetch('/api/categories?simplified=true');
         if (response.ok) {
           const data = await response.json();
-          setCategories(data);
+          if (data.categories && Array.isArray(data.categories)) {
+            setCategories(data.categories);
+          } else if (Array.isArray(data)) {
+            setCategories(data);
+          } else {
+            console.error('Unexpected categories data format:', data);
+            setCategories([]);
+          }
         } else {
           console.error('Failed to fetch categories');
+          setCategories([]);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setCategories([]);
       }
     }
     fetchCategories();
   }, []);
 
   const onSubmit = (data: RoleFormData) => {
+    // Check if at least one core quality is filled in
+    const validCoreQualities = data.coreQualities.filter(q => q.trim().length > 0);
+    
+    if (validCoreQualities.length === 0) {
+      form.setError("coreQualities", { 
+        type: "manual", 
+        message: "At least one core quality is required" 
+      });
+      return;
+    }
+    
     const newRole: Role = {
-      ...role,
+      id: role?.id || Date.now().toString(),
       ...data,
-      coreQualities: data.coreQualities.filter(Boolean),
-      incantations: data.incantations?.filter(Boolean),
+      coreQualities: validCoreQualities,
+      incantations: data.incantations?.filter(Boolean) || [],
       createdAt: role?.createdAt || new Date(),
       updatedAt: new Date(),
     };
@@ -125,7 +157,7 @@ export function RoleDialog({
                   <FormControl>
                     <select {...field} className="block w-full">
                       <option value="">Select a category</option>
-                      {categories.map((category) => (
+                      {Array.isArray(categories) && categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
                         </option>
@@ -195,7 +227,12 @@ export function RoleDialog({
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input placeholder="Core Quality" {...field} />
+                          <Input 
+                            placeholder={index === 0 ? "Core Quality (required)" : "Core Quality"} 
+                            {...field} 
+                            required={index === 0}
+                            className={index === 0 ? "border-red-300 focus:border-red-500" : ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -206,11 +243,17 @@ export function RoleDialog({
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
+                    disabled={index === 0 && fields.length === 1}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               ))}
+              {form.formState.errors.coreQualities && (
+                <p className="text-sm font-medium text-destructive mt-1">
+                  At least one core quality is required
+                </p>
+              )}
             </div>
             <FormField
               control={form.control}
