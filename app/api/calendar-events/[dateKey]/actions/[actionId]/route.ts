@@ -40,7 +40,7 @@ export async function PUT(
   req: Request,
   { params }: { params: { dateKey: string; actionId: string } }
 ) {
-  const { dateKey, actionId } = params;
+  const { dateKey, actionId } = await params;
   const actionIdNumber = parseInt(actionId, 10);
 
   try {
@@ -120,7 +120,7 @@ export async function GET(
   req: Request,
   { params }: { params: { dateKey: string; actionId: string } }
 ) {
-  const { dateKey, actionId } = params;
+  const { dateKey, actionId } = await params;
 
   try {
     const calendarEvents = await readCalendarEvents();

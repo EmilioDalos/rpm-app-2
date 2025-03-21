@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2, BookOpen } from 'lucide-react';
-import { RpmBlock } from '@/types';
+import { RpmBlock, CalendarEvent, MassiveAction } from '@/types';
 import ActionPlanPanel from './action-plan-panel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -13,6 +13,28 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const [showActionPlan, setShowActionPlan] = useState(false);
   const [categories, setCategories] = useState<Array<{id: string, name: string, roles?: any[]}>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  
+  // Fetch calendar events to check which actions are planned
+  useEffect(() => {
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch('/api/calendar-events');
+        if (response.ok) {
+          const data = await response.json();
+          setCalendarEvents(Array.isArray(data) ? data : []);
+        } else {
+          console.error('Failed to fetch calendar events:', response.statusText);
+          setCalendarEvents([]);
+        }
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+        setCalendarEvents([]);
+      }
+    };
+
+    fetchCalendarEvents();
+  }, []);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -41,6 +63,35 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
     fetchCategories();
   }, []);
 
+  // Functie om te controleren of een actie is gepland in de kalender
+  const isActionPlanned = (actionId: string): boolean => {
+    return calendarEvents.some(event => 
+      event.massiveActions && event.massiveActions.some(action => action.id === actionId)
+    );
+  };
+
+  // Update actionKeys voor geplande acties
+  const updateActionKeysForPlannedActions = (blocks: RpmBlock[]): RpmBlock[] => {
+    return blocks.map(block => {
+      if (!block.massiveActions || block.massiveActions.length === 0) {
+        return block;
+      }
+
+      const updatedActions = block.massiveActions.map(action => {
+        // Als de actie gepland is en nog niet is voltooid (niet ✔ of ✘), markeer het als 📅
+        if (isActionPlanned(action.id) && action.key !== "✔" && action.key !== "✘") {
+          return { ...action, key: "📅" };
+        }
+        return action;
+      });
+
+      return {
+        ...block,
+        massiveActions: updatedActions
+      };
+    });
+  };
+
   useEffect(() => {
     const reloadCombinedBlocks = () => {
       const localBlocks = localStorage.getItem('rpmBlocks');
@@ -58,7 +109,12 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
         ? combinedBlocks.filter(block => block.categoryId === selectedCategory)
         : combinedBlocks;
 
-      setStoredBlocks(filteredBlocks);
+      // Update action keys based on calendar planning
+      const updatedBlocks = updateActionKeysForPlannedActions(filteredBlocks);
+      
+      setStoredBlocks(updatedBlocks);
+      
+      // We slaan de originele blokken op (zonder key updates) om verwarring te voorkomen in localStorage
       localStorage.setItem('rpmBlocks', JSON.stringify(combinedBlocks));
     };
 
@@ -69,7 +125,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
     return () => {
       window.removeEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
     };
-  }, [blocks, selectedCategory]);
+  }, [blocks, selectedCategory, calendarEvents]);
 
   const handleDelete = async (id: string, isSaved: boolean) => {
     try {

@@ -74,6 +74,7 @@ export interface MassiveAction {
   id: string; // Unieke ID voor de actie
   text: string; // Beschrijving van de actie
   color?: string; // Optioneel: kleur voor visuele representatie
+  textColor?: string; // Optioneel: tekstkleur
   leverage: string; // Impact of effect van de actie
   durationAmount: number; // Duur van de actie
   durationUnit: string; // Eenheid van duur: "min", "hour", "day"
@@ -84,10 +85,11 @@ export interface MassiveAction {
   startDate?: string; // Optioneel: ISO 8601 datum voor start van de actie
   endDate?: string; // Optioneel: ISO 8601 datum voor einde van de actie
   isDateRange?: boolean; // Of de actie over meerdere dagen gaat
+  selectedDays?: string[]; // Geselecteerde dagen voor terugkerende acties
+  hour?: number; // Optioneel: uur van de dag voor planning
   missedDate?: string; // Datum waarop de actie niet werd opgepakt
   createdAt?: string; // Datum van aanmaak van de actie
   updatedAt?: string; // Laatst bijgewerkt datum
-
 }
 
 export interface Note {

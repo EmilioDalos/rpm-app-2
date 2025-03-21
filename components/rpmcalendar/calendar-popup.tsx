@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -14,6 +16,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import dynamic from 'next/dynamic'
 import { Editor } from '@tiptap/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CheckedState } from '@radix-ui/react-checkbox'
 
 const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
 
@@ -31,18 +35,20 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
-  const [startDate, setStartDate] = useState(action.startDate || '')
-  const [endDate, setEndDate] = useState(action.endDate || '')
-  const [recurringDays, setRecurringDays] = useState<string[]>(action.recurringDays || []);
+  const [startDate, setStartDate] = useState(action.startDate || dateKey)
+  const [endDate, setEndDate] = useState(action.endDate || dateKey)
+  const [recurringDays, setRecurringDays] = useState<string[]>(action.selectedDays || [])
+  const [actionHour, setActionHour] = useState(action.hour || 8)
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
 
   useEffect(() => {
     setNotes(action.notes || [])
     setIsCompleted(action.key === '✔')
     setIsDateRange(action.isDateRange || false)
-    setStartDate(action.startDate || '')
-    setEndDate(action.endDate || '')
-    setRecurringDays(action.recurringDays || []);
+    setStartDate(action.startDate || dateKey)
+    setEndDate(action.endDate || dateKey)
+    setRecurringDays(action.selectedDays || [])
+    setActionHour(action.hour || 8)
   }, [action])
 
   const addNote = useCallback(() => {
@@ -85,7 +91,8 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       isDateRange,
       startDate,
       endDate,
-      recurringDays,
+      selectedDays: recurringDays,
+      hour: actionHour,
       updatedAt: new Date().toISOString()
     }
     onUpdate(updatedAction, dateKey)
@@ -122,7 +129,9 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
             <Checkbox
               id="completed"
               checked={isCompleted}
-              onCheckedChange={setIsCompleted}
+              onCheckedChange={(checked: CheckedState) => 
+                setIsCompleted(checked === true)
+              }
             />
             <label
               htmlFor="completed"
@@ -178,6 +187,21 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </div>
             </div>
           )}
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="action-hour">Tijdstip</Label>
+            <Select value={actionHour.toString()} onValueChange={(value) => setActionHour(parseInt(value))}>
+              <SelectTrigger id="action-hour">
+                <SelectValue placeholder="Selecteer een tijdstip" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <SelectItem key={i} value={i.toString()}>
+                    {i < 10 ? `0${i}` : i}:00
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">

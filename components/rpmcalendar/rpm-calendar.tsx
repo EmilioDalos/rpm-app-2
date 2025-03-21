@@ -8,33 +8,40 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import CalendarDay from './calendar-day';
+import HourSlot from './hour-slot';
 import ActionItem from './action-item';
 import CategoryBar from './category-bar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { enGB } from 'date-fns/locale';
+import { nl as nlLocale } from "date-fns/locale";
 import dynamic from 'next/dynamic';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
 
+import MiniCalendar from './mini-calendar';
+
 const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false });
+const CalendarPopup = dynamic(() => import('./calendar-popup'), { ssr: false });
 
 interface RpmCalendarProps {
   isDropDisabled: boolean;
 }
 
+type ViewMode = "day" | "week" | "month";
+
 const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [rpmBlocks, setRpmBlocks] = useState<RpmBlock[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
-    const date = new Date();
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
-  });
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedAction, setSelectedAction] = useState<MassiveAction | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [isCalendarPopupOpen, setIsCalendarPopupOpen] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -76,7 +83,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const handleActionClick = (action: MassiveAction, dateKey: string) => {
     setSelectedAction(action);
     setSelectedDateKey(dateKey);
-    setIsPopupOpen(true);
+    setIsCalendarPopupOpen(true);
   };
 
   const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
@@ -124,11 +131,13 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       durationAmount: item.durationAmount || 0,
       durationUnit: item.durationUnit || 'min',
       priority: item.priority || 1,
-      key: item.key || '✘',
+      key: '📅',
       notes: item.notes || [],
       isDateRange: item.isDateRange || false,
+      selectedDays: item.selectedDays || [],
       color: category?.color || '#e0e0e0',
       categoryId: item.categoryId,
+      hour: item.hour !== undefined ? item.hour : 8,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -193,24 +202,88 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }
   };
 
-  const renderCalendar = () => {
+  const handleNavigatePrevious = () => {
+    if (viewMode === "week") {
+      setCurrentDate((prev) => subWeeks(prev, 1));
+    } else if (viewMode === "month") {
+      setCurrentDate((prev) => subMonths(prev, 1));
+    } else {
+      setCurrentDate((prev) => addDays(prev, -1));
+    }
+  };
+
+  const handleNavigateNext = () => {
+    if (viewMode === "week") {
+      setCurrentDate((prev) => addWeeks(prev, 1));
+    } else if (viewMode === "month") {
+      setCurrentDate((prev) => addMonths(prev, 1));
+    } else {
+      setCurrentDate((prev) => addDays(prev, 1));
+    }
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setCurrentDate(date);
+  };
+
+  const renderMonthCalendar = () => {
     const calendarDays = [];
     const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
 
-    for (let i = 0; i < 28; i++) {
-      const currentDate = new Date(currentWeekStart);
-      currentDate.setDate(currentWeekStart.getDate() + i);
-      const dateKey = currentDate.toISOString().split('T')[0];
-      const isCurrentDay = currentDate.getTime() === todayDate.getTime();
+    // Voor maandweergave, inclusief dagen uit vorige/volgende maand
+    const startDate = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
+    const endDate = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
+
+    let currentDay = startDate;
+
+    while (currentDay <= endDate) {
+      const dateKey = format(currentDay, "yyyy-MM-dd");
+      const isCurrentDay = isSameDay(currentDay, todayDate);
+      const isCurrentMonth = currentDay.getMonth() === currentDate.getMonth();
 
       const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
 
       calendarDays.push(
         <CalendarDay
           key={dateKey}
-          day={currentDate.getDate()}
-          month={currentDate.getMonth()}
-          year={currentDate.getFullYear()}
+          day={currentDay.getDate()}
+          month={currentDay.getMonth()}
+          year={currentDay.getFullYear()}
+          events={eventsForDay}
+          dateKey={dateKey}
+          isCurrentDay={isCurrentDay}
+          isCurrentMonth={isCurrentMonth}
+          onActionClick={(action) => handleActionClick(action, dateKey)}
+          onDrop={handleDrop}
+          onActionRemove={handleActionRemove}
+        />
+      );
+
+      currentDay = addDays(currentDay, 1);
+    }
+
+    return <div className="grid grid-cols-7 gap-1">{calendarDays}</div>;
+  };
+
+  const renderWeekCalendar = () => {
+    const calendarDays = [];
+    const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+
+    for (let i = 0; i < 7; i++) {
+      const currentDay = addDays(weekStart, i);
+      const dateKey = format(currentDay, "yyyy-MM-dd");
+      const isCurrentDay = isSameDay(currentDay, todayDate);
+
+      const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
+
+      calendarDays.push(
+        <CalendarDay
+          key={dateKey}
+          day={currentDay.getDate()}
+          month={currentDay.getMonth()}
+          year={currentDay.getFullYear()}
           events={eventsForDay}
           dateKey={dateKey}
           isCurrentDay={isCurrentDay}
@@ -221,7 +294,59 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       );
     }
 
-    return calendarDays;
+    return <div className="grid grid-cols-7 gap-1">{calendarDays}</div>;
+  };
+
+  const renderDayCalendar = () => {
+    const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
+    const dateKey = format(currentDate, "yyyy-MM-dd");
+    const isCurrentDay = isSameDay(currentDate, todayDate);
+
+    const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
+
+    // Genereer 24 tijdslots voor de dag
+    const hourSlots = [];
+    for (let hour = 0; hour < 24; hour++) {
+      hourSlots.push(
+        <div key={`${dateKey}-${hour}`} className="flex items-center">
+          <div className="w-16 text-right pr-2 text-sm text-muted-foreground">
+            {hour}:00
+          </div>
+          <div className="flex-1">
+            <HourSlot
+              dateKey={dateKey}
+              hour={hour}
+              events={eventsForDay}
+              isToday={isCurrentDay}
+              onActionClick={(action) => handleActionClick(action, dateKey)}
+              onDrop={(item) => handleDrop(item, dateKey)}
+              onActionRemove={(actionId) => handleActionRemove(actionId, dateKey)}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <ScrollArea className="h-[calc(100vh-12rem)]">
+        <div className="flex flex-col gap-1">
+          <div className="text-xl font-semibold mb-2">{format(currentDate, "EEEE dd MMMM yyyy", { locale: nlLocale })}</div>
+          <div className="flex flex-col gap-0.5">
+            {hourSlots}
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  };
+
+  const renderCalendar = () => {
+    if (viewMode === "month") {
+      return renderMonthCalendar();
+    } else if (viewMode === "week") {
+      return renderWeekCalendar();
+    } else {
+      return renderDayCalendar();
+    }
   };
 
   const isActionPlanned = (actionId: string) => {
@@ -234,6 +359,18 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     ? rpmBlocks.filter(block => block.categoryId === activeCategory)
     : rpmBlocks;
 
+  const getCalendarTitle = () => {
+    if (viewMode === "week") {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `${format(weekStart, "dd MMM", { locale: nlLocale })} - ${format(weekEnd, "dd MMM yyyy", { locale: nlLocale })}`;
+    } else if (viewMode === "month") {
+      return format(currentDate, "MMMM yyyy", { locale: nlLocale });
+    } else {
+      return format(currentDate, "EEEE dd MMMM yyyy", { locale: nlLocale });
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex h-screen">
@@ -243,7 +380,10 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           onCategoryClick={setActiveCategory}
         />
         <div className="w-1/4 p-4 border-r">
-          <ScrollArea className="h-[calc(100vh-2rem)]">
+          <div className="mb-6">
+            <MiniCalendar selectedDate={currentDate} onDateSelect={handleDateSelect} />
+          </div>
+          <ScrollArea className="h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold mb-4">
               {activeCategory 
                 ? `RPM Plannen - ${categories.find(c => c.id === activeCategory)?.name}` 
@@ -301,30 +441,64 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           </ScrollArea>
         </div>
         <div className="w-3/4 p-4">
-          <div className="flex justify-between mb-4">
-            <Button onClick={() => setCurrentWeekStart((prev) => new Date(prev.setDate(prev.getDate() - 7)))}>
+          <div className="flex justify-between items-center mb-4">
+            <Button onClick={handleNavigatePrevious}>
               <ChevronLeft />
             </Button>
-            <h2 className="text-2xl">{`${format(currentWeekStart, 'dd-MM-yyyy', { locale: enGB })}`}</h2>
-            <Button onClick={() => setCurrentWeekStart((prev) => new Date(prev.setDate(prev.getDate() + 7)))}>
+            <div className="flex flex-col items-center">
+              <h2 className="text-2xl">{getCalendarTitle()}</h2>
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="mt-2">
+                <TabsList>
+                  <TabsTrigger value="day">Dag</TabsTrigger>
+                  <TabsTrigger value="week">Week</TabsTrigger>
+                  <TabsTrigger value="month">Maand</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <Button onClick={handleNavigateNext}>
               <ChevronRight />
             </Button>
           </div>
-          <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
+
+          {viewMode === "month" && (
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"].map((day) => (
+                <div key={day} className="text-center font-semibold">
+                  {day}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {renderCalendar()}
         </div>
+        {selectedAction && isPopupOpen && (
+          <ActionPopup
+            action={selectedAction}
+            dateKey={selectedDateKey || ""}
+            isOpen={isPopupOpen}
+            onClose={() => {
+              setIsPopupOpen(false);
+              setSelectedAction(null);
+              setSelectedDateKey(null);
+            }}
+            onUpdate={handleActionUpdate}
+          />
+        )}
+        {selectedAction && isCalendarPopupOpen && selectedDateKey && (
+          <CalendarPopup
+            action={selectedAction}
+            dateKey={selectedDateKey}
+            isOpen={isCalendarPopupOpen}
+            onClose={() => {
+              setIsCalendarPopupOpen(false);
+              setSelectedAction(null);
+              setSelectedDateKey(null);
+            }}
+            onUpdate={handleActionUpdate}
+          />
+        )}
       </div>
-      {selectedAction && isPopupOpen && selectedDateKey && (
-        <ActionPopup
-          action={selectedAction}
-          dateKey={selectedDateKey}
-          isOpen={isPopupOpen}
-          onClose={() => {
-            setIsPopupOpen(false);
-            setSelectedDateKey(null);
-          }}
-          onUpdate={handleActionUpdate}
-        />
-      )}
     </DndProvider>
   );
 };

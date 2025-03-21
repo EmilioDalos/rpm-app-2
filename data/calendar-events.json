@@ -1,119 +1,158 @@
 [
+  {
+    "id": "event-2025-01-05",
+    "date": "2025-01-05",
+    "massiveActions": [
       {
-        "id": "event-2025-01-05",
-        "date": "2025-01-05",
-        "massiveActions": [
+        "id": "action-001",
+        "text": "Trainingsschema volgen voor borst, schouders en triceps",
+        "color": "blue",
+        "leverage": "Grotere kracht en spierdefinitie",
+        "durationAmount": 1,
+        "durationUnit": "day",
+        "priority": 1,
+        "notes": [
           {
-            "id": "action-001",
-            "text": "Trainingsschema volgen voor borst, schouders en triceps",
-            "color": "blue",
-            "leverage": "Grotere kracht en spierdefinitie",
-            "durationAmount": 1,
-            "durationUnit": "day",
-            "priority": 1,
-            "notes": [
-              {
-                "id": "note-001",
-                "text": "Progressief gewicht toevoegen elke twee weken",
-                "type": "progress",
-                "createdAt": "2025-01-05T00:00:00Z"
-              }
-            ],
-            "categoryId": "category-001",
-            "key": "✔",
-            "startDate": "2025-01-05",
-            "endDate": "2025-01-05"
+            "id": "note-001",
+            "text": "Progressief gewicht toevoegen elke twee weken",
+            "type": "progress",
+            "createdAt": "2025-01-05T00:00:00Z"
           }
         ],
-        "createdAt": "2025-01-05T00:00:00Z",
-        "updatedAt": "2025-01-05T00:00:00Z"
-      },
-      {
-        "id": "event-2025-01-06",
-        "date": "2025-01-06",
-        "massiveActions": [
-          {
-            "id": "action-002",
-            "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
-            "color": "green",
-            "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
-            "durationAmount": 1,
-            "durationUnit": "day",
-            "priority": 1,
-            "notes": [
-              {
-                "id": "note-002",
-                "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
-                "type": "progress",
-                "createdAt": "2025-01-05T00:00:00Z"
-              }
-            ],
-            "categoryId": "category-002",
-            "key": "✔",
-            "startDate": "2025-01-06",
-            "endDate": "2025-01-06"
-          }
-        ],
-        "createdAt": "2025-01-05T00:00:00Z",
-        "updatedAt": "2025-01-05T00:00:00Z"
-      },
-      {
-        "id": "event-2025-01-08",
-        "date": "2025-01-08",
-        "massiveActions": [
-          {
-            "id": "action-001",
-            "text": "Trainingsschema volgen voor borst, schouders en triceps",
-            "color": "blue",
-            "leverage": "Grotere kracht en spierdefinitie",
-            "durationAmount": 1,
-            "durationUnit": "day",
-            "priority": 1,
-            "notes": [
-              {
-                "id": "note-001",
-                "text": "Progressief gewicht toevoegen elke twee weken",
-                "type": "progress",
-                "createdAt": "2025-01-05T00:00:00Z"
-              }
-            ],
-            "categoryId": "category-001",
-            "key": "✔",
-            "startDate": "2025-01-08",
-            "endDate": "2025-01-08"
-          }
-        ],
-        "createdAt": "2025-01-05T00:00:00Z",
-        "updatedAt": "2025-01-05T00:00:00Z"
-      },
-      {
-        "id": "event-2025-01-09",
-        "date": "2025-01-09",
-        "massiveActions": [
-          {
-            "id": "action-002",
-            "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
-            "color": "green",
-            "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
-            "durationAmount": 1,
-            "durationUnit": "day",
-            "priority": 1,
-            "notes": [
-              {
-                "id": "note-002",
-                "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
-                "type": "progress",
-                "createdAt": "2025-01-05T00:00:00Z"
-              }
-            ],
-            "categoryId": "category-002",
-            "key": "✔",
-            "startDate": "2025-01-09",
-            "endDate": "2025-01-09"
-          }
-        ],
-        "createdAt": "2025-01-05T00:00:00Z",
-        "updatedAt": "2025-01-05T00:00:00Z"
+        "categoryId": "category-001",
+        "key": "✔",
+        "startDate": "2025-01-05",
+        "endDate": "2025-01-05"
       }
-      // Herhaal het patroon voor de daaropvolgende weken tot 16 februari 2025.
+    ],
+    "createdAt": "2025-01-05T00:00:00Z",
+    "updatedAt": "2025-01-05T00:00:00Z"
+  },
+  {
+    "id": "event-2025-01-06",
+    "date": "2025-01-06",
+    "massiveActions": [
+      {
+        "id": "action-002",
+        "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
+        "color": "green",
+        "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
+        "durationAmount": 1,
+        "durationUnit": "day",
+        "priority": 1,
+        "notes": [
+          {
+            "id": "note-002",
+            "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
+            "type": "progress",
+            "createdAt": "2025-01-05T00:00:00Z"
+          }
+        ],
+        "categoryId": "category-002",
+        "key": "✔",
+        "startDate": "2025-01-06",
+        "endDate": "2025-01-06"
+      }
+    ],
+    "createdAt": "2025-01-05T00:00:00Z",
+    "updatedAt": "2025-01-05T00:00:00Z"
+  },
+  {
+    "id": "event-2025-01-08",
+    "date": "2025-01-08",
+    "massiveActions": [
+      {
+        "id": "action-001",
+        "text": "Trainingsschema volgen voor borst, schouders en triceps",
+        "color": "blue",
+        "leverage": "Grotere kracht en spierdefinitie",
+        "durationAmount": 1,
+        "durationUnit": "day",
+        "priority": 1,
+        "notes": [
+          {
+            "id": "note-001",
+            "text": "Progressief gewicht toevoegen elke twee weken",
+            "type": "progress",
+            "createdAt": "2025-01-05T00:00:00Z"
+          }
+        ],
+        "categoryId": "category-001",
+        "key": "✔",
+        "startDate": "2025-01-08",
+        "endDate": "2025-01-08"
+      }
+    ],
+    "createdAt": "2025-01-05T00:00:00Z",
+    "updatedAt": "2025-01-05T00:00:00Z"
+  },
+  {
+    "id": "event-2025-01-09",
+    "date": "2025-01-09",
+    "massiveActions": [
+      {
+        "id": "action-002",
+        "text": "Trainingsschema volgen voor rug, benen, kuiten en biceps",
+        "color": "green",
+        "leverage": "Algehele fysieke kracht en stabiliteit verbeteren",
+        "durationAmount": 1,
+        "durationUnit": "day",
+        "priority": 1,
+        "notes": [
+          {
+            "id": "note-002",
+            "text": "Kettlebell swings en pull-ups gefaseerd verbeteren",
+            "type": "progress",
+            "createdAt": "2025-01-05T00:00:00Z"
+          }
+        ],
+        "categoryId": "category-002",
+        "key": "✔",
+        "startDate": "2025-01-09",
+        "endDate": "2025-01-09"
+      }
+    ],
+    "createdAt": "2025-01-05T00:00:00Z",
+    "updatedAt": "2025-01-05T00:00:00Z"
+  },
+  {
+    "id": "2025-03-21-1742022339287",
+    "date": "2025-03-21",
+    "massiveActions": [
+      {
+        "id": "1742022339287",
+        "text": "test4",
+        "leverage": "",
+        "durationAmount": 5,
+        "durationUnit": "hr",
+        "priority": 3,
+        "key": "✘",
+        "category": "",
+        "notes": [],
+        "hour": 18,
+        "isDateRange": false,
+        "selectedDays": [],
+        "color": "#e0e0e0",
+        "createdAt": "2025-03-21T13:29:25.485Z",
+        "updatedAt": "2025-03-21T13:29:25.486Z"
+      },
+      {
+        "id": "1741372262701",
+        "text": "test3",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 2,
+        "key": "✘",
+        "category": "",
+        "notes": [],
+        "hour": 21,
+        "isDateRange": false,
+        "selectedDays": [],
+        "color": "#e0e0e0",
+        "createdAt": "2025-03-21T13:52:20.420Z",
+        "updatedAt": "2025-03-21T13:52:20.420Z"
+      }
     ]
+  }
+]

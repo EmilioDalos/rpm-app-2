@@ -1,5 +1,5 @@
-import React from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import React, { forwardRef, useImperativeHandle } from 'react'
+import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Bold from '@tiptap/extension-bold'
 import Italic from '@tiptap/extension-italic'
@@ -14,12 +14,16 @@ interface TiptapProps {
   placeholder?: string
 }
 
-const Tiptap: React.FC<TiptapProps> = ({ content, onUpdate, placeholder }) => {
+export interface TiptapRef {
+  editor: Editor | null
+}
+
+const Tiptap = forwardRef<TiptapRef, TiptapProps>(({ content, onUpdate, placeholder }, ref) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: false, // Disable default bulletList
-        orderedList: false, // Disable default orderedList
+        bulletList: false,
+        orderedList: false,
       }),
       Bold,
       Italic,
@@ -39,6 +43,10 @@ const Tiptap: React.FC<TiptapProps> = ({ content, onUpdate, placeholder }) => {
     },
   })
 
+  useImperativeHandle(ref, () => ({
+    editor,
+  }))
+
   if (!editor) {
     return null
   }
@@ -53,7 +61,6 @@ const Tiptap: React.FC<TiptapProps> = ({ content, onUpdate, placeholder }) => {
 
   return (
     <div className="border rounded-md">
-      {/* Toolbar */}
       <div className="flex space-x-2 p-2 border-b bg-gray-100">
         {toolbarButtons.map((button, index) => (
           <button
@@ -65,11 +72,12 @@ const Tiptap: React.FC<TiptapProps> = ({ content, onUpdate, placeholder }) => {
           </button>
         ))}
       </div>
-      {/* Editor */}
       <EditorContent editor={editor} placeholder={placeholder} />
     </div>
   )
-}
+})
+
+Tiptap.displayName = 'Tiptap'
 
 export default Tiptap
 

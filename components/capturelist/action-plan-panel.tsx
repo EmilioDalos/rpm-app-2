@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, Trash2 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { RpmBlock, MassiveAction } from "@/types"
+import type { RpmBlock, MassiveAction, CalendarEvent } from "@/types"
 
 type ActionPlan = MassiveAction & {
   id: string
@@ -28,6 +28,17 @@ interface Group {
   actions: { id: number; text: string; checked: boolean; }[];
 }
 
+// Beschrijvingen voor de actie-statussleutels
+const ACTION_KEY_DESCRIPTIONS = {
+  "?": "Nieuwe actie die nog geen toewijzing heeft",
+  "✘": "Actie is voltooid/afgerond",
+  "✔": "Actie is in uitvoering",
+  "¡": "Actie met hefboomwerking",
+  "■": "Actie bleek niet nodig voor het resultaat",
+  "➜": "Actie is doorgeschoven naar een ander plan",
+  "📅": "Actie is ingepland in de kalender",
+};
+
 export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps): ReactElement {
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
@@ -37,6 +48,53 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   const [categories, setCategories] = useState<Array<{id: string, name: string, roles?: any[]}>>([])
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedOption, setSelectedOption] = useState<string>("Day")
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+
+  // Haal kalendergebeurtenissen op om te controleren welke acties zijn gepland
+  useEffect(() => {
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch('/api/calendar-events');
+        if (response.ok) {
+          const data = await response.json();
+          setCalendarEvents(Array.isArray(data) ? data : []);
+        } else {
+          console.error('Failed to fetch calendar events');
+          setCalendarEvents([]);
+        }
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+        setCalendarEvents([]);
+      }
+    };
+    
+    fetchCalendarEvents();
+  }, []);
+  
+  // Functie om te controleren of een actie gepland is
+  const isActionPlanned = (actionId: string): boolean => {
+    return calendarEvents.some(event => 
+      event.massiveActions && event.massiveActions.some(action => action.id === actionId)
+    );
+  };
+  
+  // Update actiestatussen op basis van planning
+  useEffect(() => {
+    if (calendarEvents.length > 0 && massiveActions.length > 0) {
+      const updatedActions = massiveActions.map(action => {
+        // Als de actie gepland is en de key is niet al '📅', '✔' of '✘', update de key
+        if (isActionPlanned(action.id) && action.key !== '📅' && action.key !== '✔' && action.key !== '✘') {
+          return { ...action, key: '📅' };
+        }
+        return action;
+      });
+      
+      // Alleen bijwerken als er daadwerkelijk wijzigingen zijn
+      if (JSON.stringify(updatedActions) !== JSON.stringify(massiveActions)) {
+        setMassiveActions(updatedActions);
+      }
+    }
+  }, [calendarEvents, massiveActions]);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -234,7 +292,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       durationAmount: 0,
       durationUnit: "min",
       priority: massiveActions.length + 1,
-      key: "✘",
+      key: "?",
       categoryId: selectedCategory || "",
       notes: [],
     }
@@ -511,7 +569,15 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
               <div
                 className={`flex-[2] p-4 rounded-lg w-full bg-gray-100 ${isCollapsed && activeColumn !== "massiveActions" ? "hidden" : ""}`}
               >
-                <h3 className="text-lg font-semibold mb-2">MASSIVE ACTION PLAN</h3>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">MASSIVE ACTION PLAN</h3>
+                  <div className="text-xs text-gray-500 cursor-help" title="Legenda van de actiesymbolen">
+                    <span className="mr-2">? (Nieuw)</span>
+                    <span className="mr-2">📅 (Gepland)</span>
+                    <span className="mr-2">✔ (In uitvoering)</span>
+                    <span className="mr-2">✘ (Klaar)</span>
+                  </div>
+                </div>
 
                 {massiveActions.map((action, index) => (
                   <div key={action.id} className="flex items-center my-2 rounded  w-full">
@@ -551,14 +617,17 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
                       className="w-10 text-xs p-1"
                     />
                     <Select value={action.key} onValueChange={(value) => updateMassiveAction(index, { key: value })}>
-                      <SelectTrigger className="w-10 text-xs p-1">
+                      <SelectTrigger className="w-14 text-base p-1 flex justify-center">
                         <SelectValue placeholder="Key" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="✘">✘</SelectItem>
-                        <SelectItem value="✔">✔</SelectItem>
-                        <SelectItem value="O">O</SelectItem>
-                        <SelectItem value="➜">➜</SelectItem>
+                        <SelectItem value="?">? (Nieuw)</SelectItem>
+                        <SelectItem value="✘">✘ (Klaar)</SelectItem>
+                        <SelectItem value="✔">✔ (In uitvoering)</SelectItem>
+                        <SelectItem value="¡">¡ (Leveraged)</SelectItem>
+                        <SelectItem value="■">■ (Niet nodig)</SelectItem>
+                        <SelectItem value="➜">➜ (Verplaatst)</SelectItem>
+                        <SelectItem value="📅">📅 (Gepland)</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input

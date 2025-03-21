@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface CalendarDayProps {
   day: number;
@@ -14,6 +15,7 @@ interface CalendarDayProps {
   events: CalendarEvent[];
   dateKey: string;
   isCurrentDay: boolean;
+  isCurrentMonth?: boolean;
   onActionClick: (action: MassiveAction) => void;
   onDrop: (item: MassiveAction, dateKey: string) => void;
   onActionRemove: (actionId: string, dateKey: string) => void;
@@ -26,6 +28,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   events,
   dateKey,
   isCurrentDay,
+  isCurrentMonth = true,
   onActionClick,
   onDrop,
   onActionRemove,
@@ -38,7 +41,15 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'action',
     canDrop: () => !isPastDay,
-    drop: (item: MassiveAction) => onDrop(item, dateKey),
+    drop: (item: MassiveAction) => {
+      // Als de actie wordt gesleept naar een dag in week/maand view,
+      // en er is nog geen uur ingesteld, stel het standaard in op 8:00
+      const itemWithDefaults = {
+        ...item,
+        hour: item.hour !== undefined ? item.hour : 8
+      };
+      onDrop(itemWithDefaults, dateKey);
+    },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
@@ -66,78 +77,94 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
     <div
       ref={drop}
       className={cn(
-        'h-32 border rounded-md p-1 overflow-hidden bg-background shadow-sm hover:shadow-md transition-shadow',
-        isCurrentDay && 'ring-2 ring-primary',
-        isOver && !isPastDay && 'bg-primary/10',
-        isPastDay && 'opacity-50'
+        "h-32 border rounded-md p-1 overflow-hidden bg-background shadow-sm hover:shadow-md transition-shadow",
+        isCurrentDay && "ring-2 ring-primary",
+        isOver && !isPastDay && "bg-primary/10",
+        isPastDay && "opacity-50",
+        !isCurrentMonth && "opacity-40" // Als de dag niet in de huidige maand valt, toon hem lichter
       )}
     >
-      <div className={cn('font-bold mb-1 text-sm', isCurrentDay && 'text-primary')}>{day}</div>
+      <div className={cn(
+        "font-bold mb-1 text-sm",
+        isCurrentDay && "text-primary"
+      )}>
+        {day}
+      </div>
       <ScrollArea className="h-24">
         <TooltipProvider>
-          {events.map((event) =>
-            event.massiveActions?.map((action) =>
-              (action.isDateRange && isDateInRange(action, dateKey)) || (!action.isDateRange && event.date === dateKey) ? (
-                <Tooltip key={action.id}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20`}
-                      style={{ backgroundColor: action.color || '#f0f0f0', color: '#000' }}
-                      onClick={() => onActionClick(action)}
+          {events.map((event) => (
+            event.massiveActions.map((action) => (
+              <Tooltip key={action.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={`mb-1 p-1 rounded-md shadow-sm cursor-pointer hover:bg-primary/20 relative group`}
+                    style={{ 
+                      backgroundColor: action.color || '#e0e0e0',
+                      color: action.textColor || '#000000'
+                    }}
+                    onClick={() => onActionClick(action)}
+                  >
+                    <p className="text-xs font-medium line-clamp-2 pr-6">{action.text}</p>
+                    <span className="text-xs opacity-75 absolute bottom-0 right-1">
+                      {`${action.hour !== undefined ? (action.hour < 10 ? `0${action.hour}` : action.hour) : '??'}:00`}
+                    </span>
+                    <button
+                      className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmRemoveAction(action.id);
+                      }}
                     >
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs font-medium line-clamp-2">{action.text}</p>
-                        <button
-                          className="text-black text-xs ml-2 hover:text-gray-500"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            confirmRemoveAction(action.id);
-                          }}
-                        >
-                          ✖
-                        </button>
+                      <X size={12} />
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="max-w-xs">
+                    <p className="font-bold">{action.text}</p>
+                    <p className="text-sm">
+                      {action.durationAmount} {action.durationUnit} - {action.leverage}
+                    </p>
+                    <p className="text-sm mt-1">
+                      Tijd: {action.hour !== undefined ? `${action.hour < 10 ? `0${action.hour}` : action.hour}:00` : 'Niet gespecificeerd'}
+                    </p>
+                    {action.notes && action.notes.length > 0 && (
+                      <div className="mt-2">
+                        <p className="font-semibold">Notities:</p>
+                        {action.notes.map((note, index) => (
+                          <p key={note.id} className="text-sm mt-1">
+                            {index + 1}. {note.text}
+                          </p>
+                        ))}
                       </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="max-w-xs">
-                      <p className="font-bold">{action.text}</p>
-                      {action.notes && action.notes.length > 0 && (
-                        <div className="mt-2">
-                          <p className="font-semibold">Notities:</p>
-                          {action.notes.map((note, index) => (
-                            <p key={note.id} className="text-sm mt-1">
-                              {index + 1}. {note.text}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ) : null
-            )
-          )}
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ))
+          ))}
         </TooltipProvider>
       </ScrollArea>
-      {isDialogOpen && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Weet je het zeker?</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm">Wil je deze actie echt verwijderen?</p>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
-                Annuleren
-              </Button>
-              <Button variant="destructive" onClick={handleRemoveAction}>
-                Verwijder
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+
+      {/* Bevestigingsdialoog voor het verwijderen van een actie */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Actie verwijderen</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Weet je zeker dat je deze actie wilt verwijderen uit de kalender?</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button variant="destructive" onClick={handleRemoveAction}>
+              Verwijderen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

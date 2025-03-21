@@ -1,7 +1,7 @@
 import React from 'react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Category } from '@/types';
+import { Category } from '@/types'
 import Link from 'next/link'
 
 interface CategoryBarProps {
@@ -23,7 +23,7 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ categories, activeCategory, o
                     activeCategory === category.id ? 'ring-2 ring-primary' : ''
                   }`}
                   onClick={() => onCategoryClick(category.id)}
-                  style={{ backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}` }}
+                  style={{ backgroundColor: category.color || `#${Math.floor(Math.random()*16777215).toString(16)}` }}
                 >
                   <span className="sr-only">{category.name}</span>
                 </button>
@@ -40,7 +40,7 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ categories, activeCategory, o
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>New Category</p>
+              <p>Nieuwe categorie</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
