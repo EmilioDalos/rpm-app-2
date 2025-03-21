@@ -252,12 +252,24 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             {filteredRpmBlocks?.map((block) => (
               <Card key={block.id} className="mb-4">
                 <CardHeader>
-                  <CardTitle>{block.result}</CardTitle>
+                  <CardTitle className="flex flex-col">
+                    {block.categoryId ? (
+                      <span className="uppercase font-bold text-lg">
+                        {categories.find(c => c.id === block.categoryId)?.name || ""}
+                      </span>
+                    ) : (
+                      <span className="uppercase font-bold text-lg">{block.type}</span>
+                    )}
+                    <span className="text-sm text-gray-500">
+                      {block.type}
+                    </span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <p className="text-sm mb-4 font-medium">{block.result}</p>
                   <Accordion type="single" collapsible>
                     <AccordionItem value="purposes">
-                      <AccordionTrigger>Doelen</AccordionTrigger>
+                      <AccordionTrigger>Purposes</AccordionTrigger>
                       <AccordionContent>
                         <ul>
                           {block.purposes?.map((purpose, index) => (
