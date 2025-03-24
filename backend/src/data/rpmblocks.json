@@ -1,0 +1,100 @@
+[
+  {
+    "id": "1741372248154",
+    "massiveActions": [
+      {
+        "id": "1737372638426",
+        "text": "testerzz",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": "1741372262701",
+        "text": "test3",
+        "leverage": "",
+        "durationAmount": 4,
+        "durationUnit": "hr",
+        "priority": 2,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": "1742022339287",
+        "text": "test4",
+        "leverage": "",
+        "durationAmount": 5,
+        "durationUnit": "hr",
+        "priority": 3,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      }
+    ],
+    "result": "ik hou van camila met hart en ziel",
+    "purposes": [
+      "test",
+      "test2"
+    ],
+    "categoryId": "1742484569834",
+    "type": "Category",
+    "createdAt": "2025-03-21T13:56:12.388Z",
+    "updatedAt": "2025-03-21T13:56:12.388Z",
+    "saved": true
+  },
+  {
+    "id": "1742210486866",
+    "massiveActions": [
+      {
+        "id": "1742210439168",
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 0,
+        "key": "✘",
+        "categoryId": "",
+        "notes": []
+      }
+    ],
+    "result": "testgroep10",
+    "purposes": [
+      "Purpose voor testgroep10"
+    ],
+    "categoryId": "1742484569834",
+    "type": "Category",
+    "createdAt": "2025-03-20T18:07:39.948Z",
+    "updatedAt": "2025-03-20T18:07:39.948Z",
+    "saved": true
+  },
+  {
+    "id": "1742210971261",
+    "massiveActions": [
+      {
+        "id": "1742210934435",
+        "text": "test",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 0,
+        "key": "✘",
+        "categoryId": "",
+        "notes": []
+      }
+    ],
+    "result": "testgr11",
+    "purposes": [
+      "Purpose voor testgr11"
+    ],
+    "categoryId": "",
+    "type": "Day",
+    "createdAt": "2025-03-17T11:29:31.021Z",
+    "updatedAt": "2025-03-17T11:29:31.021Z",
+    "saved": true
+  }
+]
