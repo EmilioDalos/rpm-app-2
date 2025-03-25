@@ -42,7 +42,7 @@ export default function Home() {
         const addedCategory = await response.json();
         setCategories((prevCategories) => [...prevCategories, addedCategory]);
       } else {
-        console.error('Failed to add category'); // ConsoleError
+        console.error('Failed to add category');
       }
     } catch (error) {
       console.error('Error adding category:', error);
@@ -50,9 +50,6 @@ export default function Home() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
-    console.log('Updating category with ID:', updatedCategory.id);
-    console.log('Updated imageBlob:', updatedCategory.imageBlob); // Log imageBlob
-  
     try {
       const response = await fetch(`/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
@@ -61,10 +58,9 @@ export default function Home() {
         },
         body: JSON.stringify(updatedCategory),
       });
-  
+
       if (response.ok) {
         const updatedData = await response.json();
-        console.log('Updated category data:', updatedData); // Log response
         setCategories((prevCategories) =>
           prevCategories.map((cat) =>
             cat.id === updatedData.id ? updatedData : cat
@@ -79,22 +75,32 @@ export default function Home() {
   };
   
   const handleDeleteCategory = async (id: string) => {
-    setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      });
+  
+      if (response.ok) {
+        setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
+      } else {
+        console.error('Failed to delete category');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
   };
 
-
-
   return (
-    <main className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <main>
         <CategoryList
-        categories={categories}
-        onAddCategory={handleAddCategory}
-        onUpdateCategory={handleUpdateCategory}
-        onDeleteCategory={handleDeleteCategory}
+          categories={categories}
+          onAddCategory={handleAddCategory}
+          onUpdateCategory={handleUpdateCategory}
+          onDeleteCategory={handleDeleteCategory}
         />
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
