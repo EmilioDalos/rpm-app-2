@@ -96,5 +96,53 @@
     "createdAt": "2025-03-17T11:29:31.021Z",
     "updatedAt": "2025-03-17T11:29:31.021Z",
     "saved": true
+  },
+  {
+    "id": "032fc7a9-e9de-4f3c-b853-c3ab131e394e",
+    "massiveActions": [
+      {
+        "id": "1737372638426",
+        "text": "testerzz",
+        "leverage": "",
+        "durationAmount": 0,
+        "durationUnit": "min",
+        "priority": 1,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": "1741372262701",
+        "text": "test3",
+        "leverage": "",
+        "durationAmount": 4,
+        "durationUnit": "hr",
+        "priority": 2,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      },
+      {
+        "id": "1742022339287",
+        "text": "test4",
+        "leverage": "",
+        "durationAmount": 5,
+        "durationUnit": "hr",
+        "priority": 3,
+        "key": "✘",
+        "category": "",
+        "notes": []
+      }
+    ],
+    "result": "ik hou van camila met hart en zielll",
+    "purposes": [
+      "test",
+      "test2"
+    ],
+    "categoryId": "1742484569834",
+    "type": "Category",
+    "createdAt": "2025-03-25T18:03:35.391Z",
+    "updatedAt": "2025-03-25T18:03:35.391Z",
+    "saved": true
   }
 ]

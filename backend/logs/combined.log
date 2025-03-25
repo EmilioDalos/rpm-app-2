@@ -55,3 +55,174 @@
 {"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-24T19:54:00.783Z"}
 {"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-24T20:09:54.255Z"}
 {"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T07:26:53.446Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T12:38:02.394Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T12:41:57.148Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T12:47:34.480Z"}
+{"level":"info","message":"GET /favicon.ico","timestamp":"2025-03-25T12:47:34.513Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T12:52:25.755Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T13:42:00.953Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T13:48:29.644Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T13:49:05.936Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T13:49:41.508Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:00:26.823Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:15:05.647Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:21:36.450Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:23:58.607Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:25:23.573Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:27:43.059Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:31:02.352Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T14:33:43.251Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:34:52.740Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:36:04.158Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:36:04.161Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:36:06.363Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:36:24.147Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T14:38:02.814Z"}
+{"level":"info","message":"GET /calendar-events","timestamp":"2025-03-25T14:38:11.803Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T14:38:50.938Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T14:39:16.345Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T14:39:20.083Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:09:59.489Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:11:22.300Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:11:24.719Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:12:08.378Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:12:09.056Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:12:09.438Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:32:48.967Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:33:06.691Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:33:08.345Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:52.610Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:54.743Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:55.224Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:55.493Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:55.762Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:36:58.417Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:00.227Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:00.459Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:00.695Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:00.918Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:01.151Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:01.395Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:01.609Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:01.836Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:02.051Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:02.279Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:37:02.467Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:38:32.681Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:40.265Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:44.730Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:47.669Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:47.974Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:48.212Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:48.438Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:48.683Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:48.913Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:49.233Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:50.463Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:38:53.655Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:39:03.165Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:39:03.842Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:39:04.110Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:39:04.367Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:41:53.741Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:41:54.719Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:41:55.003Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:41:55.246Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:41:55.523Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:42:12.876Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:42:33.410Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:42:34.163Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:42:34.437Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:42:36.857Z"}
+{"level":"info","message":"GET /","timestamp":"2025-03-25T15:42:43.417Z"}
+{"level":"info","message":"GET /favicon.ico","timestamp":"2025-03-25T15:42:43.444Z"}
+{"level":"info","message":"GET /capturelist","timestamp":"2025-03-25T15:42:51.482Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:43:13.768Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:45:55.636Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:45:56.654Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:45:56.922Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:45:57.192Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:45:58.410Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:46:00.104Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:46:32.988Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:54:28.029Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:54:34.275Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:54:36.345Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:54:36.668Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:54:36.924Z"}
+{"level":"info","message":"GET /api/capturelist","timestamp":"2025-03-25T15:54:37.152Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:54:42.935Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:58:27.839Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T15:59:20.442Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T15:59:45.788Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T16:00:08.920Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T16:01:45.610Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T16:54:30.253Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T16:54:34.688Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T16:58:45.070Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T17:35:16.576Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:35:27.035Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:36:32.296Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:40:51.919Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:41:04.946Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:41:04.948Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T17:41:06.945Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T17:41:06.947Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T17:43:56.948Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T17:59:59.678Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T17:59:59.682Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:01:36.632Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-25T18:01:36.633Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:01:36.634Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:01:48.933Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:01:48.935Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:01:48.937Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:01:48.939Z"}
+{"level":"info","message":"GET /api//rpmblocks/1741372248154","timestamp":"2025-03-25T18:01:57.169Z"}
+{"level":"info","message":"GET /api//rpmblocks/1741372248154","timestamp":"2025-03-25T18:03:35.368Z"}
+{"level":"info","message":"POST /api/rpmblocks","timestamp":"2025-03-25T18:03:35.390Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:03:35.745Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:03:37.604Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:03:37.609Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:03:37.610Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:03:37.612Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:03:57.687Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:03:57.688Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:03:57.689Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:03:57.690Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:06:13.027Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:47.793Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:48.839Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:49.381Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:49.668Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:49.914Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:08:50.156Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:09:12.367Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:09:13.723Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:10:24.566Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:12:21.509Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:18:55.312Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:20:00.260Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:20:25.061Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:22:26.095Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:22:27.572Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:22:35.996Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:22:49.907Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:25:05.117Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:25:53.418Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-25T18:26:29.300Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:27:03.066Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:37:41.117Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-25T18:37:41.119Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:37:41.119Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:37:41.120Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-25T18:37:41.121Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-25T18:37:41.122Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:37:54.444Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-25T18:37:54.445Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:37:56.688Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:37:56.689Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:37:56.689Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-25T18:37:56.690Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:37:56.694Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-25T18:37:56.695Z"}

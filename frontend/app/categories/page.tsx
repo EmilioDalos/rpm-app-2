@@ -1,18 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CategoryList } from "@/components/categories/category-list";
-import { Header } from "@/components/layout/header";
-import { useEffect } from "react";
-import { useState } from 'react';
 import { Category } from "@/types";
+import { Header } from "@/components/layout/header";
 
-export default function Home() {
+export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
         if (response.ok) {
           const data = await response.json();
           setCategories(data);
@@ -29,7 +28,7 @@ export default function Home() {
 
   const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,36 +47,41 @@ export default function Home() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
+    console.log('handleUpdateCategory - Starting update with category:', updatedCategory);
     try {
-      const response = await fetch(`/api/categories/${updatedCategory.id}`, {
+      console.log('handleUpdateCategory - Making PUT request to:', `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${updatedCategory.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedCategory),
       });
+      console.log('handleUpdateCategory - Response status:', response.status);
+      console.log('handleUpdateCategory - Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
         const updatedData = await response.json();
+        console.log('handleUpdateCategory - Successfully updated category:', updatedData);
         setCategories((prevCategories) =>
           prevCategories.map((cat) =>
             cat.id === updatedData.id ? updatedData : cat
           )
         );
       } else {
-        console.error('Failed to update category');
+        const errorData = await response.json();
+        console.error('handleUpdateCategory - Failed to update category:', errorData);
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('handleUpdateCategory - Error updating category:', error);
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const response = await fetch(`/api/categories/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
         setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
       } else {
@@ -89,16 +93,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="min-h-screen bg-gray-100">
       <Header />
-      <main>
+      <div className="container mx-auto px-4 py-8">
         <CategoryList
           categories={categories}
           onAddCategory={handleAddCategory}
           onUpdateCategory={handleUpdateCategory}
           onDeleteCategory={handleDeleteCategory}
         />
-      </main>
-    </div>
+      </div>
+    </main>
   );
-} 
+}

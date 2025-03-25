@@ -2,17 +2,20 @@
 
 import { CategoryList } from "@/components/categories/category-list";
 import { Header } from "@/components/layout/header";
-import { useEffect } from "react";
-import { useState } from 'react';
+import { useEffect, useState } from "react";
 import { Category } from "@/types";
 
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Fetch categories when component mounts
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await fetch('/api/categories');
+        console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);  // Controleer of de URL juist is
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+        
         if (response.ok) {
           const data = await response.json();
           setCategories(data);
@@ -27,9 +30,10 @@ export default function Home() {
     fetchCategories();
   }, []);
 
+  // Handlers for category operations
   const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,8 +52,10 @@ export default function Home() {
   };
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
+    console.log('Updating category with ID:', updatedCategory.id);
+
     try {
-      const response = await fetch(`/api/categories/${updatedCategory.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -74,8 +80,8 @@ export default function Home() {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {
@@ -88,17 +94,18 @@ export default function Home() {
     }
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="min-h-screen bg-gray-100">
       <Header />
-      <main>
+      <div className="container mx-auto px-4 py-8">
         <CategoryList
           categories={categories}
           onAddCategory={handleAddCategory}
           onUpdateCategory={handleUpdateCategory}
           onDeleteCategory={handleDeleteCategory}
         />
-      </main>
-    </div>
+      </div>
+    </main>
   );
-} 
+}

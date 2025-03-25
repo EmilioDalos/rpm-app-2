@@ -13,7 +13,7 @@ export default function RolesPage() {
   useEffect(() => {
     async function fetchRoles() {
       try {
-        const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/roles');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`);
         if (response.ok) {
           const data = await response.json();
           setRoles(data);
@@ -30,7 +30,7 @@ export default function RolesPage() {
 
   const handleAddRole = async (newRole: Omit<Role, 'id'>) => {
     try {
-      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/roles', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,21 +50,26 @@ export default function RolesPage() {
 
   const handleUpdateRole = async (updatedRole: Role) => {
     try {
-      const response = await fetch(`/api/roles/${updatedRole.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles/${updatedRole.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedRole),
       });
-
+  
       if (response.ok) {
         const updatedData = await response.json();
+  
+        // Werk de state bij en ververs de lijst
         setRoles((prevRoles) =>
           prevRoles.map((role) =>
             role.id === updatedData.id ? updatedData : role
           )
         );
+  
+        // Optioneel: herlaad de lijst volledig om de laatste data te krijgen
+        //fetchRoles();
       } else {
         console.error('Failed to update role');
       }
@@ -72,10 +77,12 @@ export default function RolesPage() {
       console.error('Error updating role:', error);
     }
   };
+  
+  
 
   const handleDeleteRole = async (id: string) => {
     try {
-      const response = await fetch(`/api/roles/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL} /api/roles/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

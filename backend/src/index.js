@@ -44,11 +44,13 @@ app.get('/', (req, res) => {
 const categoryRoutes = require('./routes/categories');
 const rpmBlockRoutes = require('./routes/rpmblocks');
 const calendarRoutes = require('./routes/calendar-events');
+const rolesRoutes = require('./routes/roles');
 
 // Route registratie
 app.use('/api/categories', categoryRoutes);
 app.use('/api/rpmblocks', rpmBlockRoutes);
 app.use('/api/calendar-events', calendarRoutes);
+app.use('/api/roles', rolesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
