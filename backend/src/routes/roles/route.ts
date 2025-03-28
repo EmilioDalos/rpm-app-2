@@ -166,74 +166,129 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const roleData = req.body;
+    console.log('Updating role with data:', JSON.stringify(roleData, null, 2));
 
-    // First update the role
-    const [updated] = await Role.update({
-      name: roleData.name,
-      purpose: roleData.purpose,
-      description: roleData.description,
-      identity_statement: roleData.identityStatement,
-      category_id: roleData.categoryId
-    }, { 
-      where: { id } 
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      try {
+        // First update the role
+        const [updated] = await Role.update({
+          name: roleData.name,
+          purpose: roleData.purpose,
+          description: roleData.description,
+          identity_statement: roleData.identityStatement,
+          category_id: roleData.categoryId
+        }, { 
+          where: { id },
+          transaction: t
+        });
+
+        console.log('Role update result:', updated);
+
+        if (!updated) {
+          return null;
+        }
+
+        // Delete existing core qualities and incantations
+        await sequelize.query(
+          'DELETE FROM role_core_quality WHERE role_id = :id',
+          { replacements: { id }, transaction: t }
+        );
+        await sequelize.query(
+          'DELETE FROM role_incantation WHERE role_id = :id',
+          { replacements: { id }, transaction: t }
+        );
+
+        // Insert new core qualities
+        if (roleData.coreQualities && roleData.coreQualities.length > 0) {
+          console.log('Inserting core qualities:', roleData.coreQualities);
+          const coreQualitiesValues = roleData.coreQualities.map((quality: string) => 
+            `('${id}', '${quality.replace(/'/g, "''")}')`
+          ).join(',');
+          
+          await sequelize.query(
+            `INSERT INTO role_core_quality (role_id, quality) VALUES ${coreQualitiesValues}`,
+            { transaction: t }
+          );
+        }
+
+        // Insert new incantations
+        if (roleData.incantations && roleData.incantations.length > 0) {
+          console.log('Inserting incantations:', roleData.incantations);
+          const incantationsValues = roleData.incantations.map((incantation: string) => 
+            `('${id}', '${incantation.replace(/'/g, "''")}')`
+          ).join(',');
+          
+          await sequelize.query(
+            `INSERT INTO role_incantation (role_id, incantation) VALUES ${incantationsValues}`,
+            { transaction: t }
+          );
+        }
+
+        // Then fetch the updated role with all related data
+        const [updatedRole] = await sequelize.query<RoleWithRelations>(`
+          WITH role_data AS (
+            SELECT 
+              r.*,
+              c.name as category_name,
+              c.type as category_type,
+              (
+                SELECT COALESCE(json_agg(DISTINCT quality), '[]'::json)
+                FROM role_core_quality rcq
+                WHERE rcq.role_id = r.id
+              ) as core_qualities,
+              (
+                SELECT COALESCE(json_agg(DISTINCT incantation), '[]'::json)
+                FROM role_incantation ri
+                WHERE ri.role_id = r.id
+              ) as incantations
+            FROM role r
+            JOIN category c ON r.category_id = c.id
+            WHERE r.id = :id
+          )
+          SELECT * FROM role_data;
+        `, {
+          replacements: { id },
+          type: QueryTypes.SELECT,
+          transaction: t
+        });
+
+        console.log('Updated role data:', JSON.stringify(updatedRole, null, 2));
+        return updatedRole;
+      } catch (error) {
+        console.error('Error in transaction:', error);
+        throw error;
+      }
     });
 
-    if (!updated) {
+    if (!result) {
       return res.status(404).json({ error: 'Role not found' });
-    }
-
-    // Then fetch the updated role with all related data
-    const [updatedRole] = await sequelize.query<RoleWithRelations>(`
-      WITH role_data AS (
-        SELECT 
-          r.*,
-          c.name as category_name,
-          c.type as category_type,
-          (
-            SELECT COALESCE(json_agg(DISTINCT quality), '[]'::json)
-            FROM role_core_quality rcq
-            WHERE rcq.role_id = r.id
-          ) as core_qualities,
-          (
-            SELECT COALESCE(json_agg(DISTINCT incantation), '[]'::json)
-            FROM role_incantation ri
-            WHERE ri.role_id = r.id
-          ) as incantations
-        FROM role r
-        JOIN category c ON r.category_id = c.id
-        WHERE r.id = :id
-      )
-      SELECT * FROM role_data;
-    `, {
-      replacements: { id },
-      type: QueryTypes.SELECT
-    });
-
-    if (!updatedRole) {
-      return res.status(404).json({ error: 'Role not found after update' });
     }
 
     // Transform the data to match frontend structure
     const transformedRole = {
-      id: updatedRole.id,
-      categoryId: updatedRole.category_id,
-      category: updatedRole.category_name,
-      name: updatedRole.name,
-      purpose: updatedRole.purpose || "",
-      description: updatedRole.description || "",
-      coreQualities: updatedRole.core_qualities || [],
-      identityStatement: updatedRole.identity_statement || "",
+      id: result.id,
+      categoryId: result.category_id,
+      category: result.category_name,
+      name: result.name,
+      purpose: result.purpose || "",
+      description: result.description || "",
+      coreQualities: result.core_qualities || [],
+      identityStatement: result.identity_statement || "",
       reflection: "",
-      imageBlob: updatedRole.image_blob || "",
-      incantations: updatedRole.incantations || [],
-      createdAt: updatedRole.created_at,
-      updatedAt: updatedRole.updated_at
+      imageBlob: result.image_blob || "",
+      incantations: result.incantations || [],
+      createdAt: result.created_at,
+      updatedAt: result.updated_at
     };
 
     res.json(transformedRole);
   } catch (error) {
     console.error('Error updating role:', error);
-    res.status(500).json({ error: 'Failed to update role' });
+    res.status(500).json({ 
+      error: 'Failed to update role', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

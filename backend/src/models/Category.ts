@@ -29,6 +29,7 @@ class Category extends Model<CategoryAttributes, CategoryCreationAttributes> imp
   public image_blob!: Buffer;
   public created_at!: Date;
   public updated_at!: Date;
+  roles: never[];
 }
 
 Category.init(

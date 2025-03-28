@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import Role from '../../models/Role';
-import Category from '../../models/Category';
+import Role from '../../../models/Role';
+import Category from '../../../models/Category';
 
 const router = Router();
 
