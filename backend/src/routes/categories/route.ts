@@ -1,68 +1,61 @@
-import { NextResponse } from 'next/server';
-import path from 'path';
-import { promises as fs } from 'fs';
+import { Router } from 'express';
+import Category from '../../models/Category';
 
-// Correct path to the data file
-const filePath = path.join(process.cwd(), 'src', 'data', 'categories.json');
+const router = Router();
 
-// Helper function to read categories
-async function readCategories() {
+// GET All Categories
+router.get('/', async (req, res) => {
   try {
-    const data = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(data);
+    const categories = await Category.findAll();
+    console.log("categories from backend:", categories);
+    res.status(200).json(categories);
   } catch (error) {
-    console.error('Error reading categories:', error);
-    return [];
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
   }
-}
+});
 
-// Helper function to write categories
-async function writeCategories(categories: any[]) {
+// POST a New Category
+router.post('/', async (req, res) => {
   try {
-    await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
-    return true;
+    const { name, type } = req.body;
+    const newCategory = await Category.create({ name, type });
+    res.status(201).json(newCategory);
   } catch (error) {
-    console.error('Error writing categories:', error);
-    return false;
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
   }
-}
+});
 
-export const dynamic = "force-static";
-export const revalidate = 60;
-
-// GET all categories
-export async function GET() {
+// DELETE a Category
+router.delete('/:id', async (req, res) => {
   try {
-    const categories = await readCategories();
-    console.log('Categories loaded:', categories); // Debug log
-    return NextResponse.json(categories);
+    const { id } = req.params;
+    await Category.destroy({ where: { id } });
+    res.status(200).json({ message: 'Category deleted successfully' });
   } catch (error) {
-    console.error('Error in GET /api/categories:', error);
-    return NextResponse.json({ error: 'Failed to load categories' }, { status: 500 });
+    console.error('Error deleting category:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
   }
-}
+});
 
-// POST a new category
-export async function POST(req: Request) {
+// PUT (Update) a Category
+router.put('/:id', async (req, res) => {
   try {
-    const newCategory = await req.json();
-    const categories = await readCategories();
+    const { id } = req.params;
+    const { name } = req.body;
+    const [updated] = await Category.update({ name }, { where: { id } });
 
-    // Add the new category with an ID
-    const categoryWithId = {
-      ...newCategory,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    categories.push(categoryWithId);
-    await writeCategories(categories);
-
-    return NextResponse.json(categoryWithId, { status: 201 });
+    if (updated) {
+      const updatedCategory = await Category.findByPk(id);
+      res.status(200).json(updatedCategory);
+    } else {
+      res.status(404).json({ error: 'Category not found' });
+    }
   } catch (error) {
-    console.error('Error in POST /api/categories:', error);
-    return NextResponse.json({ error: 'Failed to add category' }, { status: 500 });
+    console.error('Error updating category:', error);
+    res.status(500).json({ error: 'Failed to update category' });
   }
-}
+});
 
+export default router;

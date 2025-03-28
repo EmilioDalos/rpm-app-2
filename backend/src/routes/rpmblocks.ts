@@ -1,6 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const rpmBlockController = require('../controllers/rpmBlockController');
+import { Router } from 'express';
+import * as rpmBlockController from '../controllers/rpmBlockController';
+
+const router = Router();
 
 // GET all RPM blocks
 router.get('/', rpmBlockController.getAllRPMBlocks);
@@ -17,4 +18,4 @@ router.put('/:id', rpmBlockController.updateRPMBlock);
 // DELETE RPM block
 router.delete('/:id', rpmBlockController.deleteRPMBlock);
 
-module.exports = router;
+export default router; 

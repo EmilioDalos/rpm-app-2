@@ -1,106 +1,94 @@
-import { NextResponse } from 'next/server';
-import path from 'path';
-import { promises as fs } from 'fs';
+import { Router, Request, Response, RequestHandler } from 'express';
+import Category, { CategoryCreationAttributes } from '../../../models/Category';
 
-// Correct path to the data file
-const filePath = path.join(process.cwd(), 'src', 'data', 'categories.json');
-
-// Helper function to read categories
-async function readCategories() {
-  try {
-    const data = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading categories:', error);
-    return [];
-  }
+interface CategoryParams {
+  id?: string;
 }
 
-// Helper function to write categories
-async function writeCategories(categories: any[]) {
-  try {
-    await fs.writeFile(filePath, JSON.stringify(categories, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing categories:', error);
-    return false;
-  }
+interface CategoryBody {
+  name: string;
+  type: 'personal' | 'professional';
+  description: string;
+  vision: string;
+  purpose: string;
+  roles?: any[];
+  threeToThrive: string[];
+  resources: string;
+  results: string[];
+  actionPlans: string[];
+  imageBlob?: string;
 }
 
-// GET /api/categories/[id]
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    console.log('GET /api/categories/[id] - ID:', params.id);
-    const categories = await readCategories();
-    const category = categories.find((cat: any) => cat.id === params.id);
+const router = Router();
 
+// GET /api/categories
+const getAllCategories: RequestHandler = async (_req, res) => {
+  try {
+    const categories = await Category.findAll();
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+};
+
+// GET /api/categories/:id
+const getCategoryById: RequestHandler<CategoryParams> = async (req, res) => {
+  try {
+    const category = await Category.findByPk(req.params.id);
     if (!category) {
-      console.log('Category not found with ID:', params.id);
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      res.status(404).json({ error: 'Category not found' });
+      return;
     }
-
-    return NextResponse.json(category);
+    res.json(category);
   } catch (error) {
-    console.error('Error in GET /api/categories/[id]:', error);
-    return NextResponse.json({ error: 'Failed to get category' }, { status: 500 });
+    res.status(500).json({ error: 'Failed to fetch category' });
   }
-}
+};
 
-// PUT /api/categories/[id]
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// POST /api/categories
+const createCategory: RequestHandler<{}, {}, CategoryBody> = async (req, res) => {
   try {
-    console.log('PUT /api/categories/[id] - ID:', params.id);
-    const categories = await readCategories();
-    const updatedCategory = await request.json();
-    
-    const index = categories.findIndex((cat: any) => cat.id === params.id);
-    if (index === -1) {
-      console.log('Category not found with ID:', params.id);
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
-    }
-
-    categories[index] = {
-      ...updatedCategory,
-      id: params.id,
-      updatedAt: new Date().toISOString()
-    };
-
-    await writeCategories(categories);
-    return NextResponse.json(categories[index]);
+    const category = await Category.create(req.body as CategoryCreationAttributes);
+    res.status(201).json(category);
   } catch (error) {
-    console.error('Error in PUT /api/categories/[id]:', error);
-    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
+    res.status(500).json({ error: 'Failed to create category' });
   }
-}
+};
 
-// DELETE /api/categories/[id]
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// PUT /api/categories/:id
+const updateCategory: RequestHandler<CategoryParams, {}, CategoryBody> = async (req, res) => {
   try {
-    console.log('DELETE /api/categories/[id] - ID:', params.id);
-    const categories = await readCategories();
-    const filteredCategories = categories.filter((cat: any) => cat.id !== params.id);
-
-    if (categories.length === filteredCategories.length) {
-      console.log('Category not found with ID:', params.id);
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    const category = await Category.findByPk(req.params.id);
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
     }
-
-    await writeCategories(filteredCategories);
-    return NextResponse.json({ message: 'Category deleted successfully' });
+    await category.update(req.body as CategoryCreationAttributes);
+    res.json(category);
   } catch (error) {
-    console.error('Error in DELETE /api/categories/[id]:', error);
-    return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+    res.status(500).json({ error: 'Failed to update category' });
   }
-}
+};
 
+// DELETE /api/categories/:id
+const deleteCategory: RequestHandler<CategoryParams> = async (req, res) => {
+  try {
+    const category = await Category.findByPk(req.params.id);
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
+    await category.destroy();
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+};
 
+router.get('/', getAllCategories);
+router.get('/:id', getCategoryById);
+router.post('/', createCategory);
+router.put('/:id', updateCategory);
+router.delete('/:id', deleteCategory);
 
+export default router;

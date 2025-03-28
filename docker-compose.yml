@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: my_rpm_app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: my_rpm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U my_rpm_app -d my_rpm_db"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend_container
+    environment:
+      DATABASE_URL: postgres://my_rpm_app:app@postgres:5432/my_rpm_db
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend_container
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

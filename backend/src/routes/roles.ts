@@ -1,9 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const roleController = require('../controllers/roleController');
+import { Router } from 'express';
+import * as roleController from '../controllers/roleController';
 
-// GET all roles or roles for a specific category
-router.get('/', roleController.getAllRoles);
+const router = Router();
+
+// GET all roles
+router.get('/', roleController.getRoles);
 
 // GET role by ID
 router.get('/:id', roleController.getRoleById);
@@ -17,4 +18,4 @@ router.put('/:id', roleController.updateRole);
 // DELETE role
 router.delete('/:id', roleController.deleteRole);
 
-module.exports = router; 
+export default router; 

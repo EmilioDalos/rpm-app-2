@@ -44,3 +44,6 @@ npm run dev
 - `POST /api/calendar-events` - Nieuw kalender event aanmaken
 - `PUT /api/calendar-events/:dateKey/actions/:actionId` - Kalender actie bijwerken
 - `DELETE /api/calendar-events/:dateKey/actions/:actionId` - Kalender actie verwijderen
+
+
+
