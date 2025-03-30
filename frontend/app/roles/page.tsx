@@ -82,7 +82,7 @@ export default function RolesPage() {
 
   const handleDeleteRole = async (id: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL} /api/roles/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

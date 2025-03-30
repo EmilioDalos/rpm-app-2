@@ -540,3 +540,214 @@
 {"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-28T14:07:12.361Z"}
 {"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:07:12.390Z"}
 {"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:07:12.392Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-28T14:12:07.807Z"}
+{"level":"info","message":"DELETE /api/roles/33333333-3333-3333-3333-333333333333","timestamp":"2025-03-28T14:12:13.357Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-28T14:12:20.847Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-28T14:13:25.292Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:13:34.269Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-28T14:13:34.271Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:13:34.282Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:13:34.285Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:13:34.288Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:13:34.291Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-28T14:14:56.511Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:14:56.512Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:14:56.531Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:14:56.534Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:14:56.536Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:14:56.539Z"}
+{"level":"info","message":"DELETE /api/roles/33333333-3333-3333-3333-333333333333","timestamp":"2025-03-28T14:14:58.143Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-28T14:15:09.365Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-28T14:15:09.365Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-28T14:15:09.365Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-28T14:15:09.367Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-28T14:15:09.367Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-28T14:15:09.379Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:15:13.070Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-28T14:15:13.071Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:15:13.074Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-28T14:15:13.077Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:15:13.080Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-28T14:15:13.082Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-28T14:15:14.654Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-28T14:15:14.658Z"}
+{"level":"info","message":"PUT /api/categories/22222222-2222-2222-2222-222222222222","timestamp":"2025-03-28T14:15:53.080Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-29T15:16:56.680Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:17:05.258Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:17:05.259Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:17:05.262Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:17:05.268Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:17:05.272Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:17:05.274Z"}
+{"level":"error","message":"PayloadTooLargeError: request entity too large\n    at readStream (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/raw-body/index.js:163:17)\n    at getRawBody (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/raw-body/index.js:116:12)\n    at read (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/body-parser/lib/read.js:79:3)\n    at jsonParser (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/body-parser/lib/types/json.js:138:5)\n    at Layer.handle [as handle_request] (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/express/lib/router/index.js:328:13)\n    at /Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/express/lib/router/index.js:286:9\n    at Function.process_params (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/express/lib/router/index.js:346:12)\n    at next (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/express/lib/router/index.js:280:10)\n    at cors (/Users/emilio/Documents/GitHub/rpm-app-2/backend/node_modules/cors/lib/index.js:188:7)","timestamp":"2025-03-29T15:17:20.211Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-29T15:20:06.625Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-29T15:20:54.182Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-29T15:20:54.205Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:20:55.722Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.725Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:20:55.732Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.735Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.738Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.741Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.744Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:20:55.747Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-29T15:21:08.359Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:21:08.479Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:21:08.483Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-29T15:22:05.429Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-29T15:22:10.181Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-29T15:22:10.182Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-29T15:22:10.183Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-03-29T15:22:10.188Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-03-29T15:22:10.188Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-03-29T15:22:10.189Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.634Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:22:10.635Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.638Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:22:10.642Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.644Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.647Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.649Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:10.652Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:14.694Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:22:14.696Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:14.703Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:14.706Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:14.708Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:14.710Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-29T15:22:26.580Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:26.703Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:26.706Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:31.136Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-29T15:22:31.136Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:31.146Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:31.149Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:31.150Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:31.152Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-29T15:22:40.710Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:40.782Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:22:40.785Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-29T15:26:02.361Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:26:02.450Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-29T15:26:02.453Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:01:10.351Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:01:35.689Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:01:35.812Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:01:35.816Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:03:53.277Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:04:03.715Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:04:09.656Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:05:01.980Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:09.704Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:05:09.706Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:09.717Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:09.720Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:09.722Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:09.724Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:05:18.540Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:19.227Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:19.230Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:26.574Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:05:26.574Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:27.969Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:27.973Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:27.975Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:27.976Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:05:31.815Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:31.816Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:33.226Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:33.228Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:33.230Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:33.240Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:40.294Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:05:40.294Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:40.296Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:05:41.584Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:42.856Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:42.860Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:42.863Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:05:42.865Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:07:28.304Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:07:43.448Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:07:57.739Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:08:09.825Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:10:22.649Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:10:23.564Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:10:38.729Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.893Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:10:58.896Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.919Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:10:58.922Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.925Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.931Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.941Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:10:58.952Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:11:08.153Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:13.171Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:11:13.171Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:13.904Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:13.909Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:13.913Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:13.915Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:11:18.587Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:18.587Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:19.309Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:19.312Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:19.314Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:11:19.316Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:11:50.253Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:05.250Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:12:05.250Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:05.292Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:05.294Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:05.295Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:05.297Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:12:28.537Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:40.635Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:12:40.636Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:40.656Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:40.658Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:40.660Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:12:40.663Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:13:01.474Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:13:06.251Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:06.252Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:06.328Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:06.330Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:06.332Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:06.335Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:13:10.685Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.685Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.688Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:13:10.732Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.772Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.775Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.777Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:13:10.779Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:17:32.417Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:17:44.664Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:17:44.666Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:17:44.688Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:17:44.691Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:17:44.693Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:17:44.695Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:27:03.913Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:29:47.896Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:36:15.440Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:37:50.911Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:01.444Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:38:01.446Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:01.456Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:01.459Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:01.461Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:01.463Z"}
+{"level":"info","message":"PUT /api/roles/44444444-4444-4444-4444-444444444444","timestamp":"2025-03-30T09:38:14.523Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:23.989Z"}
+{"level":"info","message":"GET /api/roles","timestamp":"2025-03-30T09:38:23.990Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:24.479Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:24.481Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:24.483Z"}
+{"level":"info","message":"GET /api/categories?simplified=true","timestamp":"2025-03-30T09:38:24.486Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:38:59.466Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:40:49.581Z"}
+{"level":"info","message":"Server draait op http://localhost:3001","timestamp":"2025-03-30T09:42:58.929Z"}

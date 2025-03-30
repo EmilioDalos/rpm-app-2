@@ -1,6 +1,7 @@
 Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implementatieplanning voor de app zijn beschreven:
 
 ### Roadmap voor App Functionaliteit
+* images in een aws achtige constructie.
 
 ###
 
@@ -16,3 +17,4 @@ Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implemen
 
 ### Samenvatting
 Deze roadmap biedt een overzicht van de huidige status van de app en de openstaande functionaliteit die nog moet worden geïmplementeerd. Door deze stappen te volgen, kan de app verder worden ontwikkeld en verbeterd voor gebruikers.
+
