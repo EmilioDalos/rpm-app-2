@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Negeer node_modules alleen binnen frontend/src/
+frontend/src/node_modules/
