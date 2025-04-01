@@ -2,7 +2,11 @@ Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implemen
 
 ### Roadmap voor App Functionaliteit
 
-###
+###BUGS
+- deleten van een category komt er geen handje meer om iets te wijzigen
+
+
+
 
 #### Volgende Stappen
 1. **Testen**

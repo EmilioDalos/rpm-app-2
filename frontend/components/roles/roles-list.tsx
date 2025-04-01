@@ -9,11 +9,31 @@ interface RoleGridProps {
   roles: Role[];
   onAddRole: (role: Omit<Role, 'id'>) => void;
   onUpdateRole: (role: Role) => void;
-  onDeleteRole: (id: string) => void;
+  onDeleteRole: (role: Role) => void;
+
 }
 
 export function RoleList({ roles, onAddRole, onUpdateRole, onDeleteRole }: RoleGridProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [deletingRole, setDeletingRole] = useState<Role | null>(null);
+
+  const handleEdit = (role: Role) => {
+    setEditingRole(role);
+  };
+
+  const handleDelete = (role: Role) => {
+    setDeletingRole(role);
+  };
+
+  const handleCancelDelete = () => {
+    setDeletingRole(null);
+    setEditingRole(null); // Zorg dat edit-dialog ook gesloten is bij cancel van delete
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRole(null);
+  };
 
   return (
     <div className="space-y-8">
@@ -24,8 +44,8 @@ export function RoleList({ roles, onAddRole, onUpdateRole, onDeleteRole }: RoleG
           <RoleCard
             key={`${role.id}-${role.updatedAt}`} // Unieke key met updatedAt
             role={role}
-            onUpdate={onUpdateRole} // Callback voor bijwerken van specifieke rol
-            onDelete={onDeleteRole} // Callback voor verwijderen van rol
+            onEdit={() => handleEdit(role)}
+            onDelete={() => handleDelete(role)}
           />
         ))}
         

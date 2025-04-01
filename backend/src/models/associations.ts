@@ -1,4 +1,3 @@
-import { Model } from 'sequelize';
 import Category from './Category';
 import Role from './Role';
 

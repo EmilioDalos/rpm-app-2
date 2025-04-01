@@ -4,6 +4,17 @@ import { Role } from "@/types";
 import { Edit2, Trash2 } from "lucide-react";
 import { RoleDialog } from "./roles-dialog";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface RoleCardProps {
   role: Role;
@@ -31,17 +42,45 @@ export function RoleCard({ role, onUpdate, onDelete }: RoleCardProps) {
           />
         </CardContent>
         <CardFooter className="flex justify-end w-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(event) => {
+          <AlertDialog onOpenChange={(open) => {
+            if (!open) {
+              // Prevent event propagation when dialog closes
+              const event = new Event('click');
               event.stopPropagation();
-              onDelete(role.id);
-            }}
-            className="bg-gray-200 p-2 rounded"
-          >
-            <Trash2 className="h-4 w-4 text-gray-600" />
-          </Button>
+            }
+          }}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+                className="bg-gray-200 p-2 rounded"
+              >
+                <Trash2 className="h-4 w-4 text-gray-600" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Role</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this role? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={(event) => {
+                  event.stopPropagation();
+                }}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(role.id)}
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardFooter>
       </Card>
 

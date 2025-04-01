@@ -1,3 +1,6 @@
+-- Enable uuid-ossp extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Create Category Table
 CREATE TABLE IF NOT EXISTS "category" (
   id UUID PRIMARY KEY,
@@ -29,27 +32,36 @@ CREATE TABLE IF NOT EXISTS "role" (
 -- Create Other Tables
 CREATE TABLE IF NOT EXISTS "role_core_quality" (
   role_id UUID REFERENCES "role"(id) ON DELETE CASCADE,
-  quality TEXT NOT NULL
+  quality INT
 );
 
 CREATE TABLE IF NOT EXISTS "role_incantation" (
   role_id UUID REFERENCES "role"(id) ON DELETE CASCADE,
-  incantation TEXT NOT NULL
+  incantation TEXT
 );
 
 CREATE TABLE IF NOT EXISTS "category_result" (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id UUID REFERENCES "category"(id) ON DELETE CASCADE,
-  result TEXT NOT NULL
+  result TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "category_action_plan" (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id UUID REFERENCES "category"(id) ON DELETE CASCADE,
-  action_plan TEXT NOT NULL
+  action_plan  TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "category_three_to_thrive" (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id UUID REFERENCES "category"(id) ON DELETE CASCADE,
-  three_to_thrive TEXT NOT NULL
+  three_to_thrive TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block" (

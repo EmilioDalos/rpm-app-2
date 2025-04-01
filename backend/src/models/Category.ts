@@ -1,5 +1,9 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/db';
+import Role from './Role';
+import CategoryThreeToThrive from './CategoryThreeToThrive';
+import CategoryResult from './CategoryResult';
+import CategoryActionPlan from './CategoryActionPlan';
 
 interface CategoryAttributes {
   id: string;
@@ -29,7 +33,6 @@ class Category extends Model<CategoryAttributes, CategoryCreationAttributes> imp
   public image_blob!: Buffer;
   public created_at!: Date;
   public updated_at!: Date;
-  roles: never[];
 }
 
 Category.init(
@@ -64,5 +67,18 @@ Category.init(
     underscored: true,
   }
 );
+
+// Define associations
+Category.hasMany(Role, { foreignKey: 'category_id' });
+Role.belongsTo(Category, { foreignKey: 'category_id' });
+
+Category.hasMany(CategoryThreeToThrive, { foreignKey: 'category_id' });
+CategoryThreeToThrive.belongsTo(Category, { foreignKey: 'category_id' });
+
+Category.hasMany(CategoryResult, { foreignKey: 'category_id' });
+CategoryResult.belongsTo(Category, { foreignKey: 'category_id' });
+
+Category.hasMany(CategoryActionPlan, { foreignKey: 'category_id' });
+CategoryActionPlan.belongsTo(Category, { foreignKey: 'category_id' });
 
 export default Category;
