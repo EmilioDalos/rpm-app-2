@@ -59,48 +59,45 @@ VALUES
 -- ==============================
 -- RPM Block Table
 -- ==============================
-INSERT INTO rpm_block (id, category_id, result, type, created_at, updated_at, saved)
-VALUES
-  ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111', 'Become a better programmer', 'Learning', NOW(), NOW(), TRUE);
+INSERT INTO "rpm_block" (id, category_id, result, type, "order", created_at, updated_at)
+VALUES 
+  ('11111111-aaaa-aaaa-aaaa-111111111111', '11111111-1111-1111-1111-111111111111', 'Launch MVP', 'text', 1, NOW(), NOW());
 
--- ==============================
--- RPM Purpose Table
--- ==============================
-INSERT INTO rpm_purpose (rpm_block_id, purpose)
-VALUES
-  ('55555555-5555-5555-5555-555555555555', 'To gain mastery in programming');
+-- ⚙️ rpm_block_purpose
+INSERT INTO "rpm_block_purpose" (id, rpm_block_id, purpose)
+VALUES 
+  ('22222222-bbbb-bbbb-bbbb-222222222222', '11111111-aaaa-aaaa-aaaa-111111111111', 'Validate business idea'),
+  ('22222222-cccc-cccc-cccc-222222222222', '11111111-aaaa-aaaa-aaaa-111111111111', 'Build momentum');
 
--- ==============================
--- Massive Action Table
--- ==============================
-INSERT INTO massive_action (id, category_id, text, color, text_color, priority, key, created_at, updated_at)
-VALUES
-  ('66666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111', 'Complete TypeScript Course', '#FF5733', '#FFFFFF', 1, 'Learning', NOW(), NOW());
+-- ⚙️ rpm_block_massive_action
+INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date)
+VALUES 
+  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-01', '2025-04-03', TRUE, 2, NULL),
+  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-05', TRUE, 1, NULL);
 
--- ==============================
--- Massive Action Note Table
--- ==============================
-INSERT INTO massive_action_note (id, massive_action_id, text, type, created_at)
-VALUES
-  ('77777777-7777-7777-7777-777777777777', '66666666-6666-6666-6666-666666666666', 'Watched Introduction Videos', 'Progress', NOW());
+-- ⚙️ rpm_block_massive_action_note
+INSERT INTO "rpm_block_massive_action_note" (id, massive_action_id, text, type)
+VALUES 
+  ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-dddd-dddd-dddd-333333333333', 'Started designing homepage', 'Progress'),
+  ('44444444-bbbb-bbbb-bbbb-444444444444', '33333333-eeee-eeee-eeee-333333333333', 'Sent first batch of surveys', 'Update');
 
--- ==============================
--- Massive Action Note Metric Table
--- ==============================
-INSERT INTO massive_action_note_metric (note_id, name, value, unit, timestamp)
-VALUES
-  ('77777777-7777-7777-7777-777777777777', 'Progress', 10, 'percentage', NOW());
+-- ⚙️ rpm_block_massive_action_note_metric
+INSERT INTO "rpm_block_massive_action_note_metric" (note_id, name, value, unit, timestamp)
+VALUES 
+  ('44444444-aaaa-aaaa-aaaa-444444444444', 'Homepage Completion', 60, 'percent', NOW());
 
 -- ==============================
 -- Calendar Event Table
 -- ==============================
-INSERT INTO calendar_event (id, date, created_at, updated_at)
+INSERT INTO "calendar_event" (id, title, description, start_date, end_date, location, category, color, created_at, updated_at)
 VALUES
-  ('88888888-8888-8888-8888-888888888888', '2025-03-27', NOW(), NOW());
+  ('88888888-8888-8888-8888-888888888888', 'Project Kickoff', 'Initial project planning meeting', '2025-03-27 09:00:00', '2025-03-27 11:00:00', 'Conference Room A', 'Meeting', '#FF5733', NOW(), NOW()),
+  ('99999999-9999-9999-9999-999999999999', 'Team Review', 'Weekly team progress review', '2025-03-28 14:00:00', '2025-03-28 15:00:00', 'Virtual Meeting', 'Review', '#33FF57', NOW(), NOW());
 
 -- ==============================
 -- Calendar Event Massive Action Table
 -- ==============================
-INSERT INTO calendar_event_massive_action (calendar_event_id, massive_action_id)
+INSERT INTO "calendar_event_massive_action" (calendar_event_id, massive_action_id)
 VALUES
-  ('88888888-8888-8888-8888-888888888888', '66666666-6666-6666-6666-666666666666');
+  ('88888888-8888-8888-8888-888888888888', '33333333-dddd-dddd-dddd-333333333333'),
+  ('99999999-9999-9999-9999-999999999999', '33333333-eeee-eeee-eeee-333333333333');

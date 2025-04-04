@@ -68,6 +68,7 @@ setup_database() {
       docker exec -i $POSTGRES_CONTAINER psql -U $DB_USER -d postgres -c "CREATE DATABASE $DB_NAME;"
       echo "✅ Database recreated."
       initialize_database
+      CREATE="yes"
     else
       echo "⏩ No input or not 'yes'. Continuing with existing database."
     fi
@@ -78,6 +79,7 @@ setup_database() {
       docker exec -i $POSTGRES_CONTAINER psql -U $DB_USER -d postgres -c "CREATE DATABASE $DB_NAME;"
       echo "✅ Database created."
       initialize_database
+      
     else
       echo "⏩ No input or not 'yes'. Skipping database creation."
     fi
@@ -99,6 +101,9 @@ if [ -d "backend" ]; then
   cd backend
   [ -f "package.json" ] && npm install && npm run dev & BACKEND_PID=$!
   cd ..
+else
+  echo "❌ Backend directory not found!"
+  exit 1
 fi
 
 echo "📦 Starting frontend..."
@@ -106,6 +111,50 @@ if [ -d "frontend" ]; then
   cd frontend
   [ -f "package.json" ] && npm install && npm run dev & FRONTEND_PID=$!
   cd ..
+else
+  echo "❌ Frontend directory not found!"
+  exit 1
 fi
 
-wait $BACKEND_PID $FRONTEND_PID
+echo "⏳ Waiting for servers to start..."
+sleep 5
+
+# Check if servers are running
+if ! lsof -i :3000 > /dev/null 2>&1 || ! lsof -i :3001 > /dev/null 2>&1; then
+  echo "❌ Servers failed to start!"
+  exit 1
+fi
+
+echo "✅ Servers started successfully!"
+
+# if database was created, run test cases
+if [[ "$CREATE" == "yes" ]]; then
+  echo -n "❓ Do you want to run RPM block test cases? (yes/no) > "
+  read -t 10 RUN_TESTS || RUN_TESTS="no"
+
+  if [[ "$RUN_TESTS" == "yes" ]]; then
+    echo "🧪 Running RPM block test cases..."
+    chmod +x ./backend/run-all-tests.sh
+    ./backend/run-all-tests.sh
+  else
+    echo "⏩ Skipping test cases."
+  fi
+fi
+
+# Cleanup function
+cleanup() {
+  echo "🧹 Cleaning up..."
+  kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+  exit 0
+}
+
+# Trap SIGINT and SIGTERM
+trap cleanup SIGINT SIGTERM
+
+echo "🎉 Development environment is ready!"
+echo "Press Ctrl+C to stop the servers."
+
+# Keep the script running
+while true; do
+  sleep 1
+done

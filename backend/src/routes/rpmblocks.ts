@@ -1,21 +1,27 @@
-import { Router } from 'express';
-import * as rpmBlockController from '../controllers/rpmBlockController';
+import express from 'express';
+import {
+  getRPMBlocks,
+  getRPMBlockById,
+  createRPMBlock,
+  updateRPMBlock,
+  deleteRPMBlock
+} from '../controllers/rpmBlockController';
 
-const router = Router();
+const router = express.Router();
 
 // GET all RPM blocks
-router.get('/', rpmBlockController.getAllRPMBlocks);
+router.get('/', getRPMBlocks);
 
 // GET RPM block by ID
-router.get('/:id', rpmBlockController.getRPMBlockById);
+router.get('/:id', getRPMBlockById);
 
 // POST create new RPM block
-router.post('/', rpmBlockController.createRPMBlock);
+router.post('/', createRPMBlock);
 
 // PUT update RPM block
-router.put('/:id', rpmBlockController.updateRPMBlock);
+router.put('/:id', updateRPMBlock);
 
 // DELETE RPM block
-router.delete('/:id', rpmBlockController.deleteRPMBlock);
+router.delete('/:id', deleteRPMBlock);
 
 export default router; 

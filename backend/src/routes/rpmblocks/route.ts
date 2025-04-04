@@ -1,86 +1,149 @@
-import { NextResponse } from 'next/server';
-import path from 'path';
-import { promises as fs } from 'fs';
+import { Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import RPMBlock from '../../models/RpmBlock';
+import sequelize from '../../config/db';
+import RpmBlockMassiveAction from '@/models/RpmBlockMassiveAction';
+import RpmBlockPurpose from '@/models/RpmBlockPurpose';
 
-const filePath = path.join(process.cwd(), 'data', 'rpmBlocks.json');
+const router = Router();
 
-// Helper function to read rpmBlocks
-async function readRpmBlocks() {
+// GET: Fetch all RPM blocks
+router.get('/', async (req, res) => {
   try {
-    const data = await fs.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(data);
-    
-    // Controleer of het een array is, zo niet, haal de array uit het object
-    if (Array.isArray(parsed)) {
-      return parsed;
-    } else if (parsed.rpmBlocks && Array.isArray(parsed.rpmBlocks)) {
-      return parsed.rpmBlocks;
-    } else {
-      console.error('Unexpected data structure in rpmBlocks.json:', parsed);
-      return []; // Return empty array as fallback
-    }
+    const blocks = await RPMBlock.findAll({
+      include: [
+        { model: RpmBlockMassiveAction },
+        { model: RpmBlockPurpose },
+      ],
+      order: [['created_at', 'ASC']]
+    });
+    res.json(blocks);
   } catch (error) {
-    console.error('Error reading rpmBlocks:', error);
-    return []; // Return empty array on error
+    console.error('Error fetching RPM blocks:', error);
+    res.status(500).json({ error: 'Failed to fetch RPM blocks' });
   }
-}
+});
 
-// Helper function to write rpmBlocks
-async function writeRpmBlocks(rpmBlocks: { id: string; [key: string]: any }[]) {
-  await fs.writeFile(filePath, JSON.stringify(rpmBlocks, null, 2));
-}
+// GET: Fetch a single RPM block by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const block = await RPMBlock.findByPk(req.params.id, {
+      include: [
+        { model: RpmBlockMassiveAction },
+        { model: RpmBlockPurpose },
+      ]
+    });
 
-// GET all rpmBlocks
-export async function GET() {
-  const rpmBlocks = await readRpmBlocks();
-  return NextResponse.json(rpmBlocks);
-}
-
-// POST a new rpmBlock
-export async function POST(req: Request) {
-  const newBlock = await req.json();
-  const blocks = await readRpmBlocks();
-  
-  // Ensure blocks is an array
-  const blocksArray = Array.isArray(blocks) ? blocks : [];
-  
-  const newBlockWithId = { ...newBlock, id: Date.now().toString() };
-  blocksArray.push(newBlockWithId);
-
-  await writeRpmBlocks(blocksArray);
-  return NextResponse.json(newBlockWithId, { status: 201 });
-}
-
-// PUT: Update an RPM block
-export async function PUT(req: Request) {
-  const url = new URL(req.url);
-  const id = url.pathname.split('/').pop();
-
-  const updatedBlock = await req.json();
-  const blocks = await readRpmBlocks();
-
-  const index = blocks.findIndex((block: { id: string; [key: string]: any }) => block.id === id);
-  if (index !== -1) {
-    blocks[index] = { ...updatedBlock, id }; // Ensure ID remains unchanged
-    await writeRpmBlocks(blocks);
-    return NextResponse.json(blocks[index]);
-  } else {
-    return NextResponse.json({ error: 'Block not found' }, { status: 404 });
+   if (!block) {
+      return res.status(404).json({ error: 'RPM block not found' });
+    }
+    res.json(block);
+  } catch (error) {
+    console.error('Error fetching RPM block:', error);
+    res.status(500).json({ error: 'Failed to fetch RPM block' });
   }
-}
+});
+
+// POST: Create a new RPM block
+router.post('/', async (req, res) => {
+  try {
+    const { title, description, type, content, order, categoryId, result, saved } = req.body;
+
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      // If order is not provided, get the highest order and increment
+      let finalOrder = order;
+      if (order === undefined) {
+        const maxOrder = await RPMBlock.max('order', { transaction: t });
+        finalOrder = (maxOrder || 0) + 1;
+      }
+
+      // Create the block
+      const block = await RPMBlock.create({
+        id: uuidv4(),
+        title,
+        description,
+        type,
+        content,
+        order: finalOrder,
+        categoryId,
+        result,
+        saved,
+        created_at: new Date(),
+        updated_at: new Date()
+      }, { transaction: t });
+
+      return block;
+    });
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error creating RPM block:', error);
+    res.status(500).json({ error: 'Failed to create RPM block' });
+  }
+});
+
+// PUT: Update an existing RPM block
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, type, content, order } = req.body;
+
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      const block = await RPMBlock.findByPk(id);
+      if (!block) {
+        return null;
+      }
+
+      await block.update({
+        title,
+        description,
+        type,
+        content,
+        order,
+        updated_at: new Date()
+      }, { transaction: t });
+
+      return block;
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'RPM block not found' });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating RPM block:', error);
+    res.status(500).json({ error: 'Failed to update RPM block' });
+  }
+});
 
 // DELETE: Remove an RPM block
-export async function DELETE(req: Request) {
-  const url = new URL(req.url);
-  const id = url.pathname.split('/').pop();
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  const blocks = await readRpmBlocks();
-  const updatedBlocks = blocks.filter((block: { id: string; [key: string]: any }) => block.id !== id);
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      const block = await RPMBlock.findByPk(id);
+      if (!block) {
+        return null;
+      }
 
-  if (updatedBlocks.length === blocks.length) {
-    return NextResponse.json({ error: 'Block not found' }, { status: 404 });
+      await block.destroy({ transaction: t });
+      return block;
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'RPM block not found' });
+    }
+
+    res.json({ message: 'RPM block deleted successfully', block: result });
+  } catch (error) {
+    console.error('Error deleting RPM block:', error);
+    res.status(500).json({ error: 'Failed to delete RPM block' });
   }
+});
 
-  await writeRpmBlocks(updatedBlocks);
-  return NextResponse.json({ message: 'Block deleted' });
-}
+export default router;

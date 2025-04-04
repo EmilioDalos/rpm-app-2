@@ -1,128 +1,109 @@
 import { Request, Response } from 'express';
-import { promises as fs } from 'fs';
-import path from 'path';
+import CalendarEvent from '../models/CalendarEvent';
+import { Op } from 'sequelize';
 
-const dataFilePath = path.join(__dirname, '../data/calendar-events.json');
-
-interface CalendarEvent {
-  id: string;
-  date: string;
-  massiveActions: any[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Helper function to read calendar events
-const readCalendarEvents = async (): Promise<CalendarEvent[]> => {
+export const getCalendarEvents = async (req: Request, res: Response) => {
   try {
-    const data = await fs.readFile(dataFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading calendar events:', error);
-    return [];
-  }
-};
-
-// Helper function to write calendar events
-const writeCalendarEvents = async (events: CalendarEvent[]): Promise<boolean> => {
-  try {
-    await fs.writeFile(dataFilePath, JSON.stringify(events, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing calendar events:', error);
-    return false;
-  }
-};
-
-export const getEvents = async (req: Request, res: Response) => {
-  try {
-    const events = await readCalendarEvents();
-    res.json(events);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
-  }
-};
-
-export const getEventById = async (req: Request, res: Response) => {
-  try {
-    const events = await readCalendarEvents();
-    const event = events.find(e => e.id === req.params.id);
+    const { start, end } = req.query;
     
+    let whereClause = {};
+    if (start && end) {
+      whereClause = {
+        start_date: {
+          [Op.gte]: new Date(start as string),
+          [Op.lte]: new Date(end as string)
+        }
+      };
+    }
+
+    const events = await CalendarEvent.findAll({
+      where: whereClause,
+      order: [['start_date', 'ASC']]
+    });
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch calendar events',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+export const getCalendarEventById = async (req: Request, res: Response) => {
+  try {
+    const event = await CalendarEvent.findByPk(req.params.id);
     if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
-    
     res.json(event);
   } catch (error) {
+    console.error('Error fetching calendar event:', error);
     res.status(500).json({ error: 'Failed to fetch calendar event' });
   }
 };
 
-export const createEvent = async (req: Request, res: Response) => {
+export const createCalendarEvent = async (req: Request, res: Response) => {
   try {
-    const events = await readCalendarEvents();
-    const newEvent: CalendarEvent = {
-      ...req.body,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const { title, description, start_date, end_date, location, category, color } = req.body;
     
-    events.push(newEvent);
-    
-    if (await writeCalendarEvents(events)) {
-      res.status(201).json(newEvent);
-    } else {
-      res.status(500).json({ error: 'Failed to create calendar event' });
-    }
+    const event = await CalendarEvent.create({
+      title,
+      description,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      location,
+      category,
+      color
+    });
+
+    res.status(201).json(event);
   } catch (error) {
+    console.error('Error creating calendar event:', error);
     res.status(500).json({ error: 'Failed to create calendar event' });
   }
 };
 
-export const updateEvent = async (req: Request, res: Response) => {
+export const updateCalendarEvent = async (req: Request, res: Response) => {
   try {
-    const events = await readCalendarEvents();
-    const index = events.findIndex(e => e.id === req.params.id);
-    
-    if (index === -1) {
+    const { id } = req.params;
+    const { title, description, start_date, end_date, location, category, color } = req.body;
+
+    const event = await CalendarEvent.findByPk(id);
+    if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
-    
-    const updatedEvent: CalendarEvent = {
-      ...events[index],
-      ...req.body,
-      id: req.params.id,
-      updatedAt: new Date().toISOString()
-    };
-    
-    events[index] = updatedEvent;
-    
-    if (await writeCalendarEvents(events)) {
-      res.json(updatedEvent);
-    } else {
-      res.status(500).json({ error: 'Failed to update calendar event' });
-    }
+
+    await event.update({
+      title,
+      description,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      location,
+      category,
+      color
+    });
+
+    res.json(event);
   } catch (error) {
+    console.error('Error updating calendar event:', error);
     res.status(500).json({ error: 'Failed to update calendar event' });
   }
 };
 
-export const deleteEvent = async (req: Request, res: Response) => {
+export const deleteCalendarEvent = async (req: Request, res: Response) => {
   try {
-    const events = await readCalendarEvents();
-    const filteredEvents = events.filter(e => e.id !== req.params.id);
+    const { id } = req.params;
+    const event = await CalendarEvent.findByPk(id);
     
-    if (filteredEvents.length === events.length) {
+    if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
-    
-    if (await writeCalendarEvents(filteredEvents)) {
-      res.json({ message: 'Calendar event deleted successfully' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete calendar event' });
-    }
+
+    await event.destroy();
+    res.json({ message: 'Calendar event deleted successfully', event });
   } catch (error) {
+    console.error('Error deleting calendar event:', error);
     res.status(500).json({ error: 'Failed to delete calendar event' });
   }
 }; 

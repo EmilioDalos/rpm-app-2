@@ -47,6 +47,49 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET Category by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const category = await Category.findByPk(id, {
+      include: [
+        { model: Role },
+        { model: CategoryThreeToThrive },
+        { model: CategoryResult },
+        { model: CategoryActionPlan }
+      ]
+    });
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const transformedCategory = {
+      ...category.toJSON(),
+      roles: category.roles?.map(role => ({
+        id: role.id,
+        name: role.name,
+        purpose: role.purpose || "",
+        description: role.description || ""
+      })),
+      threeToThrive: category.CategoryThreeToThrives?.map(item => item.three_to_thrive) || [],
+      results: category.CategoryResults?.map(item => item.result) || [],
+      actionPlans: category.CategoryActionPlans?.map(item => item.action_plan) || [],
+      imageBlob: category.image_blob ? `data:image/jpeg;base64,${Buffer.from(category.image_blob).toString('base64')}` : null,
+      description: category.description || "",
+      vision: category.vision || "",
+      purpose: category.purpose || "",
+      resources: category.resources || ""
+    };
+
+    res.json(transformedCategory);
+  } catch (error) {
+    console.error('Error fetching category by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch category' });
+  }
+});
+
 // POST a New Category
 router.post('/', async (req, res) => {
   try {

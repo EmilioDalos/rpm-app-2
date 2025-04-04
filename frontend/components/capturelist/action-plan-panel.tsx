@@ -80,7 +80,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   
   // Update actiestatussen op basis van planning
   useEffect(() => {
-    if (calendarEvents.length > 0 && massiveActions.length > 0) {
+    if (calendarEvents.length > 0 && massiveActions && massiveActions.length > 0) {
       const updatedActions = massiveActions.map(action => {
         // Als de actie gepland is en de key is niet al '📅', '✔' of '✘', update de key
         if (isActionPlanned(action.id) && action.key !== '📅' && action.key !== '✔' && action.key !== '✘') {
@@ -185,7 +185,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           })))
         } else {
           // Als massiveActions leeg is, gebruik dan de acties uit dataSource
-          setMassiveActions(dataSource.massiveActions.map(action => ({
+          setMassiveActions(dataSource.massiveActions?.map(action => ({
             ...action,
             id: typeof action.id === 'string' ? action.id : String(action.id),
             categoryId: dataSource.categoryId || "",
@@ -243,7 +243,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     } else {
       // Geen opgeslagen data gevonden, gebruik dataSource
       console.log("Geen opgeslagen data gevonden, gebruik dataSource:", dataSource)
-      setMassiveActions(dataSource.massiveActions.map(action => ({
+      setMassiveActions(dataSource.massiveActions?.map(action => ({
         ...action,
         id: typeof action.id === 'string' ? action.id : String(action.id),
         categoryId: dataSource.categoryId || "",
@@ -296,7 +296,9 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       categoryId: selectedCategory || "",
       notes: [],
     }
-    setMassiveActions([...massiveActions, newAction])
+    
+    // Gebruik een callback met de huidige state om race conditions te voorkomen
+    setMassiveActions(prevActions => [...prevActions, newAction])
   }
 
   const updateMassiveAction = (index: number, updatedAction: Partial<ActionPlan>) => {
@@ -305,114 +307,60 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
   const handleSave = async () => {
     try {
-      const source = group?.id ? group : selectedBlock
-      if (!source?.id) return
-
-      // Controleer of massiveActions en result niet leeg zijn
-      if (massiveActions.length === 0) {
-        console.warn("massiveActions is leeg! Voeg eerst acties toe.")
-        return; // Stop de functie als er geen acties zijn
-      }
-
-      if (!result) {
-        console.warn("result is leeg! Voeg eerst een resultaat toe.")
-        return; // Stop de functie als er geen resultaat is
-      }
-
-      // Zorg ervoor dat het ID correct wordt overgenomen
-      const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
-
-      // Controleer categoryId en type (debug logging)
-      console.log("handleSave - Saving with categoryId:", selectedCategory);
-      console.log("handleSave - Saving with type:", selectedOption);
-      
-      // Als selectedOption is "Category" maar er is geen categoryId, geef een waarschuwing
-      if (selectedOption === "Category" && !selectedCategory) {
-        console.warn("Type is Category maar geen categorie geselecteerd!");
+      if (!massiveActions || massiveActions.length === 0 || !result) {
+        console.error('No actions or result to save');
+        return;
       }
 
       const newBlock = {
-        id: sourceId,
-        massiveActions,
-        result,
-        purposes,
-        categoryId: selectedCategory,
-        type: selectedOption,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        saved: true,
-      }
-
-      console.log("Saving block with data:", newBlock);
-      console.log("Using ID:", sourceId);
-
-      let response
-      if (selectedBlock) {
-        console.log("Checking if selectedBlock exists...GET")
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api//rpmblocks/${sourceId}`, {
-          method: "GET",
+        category_id: selectedCategory,
+        result: result,
+        type: 'text',
+        order: 1,
+        content: JSON.stringify({
+          massiveActions,
+          purposes,
+          result
         })
+      };
 
-        if (response.ok) {
-          console.log("selectedBlock exists. Updating with PUT...")
-          // Update the record using PUT
-          response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${sourceId}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newBlock),
-          })
-        } else if (response.status === 404) {
-          console.log("selectedBlock not found. Creating with POST...")
-          // Create a new record using POST
-          response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newBlock),
-          })
-        }
-      } else {
-        // Default behavior for group: Always create a new record using POST
-        console.log("Group detected. Creating new record with POST...")
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newBlock),
-        })
-      }
+      const response = await fetch('http://localhost:3001/api/rpmblocks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newBlock),
+      });
 
       if (!response.ok) {
-        throw new Error("Error saving the action plan.")
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to save RPM block');
       }
 
-      const savedBlock = await response.json()
-      console.log("Action plan successfully saved:", savedBlock)
+      const savedBlock = await response.json();
+      console.log('Saved RPM block:', savedBlock);
 
       // Update localStorage
-      const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
-      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== sourceId)
-      updatedBlocks.unshift(savedBlock)
-      localStorage.setItem("rpmBlocks", JSON.stringify(updatedBlocks))
+      const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]");
+      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== savedBlock.id);
+      updatedBlocks.unshift(savedBlock);
+      localStorage.setItem("rpmBlocks", JSON.stringify(updatedBlocks));
 
       // Remove the corresponding action plan from localStorage
-      console.log("Remove the corresponding action plan from localStorage:", savedBlock)
-      localStorage.removeItem(`actionPlan-${sourceId}`)
+      localStorage.removeItem(`actionPlan-${savedBlock.id}`);
 
       // Emit custom event
-      const event = new CustomEvent("rpmBlocksUpdated")
-      window.dispatchEvent(event)
+      const event = new CustomEvent("rpmBlocksUpdated");
+      window.dispatchEvent(event);
 
       // Close the panel
-      onClose(typeof source.id === "number" ? source.id : Number.parseInt(sourceId))
+      onClose(typeof savedBlock.id === "number" ? savedBlock.id : Number.parseInt(savedBlock.id));
     } catch (error) {
-      console.error("Error saving the action plan:", error)
+      console.error('Error saving RPM block:', error);
+      // Toon een foutmelding aan de gebruiker
+      alert(`Error saving the action plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
+  };
 
   const removeMassiveAction = (index: number) => {
     setMassiveActions(massiveActions.filter((_, i) => i !== index))
@@ -429,7 +377,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   const calculateTotalTime = () => {
     let totalMinutes = 0
     let totalMustMinutes = 0
-    massiveActions.forEach((action) => {
+    massiveActions?.forEach((action) => {
       const minutes = action.durationAmount * (action.durationUnit === "hr" ? 60 : 1)
       totalMinutes += minutes
       if (action.key === "✔") {
@@ -579,7 +527,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
                   </div>
                 </div>
 
-                {massiveActions.map((action, index) => (
+                {massiveActions?.map((action, index) => (
                   <div key={action.id} className="flex items-center my-2 rounded  w-full">
                     <Input
                       placeholder="LB"

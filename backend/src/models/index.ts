@@ -1,6 +1,7 @@
 import sequelize from '../config/db';
 import './associations';
 
+
 // Optioneel: alleen connectie testen (zonder sync)
 const testDatabaseConnection = async () => {
   try {

@@ -1,114 +1,143 @@
-import { NextResponse } from 'next/server';
-   import { promises as fs } from 'fs';
-   import path from 'path';
+import { Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import CalendarEvent from '../../models/CalendarEvent';
+import sequelize from '../../config/db';
 
-   const dataFilePath = path.join(process.cwd(), 'data', 'calendar-events.json');
+const router = Router();
 
-   // GET: Fetch all calendar events
-   export async function GET() {
-     try {
-       const fileContents = await fs.readFile(dataFilePath, 'utf8');
-       const events = JSON.parse(fileContents);
-       return NextResponse.json(events);
-     } catch (error) {
-       console.error('Failed to read calendar events:', error);
-       return NextResponse.json({ error: 'Failed to load calendar events' }, { status: 500 });
-     }
-   }
-
-   export async function POST(request: Request) {
-    try {
-      const { dateKey, action } = await request.json();
-      const fileContents = await fs.readFile(dataFilePath, 'utf8');
-      const events = JSON.parse(fileContents);
-  
-      const eventIndex = events.findIndex((event: any) => event.date === dateKey);
-  
-      if (eventIndex === -1) {
-        // Event voor deze datum bestaat niet, voeg nieuw event toe
-        events.push({
-          id: `${dateKey}-${action.id}`,
-          date: dateKey,
-          massiveActions: [action], // Consistent gebruik van massiveActions
-        });
-      } else {
-        // Event bestaat, voeg actie toe
-        if (!events[eventIndex].massiveActions) {
-          events[eventIndex].massiveActions = []; // Zorg dat massiveActions bestaat
+// GET: Fetch all calendar events
+router.get('/', async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    
+    let whereClause = {};
+    if (start && end) {
+      whereClause = {
+        start_date: {
+          [sequelize.Op.gte]: new Date(start as string),
+          [sequelize.Op.lte]: new Date(end as string)
         }
-  
-        // Controleer of actie al bestaat
-        const actionExists = events[eventIndex].massiveActions.some(
-          (existingAction: any) => existingAction.id === action.id
-        );
-  
-        if (!actionExists) {
-          events[eventIndex].massiveActions.push(action);
-        }
-      }
-  
-      // Schrijf bijgewerkte evenementen terug naar het bestand
-      await fs.writeFile(dataFilePath, JSON.stringify(events, null, 2));
-  
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      console.error('Error saving calendar event:', error);
-      return NextResponse.json({ error: 'Failed to save the action' }, { status: 500 });
+      };
     }
+
+    const events = await CalendarEvent.findAll({
+      where: whereClause,
+      order: [['start_date', 'ASC']]
+    });
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar events' });
   }
+});
 
-   // PUT: Update an existing calendar event by ID
-   export async function PUT(request: Request) {
-     try {
-       const updatedEvent = await request.json();
-       const { id } = updatedEvent;
+// GET: Fetch a single calendar event by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const event = await CalendarEvent.findByPk(req.params.id);
+    if (!event) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
+    res.json(event);
+  } catch (error) {
+    console.error('Error fetching calendar event:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar event' });
+  }
+});
 
-       if (!id) {
-         return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
-       }
+// POST: Create a new calendar event
+router.post('/', async (req, res) => {
+  try {
+    const { title, description, start_date, end_date, location, category, color } = req.body;
 
-       const fileContents = await fs.readFile(dataFilePath, 'utf8');
-       const events = JSON.parse(fileContents);
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      const event = await CalendarEvent.create({
+        id: uuidv4(),
+        title,
+        description,
+        start_date: new Date(start_date),
+        end_date: new Date(end_date),
+        location,
+        category,
+        color,
+        created_at: new Date(),
+        updated_at: new Date()
+      }, { transaction: t });
 
-       const eventIndex = events.findIndex((event: { id: string }) => event.id === id);
+      return event;
+    });
 
-       if (eventIndex === -1) {
-         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-       }
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    res.status(500).json({ error: 'Failed to create calendar event' });
+  }
+});
 
-       events[eventIndex] = { ...events[eventIndex], ...updatedEvent };
+// PUT: Update an existing calendar event
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, start_date, end_date, location, category, color } = req.body;
 
-       await fs.writeFile(dataFilePath, JSON.stringify(events, null, 2));
-       return NextResponse.json(events[eventIndex]);
-     } catch (error) {
-       console.error('Failed to update calendar event:', error);
-       return NextResponse.json({ error: 'Failed to update calendar event' }, { status: 500 });
-     }
-   }
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      const event = await CalendarEvent.findByPk(id);
+      if (!event) {
+        return null;
+      }
 
-   // DELETE: Remove a calendar event by ID
-   export async function DELETE(request: Request) {
-     try {
-       const { searchParams } = new URL(request.url);
-       const id = searchParams.get('id');
+      await event.update({
+        title,
+        description,
+        start_date: new Date(start_date),
+        end_date: new Date(end_date),
+        location,
+        category,
+        color,
+        updated_at: new Date()
+      }, { transaction: t });
 
-       if (!id) {
-         return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
-       }
+      return event;
+    });
 
-       const fileContents = await fs.readFile(dataFilePath, 'utf8');
-       const events = JSON.parse(fileContents);
+    if (!result) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
 
-       const filteredEvents = events.filter((event: { id: string }) => event.id !== id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating calendar event:', error);
+    res.status(500).json({ error: 'Failed to update calendar event' });
+  }
+});
 
-       if (events.length === filteredEvents.length) {
-         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-       }
+// DELETE: Remove a calendar event
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
 
-       await fs.writeFile(dataFilePath, JSON.stringify(filteredEvents, null, 2));
-       return NextResponse.json({ message: 'Event deleted successfully' }, { status: 200 });
-     } catch (error) {
-       console.error('Failed to delete calendar event:', error);
-       return NextResponse.json({ error: 'Failed to delete calendar event' }, { status: 500 });
-     }
-   }
+    // Start a transaction
+    const result = await sequelize.transaction(async (t) => {
+      const event = await CalendarEvent.findByPk(id);
+      if (!event) {
+        return null;
+      }
+
+      await event.destroy({ transaction: t });
+      return event;
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
+
+    res.json({ message: 'Calendar event deleted successfully', event: result });
+  } catch (error) {
+    console.error('Error deleting calendar event:', error);
+    res.status(500).json({ error: 'Failed to delete calendar event' });
+  }
+});
+
+export default router;

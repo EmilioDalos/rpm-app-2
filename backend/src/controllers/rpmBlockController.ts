@@ -1,134 +1,98 @@
 import { Request, Response } from 'express';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import RPMBlock from '../models/RpmBlock';
 
-const rpmBlocksFilePath = path.join(__dirname, '../data/rpmblocks.json');
-
-interface RPMBlock {
-  id: string;
-  result: string;
-  purposes: string[];
-  massiveActions: any[];
-  categoryId: string;
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-  saved: boolean;
-}
-
-// Helper function to read RPM blocks
-const readRPMBlocks = async (): Promise<RPMBlock[]> => {
+export const getRPMBlocks = async (req: Request, res: Response) => {
   try {
-    const data = await fs.readFile(rpmBlocksFilePath, 'utf8');
-    const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : parsed.rpmBlocks || [];
+    const blocks = await RPMBlock.findAll({
+      order: [['order', 'ASC']]
+    });
+    res.status(200).json(blocks);
   } catch (error) {
-    console.error('Error reading RPM blocks:', error);
-    return [];
-  }
-};
-
-// Helper function to write RPM blocks
-const writeRPMBlocks = async (blocks: RPMBlock[]): Promise<boolean> => {
-  try {
-    await fs.writeFile(rpmBlocksFilePath, JSON.stringify({ rpmBlocks: blocks }, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing RPM blocks:', error);
-    return false;
-  }
-};
-
-export const getAllRPMBlocks = async (req: Request, res: Response) => {
-  try {
-    const blocks = await readRPMBlocks();
-    res.json(blocks);
-  } catch (error) {
+    console.error('Error fetching RPM blocks:', error);
     res.status(500).json({ error: 'Failed to fetch RPM blocks' });
   }
 };
 
 export const getRPMBlockById = async (req: Request, res: Response) => {
   try {
-    const blocks = await readRPMBlocks();
-    const block = blocks.find(b => b.id === req.params.id);
-    
+    const block = await RPMBlock.findByPk(req.params.id);
     if (!block) {
       return res.status(404).json({ error: 'RPM block not found' });
     }
-    
     res.json(block);
   } catch (error) {
+    console.error('Error fetching RPM block:', error);
     res.status(500).json({ error: 'Failed to fetch RPM block' });
   }
 };
 
 export const createRPMBlock = async (req: Request, res: Response) => {
   try {
-    const blocks = await readRPMBlocks();
-    const newBlock: RPMBlock = {
-      ...req.body,
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const { category_id, result, type, order } = req.body;
     
-    blocks.push(newBlock);
-    
-    if (await writeRPMBlocks(blocks)) {
-      res.status(201).json(newBlock);
-    } else {
-      res.status(500).json({ error: 'Failed to create RPM block' });
+    // If order is not provided, get the highest order and increment it
+    let finalOrder = order;
+    if (!order) {
+      const highestBlock = await RPMBlock.findOne({
+        order: [['order', 'DESC']]
+      });
+      finalOrder = highestBlock ? highestBlock.order + 1 : 1;
     }
+
+    const block = await RPMBlock.create({
+      category_id: category_id || null,
+      result,
+      type,
+      order: finalOrder
+    });
+
+    res.status(201).json(block);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create RPM block' });
+    console.error('Error creating RPM block:', error);
+    res.status(500).json({ 
+      error: 'Failed to create RPM block',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
 export const updateRPMBlock = async (req: Request, res: Response) => {
   try {
-    const blocks = await readRPMBlocks();
-    const index = blocks.findIndex(b => b.id === req.params.id);
-    
-    if (index === -1) {
+    const { id } = req.params;
+    const { category_id, result, type, order } = req.body;
+
+    const block = await RPMBlock.findByPk(id);
+    if (!block) {
       return res.status(404).json({ error: 'RPM block not found' });
     }
-    
-    const updatedBlock: RPMBlock = {
-      ...blocks[index],
-      ...req.body,
-      id: req.params.id,
-      updatedAt: new Date().toISOString()
-    };
-    
-    blocks[index] = updatedBlock;
-    
-    if (await writeRPMBlocks(blocks)) {
-      res.json(updatedBlock);
-    } else {
-      res.status(500).json({ error: 'Failed to update RPM block' });
-    }
+
+    await block.update({
+      category_id: category_id || null,
+      result,
+      type,
+      order
+    });
+
+    res.json(block);
   } catch (error) {
+    console.error('Error updating RPM block:', error);
     res.status(500).json({ error: 'Failed to update RPM block' });
   }
 };
 
 export const deleteRPMBlock = async (req: Request, res: Response) => {
   try {
-    const blocks = await readRPMBlocks();
-    const filteredBlocks = blocks.filter(b => b.id !== req.params.id);
+    const { id } = req.params;
+    const block = await RPMBlock.findByPk(id);
     
-    if (filteredBlocks.length === blocks.length) {
+    if (!block) {
       return res.status(404).json({ error: 'RPM block not found' });
     }
-    
-    if (await writeRPMBlocks(filteredBlocks)) {
-      res.json({ message: 'RPM block deleted successfully' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete RPM block' });
-    }
+
+    await block.destroy();
+    res.json({ message: 'RPM block deleted successfully', block });
   } catch (error) {
+    console.error('Error deleting RPM block:', error);
     res.status(500).json({ error: 'Failed to delete RPM block' });
   }
 }; 

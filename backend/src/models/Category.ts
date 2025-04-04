@@ -1,4 +1,4 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/db';
 import Role from './Role';
 import CategoryThreeToThrive from './CategoryThreeToThrive';
@@ -8,31 +8,37 @@ import CategoryActionPlan from './CategoryActionPlan';
 interface CategoryAttributes {
   id: string;
   name: string;
-  type: string;
+  type: 'personal' | 'professional';
   description?: string;
   vision?: string;
   purpose?: string;
   resources?: string;
   color?: string;
   image_blob?: Buffer;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
-interface CategoryCreationAttributes extends Optional<CategoryAttributes, 'id'> {}
+interface CategoryCreationAttributes extends Omit<CategoryAttributes, 'id' | 'created_at' | 'updated_at'> {}
 
-class Category extends Model<CategoryAttributes, CategoryCreationAttributes> implements CategoryAttributes {
+class Category extends Model<CategoryAttributes, CategoryCreationAttributes> {
   public id!: string;
   public name!: string;
-  public type!: string;
-  public description!: string;
-  public vision!: string;
-  public purpose!: string;
-  public resources!: string;
-  public color!: string;
-  public image_blob!: Buffer;
+  public type!: 'personal' | 'professional';
+  public description?: string;
+  public vision?: string;
+  public purpose?: string;
+  public resources?: string;
+  public color?: string;
+  public image_blob?: Buffer;
   public created_at!: Date;
   public updated_at!: Date;
+
+  // Define associations
+  public readonly roles?: Role[];
+  public readonly CategoryThreeToThrives?: CategoryThreeToThrive[];
+  public readonly CategoryResults?: CategoryResult[];
+  public readonly CategoryActionPlans?: CategoryActionPlan[];
 }
 
 Category.init(
@@ -47,24 +53,51 @@ Category.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM('personal', 'professional'),
       allowNull: false,
     },
-    description: DataTypes.TEXT,
-    vision: DataTypes.TEXT,
-    purpose: DataTypes.TEXT,
-    resources: DataTypes.TEXT,
-    color: DataTypes.STRING,
-    image_blob: DataTypes.BLOB,
-    created_at: DataTypes.DATE,
-    updated_at: DataTypes.DATE,
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    vision: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    purpose: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    resources: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    color: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    image_blob: {
+      type: DataTypes.BLOB,
+      allowNull: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
   },
   {
     sequelize,
     modelName: 'Category',
     tableName: 'category',
     timestamps: true,
-    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 );
 
