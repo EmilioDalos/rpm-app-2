@@ -3,20 +3,20 @@ import sequelize from '../config/db';
 
 interface CategoryResultAttributes {
   id: string;
-  category_id: string;
+  categoryId: string;
   result: string;
-  created_at?: Date;
-  updated_at?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface CreationAttributes extends Optional<CategoryResultAttributes, 'id'> {}
 
 class CategoryResult extends Model<CategoryResultAttributes, CreationAttributes> implements CategoryResultAttributes {
   public id!: string;
-  public category_id!: string;
+  public categoryId!: string;
   public result!: string;
-  public created_at?: Date;
-  public updated_at?: Date;
+  public createdAt?: Date;
+  public updatedAt?: Date;
 }
 
 CategoryResult.init(
@@ -26,22 +26,35 @@ CategoryResult.init(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    category_id: {
+    categoryId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+      field: 'category_id',
+      references: {
+        model: 'category',
+        key: 'id'
+      }
     },
     result: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    created_at: DataTypes.DATE,
-    updated_at: DataTypes.DATE,
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at'
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at'
+    }
   },
   {
     sequelize,
     modelName: 'CategoryResult',
     tableName: 'category_result',
-    timestamps: false,
+    timestamps: true
   }
 );
 

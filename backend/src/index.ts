@@ -2,8 +2,11 @@ import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import winston from 'winston';
-import categoryRoutes from './routes/categories/route';
-import roleRoutes from './routes/roles/route';
+import { testDatabaseConnection, setupAssociations } from './models';
+import categoryRoutes from './routes/categories';
+import roleRoutes from './routes/roles';
+import rpmBlockRoutes from './routes/rpmblocks';
+import calendarRoutes from './routes/calendar-events';
 
 // Load environment variables
 dotenv.config();
@@ -50,9 +53,8 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Welkom bij de RPM App API" });
 });
 
-// Import routes
-import rpmBlockRoutes from './routes/rpmblocks';
-import calendarRoutes from './routes/calendar-events';
+// Setup associations before registering routes
+setupAssociations();
 
 // Route registration
 app.use('/api/categories', categoryRoutes);
@@ -66,5 +68,17 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: 'Er is een serverfout opgetreden' });
 });
 
+// Start the server
+if (require.main === module) {
+  // Test database connection
+  testDatabaseConnection().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
 
 export default app; 

@@ -3,10 +3,10 @@ import sequelize from '../config/db';
 
 interface CategoryActionPlanAttributes {
   id: string;
-  category_id: string;
-  action_plan: string;
-  created_at?: Date;
-  updated_at?: Date;
+  categoryId: string;
+  actionPlan: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface CategoryActionPlanCreationAttributes extends Optional<CategoryActionPlanAttributes, 'id'> {}
@@ -16,10 +16,10 @@ class CategoryActionPlan
   implements CategoryActionPlanAttributes
 {
   public id!: string;
-  public category_id!: string;
-  public action_plan!: string;
-  public created_at?: Date;
-  public updated_at?: Date;
+  public categoryId!: string;
+  public actionPlan!: string;
+  public createdAt?: Date;
+  public updatedAt?: Date;
 }
 
 CategoryActionPlan.init(
@@ -29,22 +29,38 @@ CategoryActionPlan.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    category_id: {
+    categoryId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+      field: 'category_id',
+      references: {
+        model: 'category',
+        key: 'id'
+      }
     },
-    action_plan: {
+    actionPlan: {
       type: DataTypes.TEXT,
       allowNull: false,
+      field: 'action_plan'
     },
-    created_at: DataTypes.DATE,
-    updated_at: DataTypes.DATE,
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at'
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at'
+    }
   },
   {
     sequelize,
     modelName: 'CategoryActionPlan',
     tableName: 'category_action_plan',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 );
 

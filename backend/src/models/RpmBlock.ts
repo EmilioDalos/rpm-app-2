@@ -1,38 +1,42 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/db';
+import Category from './Category';
+import RpmBlockPurpose from './RpmBlockPurpose';
+import RpmBlockMassiveAction from './RpmBlockMassiveAction';
 
-interface RPMBlockAttributes {
+interface RpmBlockAttributes {
   id: string;
-  category_id: string | null;
+  categoryId: string | null;
   result: string;
   type: 'text' | 'image' | 'video' | 'link';
   order: number;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface RPMBlockCreationAttributes extends Omit<RPMBlockAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface RpmBlockCreationAttributes extends Omit<RpmBlockAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-class RPMBlock extends Model<RPMBlockAttributes, RPMBlockCreationAttributes> {
+class RpmBlock extends Model<RpmBlockAttributes, RpmBlockCreationAttributes> {
   public id!: string;
-  public category_id!: string | null;
+  public categoryId!: string | null;
   public result!: string;
   public type!: 'text' | 'image' | 'video' | 'link';
   public order!: number;
-  public created_at!: Date;
-  public updated_at!: Date;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 }
 
-RPMBlock.init(
+RpmBlock.init(
   {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    category_id: {
+    categoryId: {
       type: DataTypes.UUID,
       allowNull: true,
+      field: 'category_id',
       references: {
         model: 'category',
         key: 'id'
@@ -50,15 +54,17 @@ RPMBlock.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'created_at'
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'updated_at'
     },
   },
   {
@@ -71,4 +77,23 @@ RPMBlock.init(
   }
 );
 
-export default RPMBlock;
+// Associations 
+// RPMBlock associations
+RpmBlock.hasMany(RpmBlockMassiveAction, {
+  foreignKey: 'rpm_block_id',
+  as: 'massiveActions',
+ });
+
+RpmBlock.hasMany(RpmBlockPurpose, {
+  foreignKey: 'rpm_block_id',
+  as: 'purposes',
+});
+
+RpmBlock.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'category',
+});
+
+  
+
+export default RpmBlock;

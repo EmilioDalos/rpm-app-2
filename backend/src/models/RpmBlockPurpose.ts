@@ -1,13 +1,23 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
-import RpmBlock from './RpmBlock';
+import RPMBlock from './RpmBlock';
 
-class RpmBlockPurpose extends Model {
+interface RpmBlockPurposeAttributes {
+  id: string;
+  rpmBlockId: string;
+  purpose: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface RpmBlockPurposeCreationAttributes extends Omit<RpmBlockPurposeAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+
+class RpmBlockPurpose extends Model<RpmBlockPurposeAttributes, RpmBlockPurposeCreationAttributes> {
   public id!: string;
-  public rpm_block_id!: string;
+  public rpmBlockId!: string;
   public purpose!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 RpmBlockPurpose.init(
@@ -17,31 +27,36 @@ RpmBlockPurpose.init(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    rpm_block_id: {
+    rpmBlockId: {
       type: DataTypes.UUID,
       allowNull: false,
+      field: 'rpm_block_id'
     },
     purpose: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
+      field: 'created_at'
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
+      field: 'updated_at'
     },
   },
   {
     sequelize,
     tableName: 'rpm_block_purpose',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 );
 
-// Associations
-RpmBlockPurpose.belongsTo(RpmBlock, { foreignKey: 'rpm_block_id' });
+//  // RpmBlockPurpose associations
+
 
 export default RpmBlockPurpose;

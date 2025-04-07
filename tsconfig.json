@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/calendars/route.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/calendars/route.ts", "backend/src/routes/roles/route.xx", "backend/src/routes/categories/route.xx"],
   "exclude": ["node_modules"]
 }

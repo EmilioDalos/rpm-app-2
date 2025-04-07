@@ -5,28 +5,28 @@ interface CalendarEventAttributes {
   id: string;
   title: string;
   description: string;
-  start_date: Date;
-  end_date: Date;
+  startDate: Date;
+  endDate: Date;
   location?: string;
-  category?: string;
+  categoryId?: string;
   color?: string;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface CalendarEventCreationAttributes extends Omit<CalendarEventAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface CalendarEventCreationAttributes extends Omit<CalendarEventAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
 class CalendarEvent extends Model<CalendarEventAttributes, CalendarEventCreationAttributes> {
   public id!: string;
   public title!: string;
   public description!: string;
-  public start_date!: Date;
-  public end_date!: Date;
+  public startDate!: Date;
+  public endDate!: Date;
   public location?: string;
-  public category?: string;
+  public categoryId?: string;
   public color?: string;
-  public created_at!: Date;
-  public updated_at!: Date;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 }
 
 CalendarEvent.init(
@@ -44,35 +44,44 @@ CalendarEvent.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    start_date: {
+    startDate: {
       type: DataTypes.DATE,
       allowNull: false,
+      field: 'start_date'
     },
-    end_date: {
+    endDate: {
       type: DataTypes.DATE,
       allowNull: false,
+      field: 'end_date'
     },
     location: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    category: {
-      type: DataTypes.STRING,
+    categoryId: {
+      type: DataTypes.UUID,
       allowNull: true,
+      references: {
+        model: 'category',
+        key: 'id',
+      },
+      field: 'category_id',
     },
     color: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'created_at'
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'updated_at'
     },
   },
   {
@@ -85,4 +94,4 @@ CalendarEvent.init(
   }
 );
 
-export default CalendarEvent; 
+export default CalendarEvent;

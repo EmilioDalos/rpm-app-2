@@ -1,27 +1,27 @@
 import express from 'express';
 import {
-  getRPMBlocks,
-  getRPMBlockById,
-  createRPMBlock,
-  updateRPMBlock,
-  deleteRPMBlock
+  getRpmBlocks,
+  getRpmBlockById,
+  createRpmBlock,
+  updateRpmBlock,
+  deleteRpmBlock
 } from '../controllers/rpmBlockController';
 
 const router = express.Router();
 
 // GET all RPM blocks
-router.get('/', getRPMBlocks);
+router.get('/', getRpmBlocks);
 
 // GET RPM block by ID
-router.get('/:id', getRPMBlockById);
+router.get('/:id', getRpmBlockById);
 
 // POST create new RPM block
-router.post('/', createRPMBlock);
+router.post('/', createRpmBlock);
 
 // PUT update RPM block
-router.put('/:id', updateRPMBlock);
+router.put('/:id', updateRpmBlock);
 
 // DELETE RPM block
-router.delete('/:id', deleteRPMBlock);
+router.delete('/:id', deleteRpmBlock);
 
 export default router; 

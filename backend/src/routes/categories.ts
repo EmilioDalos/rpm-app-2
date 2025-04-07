@@ -1,21 +1,27 @@
 import { Router } from 'express';
-import * as categoryController from '../controllers/categoryController';
+import {
+  getAllCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} from '../controllers/categoryController';
 
 const router = Router();
 
-// GET all categories
-router.get('/', categoryController.getCategories);
+// GET All Categories
+router.get('/', getAllCategories);
 
-// GET category by ID
-router.get('/:id', categoryController.getCategoryById);
+// GET Category by ID
+router.get('/:id', getCategoryById);
 
-// POST create new category
-router.post('/', categoryController.createCategory);
+// POST a New Category
+router.post('/', createCategory);
 
-// PUT update category
-router.put('/:id', categoryController.updateCategory);
+// PUT Update Category
+router.put('/:id', updateCategory);
 
-// DELETE category
-router.delete('/:id', categoryController.deleteCategory);
+// DELETE Category
+router.delete('/:id', deleteCategory);
 
-export default router; 
+export default router;

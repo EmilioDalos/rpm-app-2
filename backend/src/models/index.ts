@@ -1,6 +1,80 @@
 import sequelize from '../config/db';
-import './associations';
+import RpmBlock from './RpmBlock';
+import RpmBlockMassiveAction from './RpmBlockMassiveAction';
+import RpmBlockPurpose from './RpmBlockPurpose';
+import Category from './Category';
+import CalendarEvent from './CalendarEvent';
+import Role from './Role';
+import CategoryThreeToThrive from './CategoryThreeToThrive';
+import CategoryResult from './CategoryResult';
+import CategoryActionPlan from './CategoryActionPlan';
 
+// Define associations
+const setupAssociations = () => {
+  console.log('Setting up associations...');
+  
+  // Category - Role associations
+  Category.hasMany(Role, {
+    foreignKey: 'category_id',
+    as: 'categoryRoles',
+    onDelete: 'CASCADE'
+  });
+
+  Role.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'roleCategory'
+  });
+
+  // Category associations
+  Category.hasMany(RpmBlock, {
+    foreignKey: 'category_id',
+    as: 'rpmBlocks',
+  });
+
+  // CalendarEvent associations
+  CalendarEvent.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'categoryRef',
+  });
+
+  Category.hasMany(CalendarEvent, {
+    foreignKey: 'category_id',
+    as: 'calendarEvents',
+  });
+
+  // Category - CategoryThreeToThrive associations
+  Category.hasMany(CategoryThreeToThrive, {
+    foreignKey: 'category_id',
+    as: 'CategoryThreeToThriveList',
+    onDelete: 'CASCADE'
+  });
+
+  // Category - CategoryResult associations
+  Category.hasMany(CategoryResult, {
+    foreignKey: 'category_id',
+    as: 'CategoryResults',
+    onDelete: 'CASCADE'
+  });
+
+  CategoryResult.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'category'
+  });
+
+  // Category - CategoryActionPlan associations
+  Category.hasMany(CategoryActionPlan, {
+    foreignKey: 'category_id',
+    as: 'CategoryActionPlans',
+    onDelete: 'CASCADE'
+  });
+
+  CategoryActionPlan.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'category'
+  });
+  
+  console.log('Associations set up successfully');
+};
 
 // Optioneel: alleen connectie testen (zonder sync)
 const testDatabaseConnection = async () => {
@@ -13,5 +87,17 @@ const testDatabaseConnection = async () => {
   }
 };
 
-export { testDatabaseConnection };
-export * from './associations';
+// Exporteer alle modellen
+export {
+  RpmBlock,
+  RpmBlockMassiveAction,
+  RpmBlockPurpose,
+  Category,
+  CalendarEvent,
+  Role,
+  CategoryThreeToThrive,
+  CategoryResult,
+  CategoryActionPlan,
+  setupAssociations,
+  testDatabaseConnection
+};

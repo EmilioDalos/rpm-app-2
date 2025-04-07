@@ -1,5 +1,5 @@
 import app from './index';
-import categoriesRouter from './routes/categories/route';
+import categoriesRouter from './routes/categories';
 
 const PORT = process.env.PORT || 3001;
 

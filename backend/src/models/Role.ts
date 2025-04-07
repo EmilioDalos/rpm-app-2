@@ -4,38 +4,30 @@ import Category from './Category';
 
 interface RoleAttributes {
   id: string;
-  category_id: string;
+  categoryId: string;
   name: string;
   purpose?: string;
   description?: string;
-  identity_statement?: string;
-  image_blob?: Buffer;
-  created_at?: Date;
-  updated_at?: Date;
-  category?: {
-    id: string;
-    name: string;
-    type: string;
-  };
+  identityStatement?: string;
+  imageBlob?: Buffer;
+  createdAt?: Date;
+  updatedAt?: Date;
+  category?: Category;
 }
 
 interface RoleCreationAttributes extends Optional<RoleAttributes, 'id' | 'category'> {}
 
 class Role extends Model<RoleAttributes, RoleCreationAttributes> implements RoleAttributes {
   public id!: string;
-  public category_id!: string;
+  public categoryId!: string;
   public name!: string;
   public purpose?: string;
   public description?: string;
-  public identity_statement?: string;
-  public image_blob?: Buffer;
-  public created_at?: Date;
-  public updated_at?: Date;
-  public category?: {
-    id: string;
-    name: string;
-    type: string;
-  };
+  public identityStatement?: string;
+  public imageBlob?: Buffer;
+  public createdAt?: Date;
+  public updatedAt?: Date;
+  public category?: Category;
 
   // Add type definitions for related data
   public readonly coreQualities?: { quality: string }[];
@@ -49,9 +41,10 @@ Role.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    category_id: {
+    categoryId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+      field: 'category_id',
       references: {
         model: 'category',
         key: 'id'
@@ -61,20 +54,44 @@ Role.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    purpose: DataTypes.TEXT,
-    description: DataTypes.TEXT,
-    identity_statement: DataTypes.TEXT,
-    image_blob: DataTypes.BLOB,
-    created_at: DataTypes.DATE,
-    updated_at: DataTypes.DATE,
+    purpose: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    identityStatement: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'identity_statement'
+    },
+    imageBlob: {
+      type: DataTypes.BLOB,
+      allowNull: true,
+      field: 'image_blob'
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at'
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at'
+    }
   },
   {
     sequelize,
     modelName: 'Role',
     tableName: 'role',
     timestamps: true,
-    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 );
+
 
 export default Role;

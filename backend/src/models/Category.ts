@@ -14,12 +14,12 @@ interface CategoryAttributes {
   purpose?: string;
   resources?: string;
   color?: string;
-  image_blob?: Buffer;
-  created_at: Date;
-  updated_at: Date;
+  imageBlob?: Buffer;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface CategoryCreationAttributes extends Omit<CategoryAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface CategoryCreationAttributes extends Omit<CategoryAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
 class Category extends Model<CategoryAttributes, CategoryCreationAttributes> {
   public id!: string;
@@ -30,9 +30,9 @@ class Category extends Model<CategoryAttributes, CategoryCreationAttributes> {
   public purpose?: string;
   public resources?: string;
   public color?: string;
-  public image_blob?: Buffer;
-  public created_at!: Date;
-  public updated_at!: Date;
+  public imageBlob?: Buffer;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 
   // Define associations
   public readonly roles?: Role[];
@@ -76,42 +76,33 @@ Category.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    image_blob: {
+    imageBlob: {
       type: DataTypes.BLOB,
       allowNull: true,
+      field: 'image_blob'
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'created_at'
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-    },
+      field: 'updated_at'
+    }
   },
   {
     sequelize,
     modelName: 'Category',
     tableName: 'category',
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
   }
 );
 
-// Define associations
-Category.hasMany(Role, { foreignKey: 'category_id' });
-Role.belongsTo(Category, { foreignKey: 'category_id' });
-
+Category.hasMany(Role, { as: 'roles', foreignKey: 'category_id' });
 Category.hasMany(CategoryThreeToThrive, { foreignKey: 'category_id' });
-CategoryThreeToThrive.belongsTo(Category, { foreignKey: 'category_id' });
-
-Category.hasMany(CategoryResult, { foreignKey: 'category_id' });
-CategoryResult.belongsTo(Category, { foreignKey: 'category_id' });
-
-Category.hasMany(CategoryActionPlan, { foreignKey: 'category_id' });
-CategoryActionPlan.belongsTo(Category, { foreignKey: 'category_id' });
 
 export default Category;

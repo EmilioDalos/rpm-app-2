@@ -1,15 +1,42 @@
 import { Request, Response } from 'express';
 import Category from '../models/Category';
+import Role from '../models/Role';
+import CategoryThreeToThrive from '../models/CategoryThreeToThrive';
+import CategoryResult from '../models/CategoryResult';
+import CategoryActionPlan from '../models/CategoryActionPlan';
+import sequelize from '../config/db';
+import { v4 as uuidv4 } from 'uuid';
 
-export const getCategories = async (req: Request, res: Response) => {
+export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    console.log('Fetching categories...');
     const categories = await Category.findAll({
-      raw: true,  // Get plain objects instead of Sequelize instances
-      logging: console.log  // Log the SQL query
+      include: [
+        { model: Role, as: 'roles' },
+        { model: CategoryThreeToThrive, as: 'CategoryThreeToThrives' },
+        { model: CategoryResult, as: 'CategoryResults' },
+        { model: CategoryActionPlan, as: 'CategoryActionPlans' }
+      ]
     });
-    console.log('Found categories:', categories);
-    res.status(200).json(categories);
+
+    const transformedCategories = categories.map(category => ({
+      ...category.toJSON(),
+      roles: category.roles?.map(role => ({
+        id: role.id,
+        name: role.name,
+        purpose: role.purpose || "",
+        description: role.description || ""
+      })),
+      threeToThrive: category.CategoryThreeToThrives?.map(item => item.threeToThrive) || [],
+      results: category.CategoryResults?.map(item => item.result) || [],
+      actionPlans: category.CategoryActionPlans?.map(item => item.actionPlan) || [],
+      imageBlob: category.imageBlob ? `data:image/jpeg;base64,${Buffer.from(category.imageBlob).toString('base64')}` : null,
+      description: category.description || "",
+      vision: category.vision || "",
+      purpose: category.purpose || "",
+      resources: category.resources || ""
+    }));
+
+    res.json(transformedCategories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ error: 'Failed to fetch categories' });
@@ -18,50 +45,88 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const getCategoryById = async (req: Request, res: Response) => {
   try {
-    const category = await Category.findByPk(req.params.id);
+    const { id } = req.params;
+
+    const category = await Category.findByPk(id, {
+      include: [
+        { model: Role, as: 'roles' },
+        { model: CategoryThreeToThrive, as: 'CategoryThreeToThrives' },
+        { model: CategoryResult, as: 'CategoryResults' },
+        { model: CategoryActionPlan, as: 'CategoryActionPlans' }
+      ]
+    });
+
     if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
-    res.json(category);
+
+    const transformedCategory = {
+      ...category.toJSON(),
+      roles: category.roles?.map(role => ({
+        id: role.id,
+        name: role.name,
+        purpose: role.purpose || "",
+        description: role.description || ""
+      })),
+      threeToThrive: category.CategoryThreeToThrives?.map(item => item.threeToThrive) || [],
+      results: category.CategoryResults?.map(item => item.result) || [],
+      actionPlans: category.CategoryActionPlans?.map(item => item.actionPlan) || [],
+      imageBlob: category.imageBlob ? `data:image/jpeg;base64,${Buffer.from(category.imageBlob).toString('base64')}` : null,
+      description: category.description || "",
+      vision: category.vision || "",
+      purpose: category.purpose || "",
+      resources: category.resources || ""
+    };
+
+    res.json(transformedCategory);
   } catch (error) {
+    console.error('Error fetching category by ID:', error);
     res.status(500).json({ error: 'Failed to fetch category' });
   }
 };
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const category = await Category.create(req.body);
-    res.status(201).json(category);
+    const { name, type } = req.body;
+    const newCategory = await Category.create({ name, type });
+    res.status(201).json(newCategory);
   } catch (error) {
+    console.error('Error creating category:', error);
     res.status(500).json({ error: 'Failed to create category' });
   }
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
   try {
-    const [updated] = await Category.update(req.body, {
-      where: { id: req.params.id }
-    });
-    if (!updated) {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const category = await Category.findByPk(id);
+    if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
-    const category = await Category.findByPk(req.params.id);
+
+    await category.update(updateData);
     res.json(category);
   } catch (error) {
+    console.error('Error updating category:', error);
     res.status(500).json({ error: 'Failed to update category' });
   }
 };
 
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
-    const deleted = await Category.destroy({
-      where: { id: req.params.id }
-    });
-    if (!deleted) {
+    const { id } = req.params;
+
+    const category = await Category.findByPk(id);
+    if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
-    res.json({ message: 'Category deleted successfully' });
+
+    await category.destroy();
+    res.status(204).send();
   } catch (error) {
+    console.error('Error deleting category:', error);
     res.status(500).json({ error: 'Failed to delete category' });
   }
 }; 

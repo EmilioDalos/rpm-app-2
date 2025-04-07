@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS "calendar_event" (
   start_date TIMESTAMP NOT NULL,
   end_date TIMESTAMP NOT NULL,
   location TEXT,
-  category VARCHAR(50),
+  category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
   color VARCHAR(7),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
