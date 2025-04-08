@@ -47,17 +47,22 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
 
 export const createCalendarEvent = async (req: Request, res: Response) => {
   try {
-    const { title, description, startDate, endDate, location, categoryId, color } = req.body;
+    const { title, description, startDate, endDate, location, category, categoryId, color } = req.body;
 
     // Start a transaction
     const result = await sequelize.transaction(async (t) => {
+      // Only use categoryId if it's a valid UUID, otherwise set to null
+      const validCategoryId = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId) 
+        ? categoryId 
+        : null;
+
       const event = await CalendarEvent.create({
         title,
         description,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         location,
-        categoryId,
+        categoryId: validCategoryId, // Use the validated categoryId
         color
       }, { transaction: t });
 
@@ -74,7 +79,7 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
 export const updateCalendarEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, endDate, location, categoryId, color } = req.body;
+    const { title, description, startDate, endDate, location, category, categoryId, color } = req.body;
 
     // Start a transaction
     const result = await sequelize.transaction(async (t) => {
@@ -83,13 +88,18 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
         return null;
       }
 
+      // Only use categoryId if it's a valid UUID, otherwise set to null
+      const validCategoryId = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId) 
+        ? categoryId 
+        : null;
+
       await event.update({
         title,
         description,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         location,
-        categoryId,
+        categoryId: validCategoryId, // Use the validated categoryId
         color
       }, { transaction: t });
 

@@ -1,100 +1,65 @@
 #!/bin/bash
+# Import the test-utils.sh file verifying the API calls
+source "$(dirname "$0")/test-utils.sh"
 
 # Enable error handling
 set -e
 
 echo "🧪 Starting Category API tests..."
 
-# Function to make API calls with error handling
-make_request() {
-  local method=$1
-  local url=$2
-  local data=$3
-  local response
+# Fixed test ID for consistent testing
+TEST_ID="88888888-8888-8888-8888-888888888888"
 
-  echo -e "\nMaking $method request to $url"
-  if [ -n "$data" ]; then
-    response=$(curl -s -w "\n%{http_code}" -X $method "$url" \
-      -H "Content-Type: application/json" \
-      -d "$data")
-  else
-    response=$(curl -s -w "\n%{http_code}" -X $method "$url")
-  fi
-
-  local status_code=$(echo "$response" | tail -n1)
-  local body=$(echo "$response" | sed '$d')
-
-  echo "Status code: $status_code"
-  echo "Response: $body"
-
-  if [ "$status_code" -ge 400 ]; then
-    echo "❌ Request failed with status code $status_code"
-    return 1
-  fi
-
-  return 0
-}
-
-# Fixed test ID
-TEST_ID="11111111-1111-1111-1111-111111111111"
-
-# Test 1: Create a category without optional fields
-echo -e "\nTest 1: Create category without optional fields"
-make_request "POST" "http://localhost:3001/api/categories" '{
+# Test 1: Create a category with all fields
+echo -e "\nTest 1: Creating a category with all fields"
+make_request "POST" "/categories" '{
   "id": "'$TEST_ID'",
   "name": "Test Category",
-  "type": "personal",
-  "description": "Test description"
+  "description": "A test category",
+  "color": "#FF5733",
+  "icon": "test-icon"
 }'
 
-# Test 2: Create a category with all fields
-echo -e "\n\nTest 2: Create category with all fields"
-make_request "POST" "http://localhost:3001/api/categories" '{
-  "name": "Complete Category",
-  "type": "professional",
-  "description": "Complete test description",
-  "vision": "Test vision",
-  "purpose": "Test purpose",
-  "resources": "Test resources",
-  "color": "#FF5733"
+# Verify the category was created in the database
+check_database_record "categories" "$TEST_ID"
+
+# Test 2: Create a category with minimal fields
+echo -e "\nTest 2: Creating a category with minimal fields"
+make_request "POST" "/categories" '{
+  "name": "Minimal Category"
 }'
 
 # Test 3: Get all categories
-echo -e "\n\nTest 3: Get all categories"
-make_request "GET" "http://localhost:3001/api/categories"
+echo -e "\nTest 3: Getting all categories"
+make_request "GET" "/categories"
 
-# Test 4: Get category by ID
-echo -e "\n\nTest 4: Get category by ID"
-make_request "GET" "http://localhost:3001/api/categories/$TEST_ID"
+# Test 4: Get a specific category
+echo -e "\nTest 4: Getting a specific category"
+make_request "GET" "/categories/$TEST_ID"
 
-# Test 5: Update category
-echo -e "\n\nTest 5: Update category"
-make_request "PUT" "http://localhost:3001/api/categories/$TEST_ID" '{
+# Test 5: Update a category
+echo -e "\nTest 5: Updating a category"
+make_request "PUT" "/categories/$TEST_ID" '{
   "name": "Updated Category",
-  "type": "professional",
-  "description": "Updated description",
-  "vision": "Updated vision",
-  "purpose": "Updated purpose",
-  "resources": "Updated resources",
-  "color": "#33FF57"
+  "description": "An updated test category",
+  "color": "#33FF57",
+  "icon": "updated-icon"
 }'
 
-# Test 6: Delete category
-echo -e "\n\nTest 6: Delete category"
-make_request "DELETE" "http://localhost:3001/api/categories/$TEST_ID"
+# Verify the category was updated in the database
+check_database_record "categories" "$TEST_ID"
 
-# Test 7: Create category with invalid type
-echo -e "\n\nTest 7: Create category with invalid type"
-make_request "POST" "http://localhost:3001/api/categories" '{
-  "name": "Invalid Category",
-  "type": "invalid_type",
-  "description": "Test description"
-}' || true
+# Test 6: Delete a category
+echo -e "\nTest 6: Deleting a category"
+make_request "DELETE" "/categories/$TEST_ID"
 
-# Test 8: Create category with missing required fields
-echo -e "\n\nTest 8: Create category with missing required fields"
-make_request "POST" "http://localhost:3001/api/categories" '{
-  "type": "personal"
-}' || true
+# Verify the category was deleted from the database
+check_database_record "categories" "$TEST_ID"
+
+# Test 7: Invalid category creation (missing required field)
+echo -e "\nTest 7: Testing invalid category creation"
+make_request "POST" "/categories" '{
+  "description": "A category without a name"
+}'
 
 echo -e "\n\n✅ Category API tests completed!"

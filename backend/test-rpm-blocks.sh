@@ -1,39 +1,12 @@
 #!/bin/bash
+# Import the test-utils.sh file verifying the API calls
+source "$(dirname "$0")/test-utils.sh"
 
 # Enable error handling
 set -e
 
 echo "🧪 Starting RPM Blocks API tests..."
 
-# Function to make API calls with error handling
-make_request() {
-  local method=$1
-  local url=$2
-  local data=$3
-  local response
-
-  echo -e "\nMaking $method request to $url"
-  if [ -n "$data" ]; then
-    response=$(curl -s -w "\n%{http_code}" -X $method "$url" \
-      -H "Content-Type: application/json" \
-      -d "$data")
-  else
-    response=$(curl -s -w "\n%{http_code}" -X $method "$url")
-  fi
-
-  local status_code=$(echo "$response" | tail -n1)
-  local body=$(echo "$response" | sed '$d')
-
-  echo "Status code: $status_code"
-  echo "Response: $body"
-
-  if [ "$status_code" -ge 400 ]; then
-    echo "❌ Request failed with status code $status_code"
-    return 1
-  fi
-
-  return 0
-}
 
 # Fixed test ID
 TEST_ID="11111111-aaaa-aaaa-aaaa-111111111111"

@@ -5,7 +5,7 @@ import {
   createCalendarEvent,
   updateCalendarEvent,
   deleteCalendarEvent
-} from '../../controllers/calendarEventController';
+} from '../controllers/calendarEventController';
 
 const router = Router();
 
