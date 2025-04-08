@@ -6,7 +6,7 @@ import { testDatabaseConnection, setupAssociations } from './models';
 import categoryRoutes from './routes/categories';
 import roleRoutes from './routes/roles';
 import rpmBlockRoutes from './routes/rpmblocks';
-import calendarRoutes from './routes/calendar-events';
+import calendarRoutes from './routes/calendar-events/route';
 
 // Load environment variables
 dotenv.config();
