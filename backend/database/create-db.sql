@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS "rpm_block" (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
   result TEXT NOT NULL,
-  type VARCHAR(50) NOT NULL CHECK (type IN ('text', 'image', 'video', 'link')),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('Day', 'Week', 'Month', 'Quarter', 'Project', 'Category')),
   "order" INTEGER NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

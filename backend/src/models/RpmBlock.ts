@@ -8,7 +8,7 @@ interface RpmBlockAttributes {
   id: string;
   categoryId: string | null;
   result: string;
-  type: 'text' | 'image' | 'video' | 'link';
+  type: 'Day' | 'Week' | 'Month' | 'Quarter' | 'Project' | 'Category';
   order: number;
   createdAt: Date;
   updatedAt: Date;
@@ -20,7 +20,7 @@ class RpmBlock extends Model<RpmBlockAttributes, RpmBlockCreationAttributes> {
   public id!: string;
   public categoryId!: string | null;
   public result!: string;
-  public type!: 'text' | 'image' | 'video' | 'link';
+  public type!: 'Day' | 'Week' | 'Month' | 'Quarter' | 'Project' | 'Category';
   public order!: number;
   public createdAt!: Date;
   public updatedAt!: Date;
@@ -47,8 +47,11 @@ RpmBlock.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM('text', 'image', 'video', 'link'),
+      type: DataTypes.ENUM('Day', 'Week', 'Month', 'Quarter', 'Project', 'Category'),
       allowNull: false,
+      validate: {
+        isIn: [['Day', 'Week', 'Month', 'Quarter', 'Project', 'Category']],
+      },
     },
     order: {
       type: DataTypes.INTEGER,

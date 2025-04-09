@@ -155,7 +155,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           result: group.title,
           purposes: [`Purpose voor ${group.title}`],
           categoryId: "",
-          type: "Day",
+          type: "day",
           createdAt: new Date(),
           updatedAt: new Date(),
           saved: false,
@@ -218,7 +218,15 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         setSelectedCategory(categoryId);
         
         // Zet de selectedOption correct
-        setSelectedOption(parsedData.type || dataSource.type || "Day")
+        const typeMap: { [key: string]: string } = {
+          'day': 'Day',
+          'week': 'Week',
+          'month': 'Month',
+          'quarter': 'Quarter',
+          'project': 'Project',
+          'category': 'Category'
+        };
+        setSelectedOption(typeMap[parsedData.type || dataSource.type || 'day'] || 'Day');
         
         // Als er een categoryId is, switch naar Category optie
         if (categoryId) {
@@ -236,7 +244,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         setPurposes(dataSource.purposes || [])
         setResult(dataSource.result || "")
         setSelectedCategory(dataSource.categoryId || "")
-        setSelectedOption(dataSource.type || "Day")
+        setSelectedOption("Day")
         
         // Als er een categoryId is, switch naar Category optie
         if (dataSource.categoryId) {
@@ -255,7 +263,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       setPurposes(dataSource.purposes || [])
       setResult(dataSource.result || "")
       setSelectedCategory(dataSource.categoryId || "")
-      setSelectedOption(dataSource.type || "Day")
+      setSelectedOption("Day")
       
       // Als er een categoryId is, switch naar Category optie
       if (dataSource.categoryId) {
@@ -316,14 +324,35 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         return;
       }
 
+      // Format massive actions voor opslaan
+      const formattedMassiveActions = massiveActions.map(action => ({
+        text: action.text,
+        leverage: action.leverage || '',
+        durationAmount: action.durationAmount || 0,
+        durationUnit: action.durationUnit || 'min',
+        priority: action.priority || 0,
+        key: action.key || '?',
+        categoryId: selectedCategory || ''
+      }));
+
+      // Map selectedOption naar een geldige type waarde
+      const typeMap: { [key: string]: string } = {
+        'Day': 'day',
+        'Week': 'week',
+        'Month': 'month',
+        'Quarter': 'quarter',
+        'Project': 'project',
+        'Category': 'category'
+      };
+
       const blockData = {
         category_id: selectedCategory,
         result: result,
-        type: 'text',
+        type: typeMap[selectedOption] || 'day', // Default to 'day' if no valid mapping
         order: 1,
         content: JSON.stringify({
-          massiveActions,
-          purposes,
+          massiveActions: formattedMassiveActions,
+          purposes: purposes.map(p => typeof p === 'string' ? p : p.purpose),
           result
         })
       };
@@ -331,8 +360,8 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       // Determine if we're updating an existing block or creating a new one
       const isUpdate = selectedBlock?.id !== undefined;
       const url = isUpdate 
-        ? `http://localhost:3001/api/rpmblocks/${selectedBlock.id}`
-        : 'http://localhost:3001/api/rpmblocks';
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${selectedBlock.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`;
       
       const method = isUpdate ? 'PUT' : 'POST';
 

@@ -45,7 +45,7 @@ const setupAssociations = () => {
   // Category - CategoryThreeToThrive associations
   Category.hasMany(CategoryThreeToThrive, {
     foreignKey: 'category_id',
-    as: 'CategoryThreeToThriveList',
+    as: 'CategoryThreeToThriveLists',
     onDelete: 'CASCADE'
   });
 
@@ -74,7 +74,6 @@ const setupAssociations = () => {
   });
 
 
-// Associations 
 
 RpmBlock.belongsTo(Category, {
   foreignKey: 'category_id',
@@ -82,7 +81,7 @@ RpmBlock.belongsTo(Category, {
 });
 
 RpmBlock.hasMany(RpmBlockMassiveAction, {
-  as: 'massiveActions',
+  as: 'rpmBlockMassiveActions',
   foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });
@@ -94,7 +93,7 @@ RpmBlockMassiveAction.belongsTo(RpmBlock, {
 
 // RpmBlockPurpose associaties
 RpmBlock.hasMany(RpmBlockPurpose, {
-  as: 'purposes',
+  as: 'rpmBlockPurposes',
   foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });
