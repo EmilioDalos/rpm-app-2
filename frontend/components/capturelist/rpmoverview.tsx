@@ -6,6 +6,10 @@ import { RpmBlock, CalendarEvent, MassiveAction } from '@/types';
 import ActionPlanPanel from './action-plan-panel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Purpose {
+  purpose: string;
+}
+
 export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const [visibleBlocks, setVisibleBlocks] = useState(8);
   const [storedBlocks, setStoredBlocks] = useState<RpmBlock[]>([]);
@@ -43,20 +47,28 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
         console.log('Fetching categories from API...');
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
         console.log('Categories API response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         console.log('Fetched categories data:', data);
         
-        // Controleer of we een array van categorieën hebben of een object met een categories property
-        if (data.categories && Array.isArray(data.categories)) {
-          setCategories(data.categories);
-        } else if (Array.isArray(data)) {
+        // Valideer de data structuur
+        if (Array.isArray(data)) {
+          // Data is al in het juiste formaat
           setCategories(data);
+        } else if (data.categories && Array.isArray(data.categories)) {
+          // Data zit in een categories property
+          setCategories(data.categories);
         } else {
-          setCategories([]);
           console.error('Unexpected categories data format:', data);
+          setCategories([]); // Fallback naar lege array
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setCategories([]); // Fallback naar lege array bij error
       }
     };
 
@@ -94,32 +106,46 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
 
   useEffect(() => {
     const reloadCombinedBlocks = () => {
-      const localBlocks = localStorage.getItem('rpmBlocks');
-      const localBlocksArray: RpmBlock[] = localBlocks ? JSON.parse(localBlocks) : [];
-  
-      const combinedBlocks = [
-        ...localBlocksArray,
-        ...(Array.isArray(blocks) ? blocks.filter(
-          (block) => !localBlocksArray.some((localBlock) => localBlock.id === block.id)
-        ) : []),
-      ];
+      try {
+        // Haal lokale blocks op en valideer
+        const localBlocks = localStorage.getItem('rpmBlocks');
+        const localBlocksArray: RpmBlock[] = localBlocks ? JSON.parse(localBlocks) : [];
+        const validLocalBlocks = Array.isArray(localBlocksArray) ? localBlocksArray : [];
 
-      // Filter blocks by selected category if one is selected
-      const filteredBlocks = selectedCategory !== "all"
-        ? combinedBlocks.filter(block => block.categoryId === selectedCategory)
-        : combinedBlocks;
+        // Valideer server blocks
+        const validServerBlocks = Array.isArray(blocks) ? blocks : [];
 
-      // Update action keys based on calendar planning
-      const updatedBlocks = updateActionKeysForPlannedActions(filteredBlocks);
-      
-      setStoredBlocks(updatedBlocks);
-      
-      // We slaan de originele blokken op (zonder key updates) om verwarring te voorkomen in localStorage
-      localStorage.setItem('rpmBlocks', JSON.stringify(combinedBlocks));
+        // Combineer blocks met validatie
+        const combinedBlocks = [
+          ...validLocalBlocks,
+          ...validServerBlocks.filter(
+            (block) => !validLocalBlocks.some((localBlock) => localBlock.id === block.id)
+          ),
+        ];
+
+        // Filter op categorie indien nodig
+        const filteredBlocks = selectedCategory !== "all"
+          ? combinedBlocks.filter(block => block.categoryId === selectedCategory)
+          : combinedBlocks;
+
+        // Update action keys op basis van kalender planning
+        const updatedBlocks = updateActionKeysForPlannedActions(filteredBlocks);
+        
+        // Update state
+        setStoredBlocks(updatedBlocks);
+        
+        // Update localStorage met originele data
+        localStorage.setItem('rpmBlocks', JSON.stringify(combinedBlocks));
+      } catch (error) {
+        console.error('Error processing RPM blocks:', error);
+        // Fallback naar lege array bij error
+        setStoredBlocks([]);
+      }
     };
 
     reloadCombinedBlocks();
 
+    // Event listener voor updates
     window.addEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
 
     return () => {

@@ -3,12 +3,17 @@ export const sanitizeSequelizeModel = (model: any): any => {
       ? model.get({ plain: true })
       : model;
   
-    for (const key in obj) {
-      if (key.includes('_')) {
-        delete obj[key];
-      }
+    // Verwijder alleen Sequelize metadata
+    delete obj._previousDataValues;
+    delete obj._changed;
+    delete obj._options;
+    delete obj._model;
+    delete obj._attributes;
+    delete obj._creationAttributes;
+    delete obj.category_id;
   
-      // Dieper opschonen (recursief)
+    // Recursief opschonen van geneste objecten
+    for (const key in obj) {
       if (Array.isArray(obj[key])) {
         obj[key] = obj[key].map((item: any) => sanitizeSequelizeModel(item));
       } else if (obj[key] && typeof obj[key] === 'object') {

@@ -10,37 +10,34 @@ import { isUUID } from 'validator';
 
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
+    // Eerst proberen we alleen de basis categorieën op te halen
     const categories = await Category.findAll({
-      include: [
-        { model: Role, as: 'roles' },
-        { model: CategoryThreeToThrive, as: 'CategoryThreeToThrives' },
-        { model: CategoryResult, as: 'CategoryResults' },
-        { model: CategoryActionPlan, as: 'CategoryActionPlans' }
-      ]
+      attributes: ['id', 'name', 'type', 'description', 'vision', 'purpose', 'resources'],
+      order: [['name', 'ASC']]
     });
 
-    const transformedCategories = categories.map(category => ({
-      ...category.toJSON(),
-      roles: category.roles?.map(role => ({
-        id: role.id,
-        name: role.name,
-        purpose: role.purpose || "",
-        description: role.description || ""
-      })),
-      threeToThrive: category.CategoryThreeToThrives?.map(item => item.threeToThrive) || [],
-      results: category.CategoryResults?.map(item => item.result) || [],
-      actionPlans: category.CategoryActionPlans?.map(item => item.actionPlan) || [],
-      imageBlob: category.imageBlob ? `data:image/jpeg;base64,${Buffer.from(category.imageBlob).toString('base64')}` : null,
-      description: category.description || "",
-      vision: category.vision || "",
-      purpose: category.purpose || "",
-      resources: category.resources || ""
-    }));
+    // Transformeer de data op een veilige manier
+    const transformedCategories = categories.map(category => {
+      const plainCategory = category.get({ plain: true });
+      return {
+        id: plainCategory.id,
+        name: plainCategory.name,
+        type: plainCategory.type,
+        description: plainCategory.description || "",
+        vision: plainCategory.vision || "",
+        purpose: plainCategory.purpose || "",
+        resources: plainCategory.resources || ""
+      };
+    });
 
     res.json(transformedCategories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    res.status(500).json({ 
+      error: 'Failed to fetch categories',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      code: error instanceof Error ? error.name : 'UNKNOWN_ERROR'
+    });
   }
 };
 

@@ -80,22 +80,28 @@ RpmBlock.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'category',
 });
+
 RpmBlock.hasMany(RpmBlockMassiveAction, {
-  as: 'rpmMassiveActions',
-  foreignKey: 'rpmBlockId'
+  as: 'massiveActions',
+  foreignKey: 'rpmBlockId',
+  onDelete: 'CASCADE'
 });
+
 RpmBlockMassiveAction.belongsTo(RpmBlock, {
-  foreignKey: 'rpmBlockId'
+  foreignKey: 'rpmBlockId',
+  as: 'rpmBlock'
 });
 
 // RpmBlockPurpose associaties
 RpmBlock.hasMany(RpmBlockPurpose, {
-  as: 'rpmBlockPurpose',
-  foreignKey: 'rpmBlockId'
+  as: 'purposes',
+  foreignKey: 'rpmBlockId',
+  onDelete: 'CASCADE'
 });
 
 RpmBlockPurpose.belongsTo(RpmBlock, {
-  foreignKey: 'rpmBlockId'
+  foreignKey: 'rpmBlockId',
+  as: 'rpmBlock'
 });
 
   

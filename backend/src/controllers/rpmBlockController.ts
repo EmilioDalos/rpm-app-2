@@ -4,30 +4,54 @@ import RpmBlockMassiveAction from '../models/RpmBlockMassiveAction';
 import RpmBlockPurpose from '../models/RpmBlockPurpose';
 import Category from '../models/Category';
 import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
+import sequelize from '../config/db';
+
+interface MassiveAction {
+  text: string;
+  leverage?: string;
+  durationAmount?: number;
+  durationUnit?: string;
+  priority?: number;
+  key?: string;
+}
+
+interface Purpose {
+  purpose: string;
+}
 
 export const getRpmBlocks = async (req: Request, res: Response) => {
   try {
     const blocks = await RpmBlock.findAll({
       nest: true,
       include: [
-        { model: RpmBlockMassiveAction, as: 'rpmMassiveActions' },
-        { model: RpmBlockPurpose, as: 'rpmBlockPurpose' },
-        { model: Category, as: 'category' },
+        { 
+          model: RpmBlockMassiveAction, 
+          as: 'massiveActions',
+          attributes: ['id', 'text', 'color', 'textColor', 'leverage', 'durationAmount', 'durationUnit', 'priority', 'key', 'startDate', 'endDate', 'isDateRange', 'hour', 'missedDate']
+        },
+        { 
+          model: RpmBlockPurpose, 
+          as: 'purposes',
+          attributes: ['id', 'purpose']
+        },
+        { 
+          model: Category, 
+          as: 'category',
+          attributes: ['id', 'name']
+        }
       ],
     });
-    // const formattedBlocks= blocks.map(category => ({
-    //   ...category,
-    //   updatedAt: category.updated_at, // Zorg ervoor dat je de juiste naam gebruikt
-    // }));
 
     // Sanitize the blocks
-    console.log(typeof blocks[0]);              // object
-    console.log(blocks[0].constructor.name);    // RpmBlock?
     const cleanBlocks = blocks.map((block) => sanitizeSequelizeModel(block));
     res.status(200).json(cleanBlocks);   
   } catch (error) {
     console.error('Error fetching RPM blocks:', error);
-    res.status(500).json({ error: 'Failed to fetch RPM blocks' });
+    res.status(500).json({ 
+      error: 'Failed to fetch RPM blocks',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      code: error instanceof Error ? error.name : 'UNKNOWN_ERROR'
+    });
   }
 };
 
@@ -77,24 +101,106 @@ export const createRpmBlock = async (req: Request, res: Response) => {
 export const updateRpmBlock = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { category_id, result, type, order } = req.body;
+    const { category_id, result, type, order, content } = req.body;
 
-    const block = await RpmBlock.findByPk(id);
-    if (!block) {
-      return res.status(404).json({ error: 'RPM block not found' });
+    // Start een transactie
+    const transaction = await sequelize.transaction();
+
+    try {
+      const block = await RpmBlock.findByPk(id, {
+        include: [
+          { model: RpmBlockMassiveAction, as: 'massiveActions' },
+          { model: RpmBlockPurpose, as: 'purposes' }
+        ],
+        transaction
+      });
+
+      if (!block) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'RPM block not found' });
+      }
+
+      // Update basis block data
+      await block.update({
+        categoryId: category_id || null,
+        result,
+        type,
+        order
+      }, { transaction });
+
+      // Parse content als het een string is
+      let parsedContent: { massiveActions?: MassiveAction[]; purposes?: Purpose[] };
+      try {
+        parsedContent = typeof content === 'string' ? JSON.parse(content) : content;
+      } catch (error) {
+        console.error('Error parsing content:', error);
+        parsedContent = {};
+      }
+
+      // Update massive actions
+      if (parsedContent.massiveActions && Array.isArray(parsedContent.massiveActions)) {
+        // Verwijder bestaande massive actions
+        await RpmBlockMassiveAction.destroy({
+          where: { rpmBlockId: id },
+          transaction
+        });
+
+        // Maak nieuwe massive actions aan
+        await Promise.all(parsedContent.massiveActions.map((action: MassiveAction) => 
+          RpmBlockMassiveAction.create({
+            text: action.text,
+            leverage: action.leverage || '',
+            durationAmount: action.durationAmount || 0,
+            durationUnit: action.durationUnit || 'min',
+            priority: action.priority || 0,
+            key: action.key || '?',
+            rpmBlockId: id
+          }, { transaction })
+        ));
+      }
+
+      // Update purposes
+      if (parsedContent.purposes && Array.isArray(parsedContent.purposes)) {
+        // Verwijder bestaande purposes
+        await RpmBlockPurpose.destroy({
+          where: { rpmBlockId: id },
+          transaction
+        });
+
+        // Maak nieuwe purposes aan
+        await Promise.all(parsedContent.purposes.map((purpose: Purpose) => 
+          RpmBlockPurpose.create({
+            purpose: typeof purpose === 'string' ? purpose : purpose.purpose,
+            rpmBlockId: id
+          }, { transaction })
+        ));
+      }
+
+      // Commit de transactie
+      await transaction.commit();
+
+      // Haal het bijgewerkte block op met alle relaties
+      const updatedBlock = await RpmBlock.findByPk(id, {
+        include: [
+          { model: RpmBlockMassiveAction, as: 'massiveActions' },
+          { model: RpmBlockPurpose, as: 'purposes' },
+          { model: Category, as: 'category' }
+        ]
+      });
+
+      res.json(updatedBlock);
+    } catch (error) {
+      // Rollback bij error
+      await transaction.rollback();
+      throw error;
     }
-
-    await block.update({
-      categoryId: category_id || null,
-      result,
-      type,
-      order
-    });
-
-    res.json(block);
   } catch (error) {
     console.error('Error updating RPM block:', error);
-    res.status(500).json({ error: 'Failed to update RPM block' });
+    res.status(500).json({ 
+      error: 'Failed to update RPM block',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      code: error instanceof Error ? error.name : 'UNKNOWN_ERROR'
+    });
   }
 };
 

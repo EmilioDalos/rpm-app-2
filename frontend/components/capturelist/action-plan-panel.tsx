@@ -12,6 +12,10 @@ type ActionPlan = MassiveAction & {
   id: string
 }
 
+interface Purpose {
+  purpose: string;
+}
+
 type ActionPlanPanelProps = {
   group?: {
     id: number
@@ -41,7 +45,7 @@ const ACTION_KEY_DESCRIPTIONS = {
 
 export default function ActionPlanPanel({ group, onClose, selectedBlock }: ActionPlanPanelProps): ReactElement {
   const [massiveActions, setMassiveActions] = useState<ActionPlan[]>([])
-  const [purposes, setPurposes] = useState<string[]>([])
+  const [purposes, setPurposes] = useState<(string | Purpose)[]>([])
   const [result, setResult] = useState("")
   const [activeColumn, setActiveColumn] = useState("massiveActions")
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -619,11 +623,11 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
                 className={`flex-1 p-4 rounded-lg bg-gray-300 ${isCollapsed && activeColumn !== "purpose" ? "hidden" : ""}`}
               >
                 <h3 className="text-lg font-semibold mb-2">PURPOSE</h3>
-                {purposes.map((purpose, index) => (
+                {purposes.map((purpose: string | Purpose, index) => (
                   <div key={index} className="flex items-center my-2">
                     <Input
                       placeholder="Purpose"
-                      value={purpose}
+                      value={typeof purpose === 'string' ? purpose : purpose.purpose}
                       onChange={(e) => {
                         const newPurposes = [...purposes]
                         newPurposes[index] = e.target.value
