@@ -102,7 +102,4 @@ Category.init(
   }
 );
 
-Category.hasMany(Role, { as: 'roles', foreignKey: 'category_id' });
-Category.hasMany(CategoryThreeToThrive, { foreignKey: 'category_id' });
-
 export default Category;

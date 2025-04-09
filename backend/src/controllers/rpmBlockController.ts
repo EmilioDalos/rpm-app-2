@@ -3,13 +3,15 @@ import RpmBlock from '../models/RpmBlock';
 import RpmBlockMassiveAction from '../models/RpmBlockMassiveAction';
 import RpmBlockPurpose from '../models/RpmBlockPurpose';
 import Category from '../models/Category';
+import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
 
 export const getRpmBlocks = async (req: Request, res: Response) => {
   try {
     const blocks = await RpmBlock.findAll({
+      nest: true,
       include: [
-        { model: RpmBlockMassiveAction, as: 'massiveActions' },
-        { model: RpmBlockPurpose, as: 'purposes' },
+        { model: RpmBlockMassiveAction, as: 'rpmMassiveActions' },
+        { model: RpmBlockPurpose, as: 'rpmBlockPurpose' },
         { model: Category, as: 'category' },
       ],
     });
@@ -17,8 +19,12 @@ export const getRpmBlocks = async (req: Request, res: Response) => {
     //   ...category,
     //   updatedAt: category.updated_at, // Zorg ervoor dat je de juiste naam gebruikt
     // }));
-    res.status(200).json(blocks);
-   
+
+    // Sanitize the blocks
+    console.log(typeof blocks[0]);              // object
+    console.log(blocks[0].constructor.name);    // RpmBlock?
+    const cleanBlocks = blocks.map((block) => sanitizeSequelizeModel(block));
+    res.status(200).json(cleanBlocks);   
   } catch (error) {
     console.error('Error fetching RPM blocks:', error);
     res.status(500).json({ error: 'Failed to fetch RPM blocks' });
@@ -52,7 +58,7 @@ export const createRpmBlock = async (req: Request, res: Response) => {
     }
 
     const block = await RpmBlock.create({
-      category_id: category_id || null,
+      categoryId: category_id || null,
       result,
       type,
       order: finalOrder
@@ -79,7 +85,7 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
     }
 
     await block.update({
-      category_id: category_id || null,
+      categoryId: category_id || null,
       result,
       type,
       order

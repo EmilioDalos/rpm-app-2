@@ -6,6 +6,7 @@ import CategoryResult from '../models/CategoryResult';
 import CategoryActionPlan from '../models/CategoryActionPlan';
 import sequelize from '../config/db';
 import { v4 as uuidv4 } from 'uuid';
+import { isUUID } from 'validator';
 
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
@@ -46,6 +47,11 @@ export const getAllCategories = async (req: Request, res: Response) => {
 export const getCategoryById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    // UUID validatie
+    if (!isUUID(id)) {
+      return res.status(400).json({ error: 'Invalid category ID format (must be UUID)' });
+    }
 
     const category = await Category.findByPk(id, {
       include: [

@@ -312,7 +312,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         return;
       }
 
-      const newBlock = {
+      const blockData = {
         category_id: selectedCategory,
         result: result,
         type: 'text',
@@ -324,21 +324,29 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         })
       };
 
-      const response = await fetch('http://localhost:3001/api/rpmblocks', {
-        method: 'POST',
+      // Determine if we're updating an existing block or creating a new one
+      const isUpdate = selectedBlock?.id !== undefined;
+      const url = isUpdate 
+        ? `http://localhost:3001/api/rpmblocks/${selectedBlock.id}`
+        : 'http://localhost:3001/api/rpmblocks';
+      
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newBlock),
+        body: JSON.stringify(blockData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to save RPM block');
+        throw new Error(errorData.details || `Failed to ${isUpdate ? 'update' : 'save'} RPM block`);
       }
 
       const savedBlock = await response.json();
-      console.log('Saved RPM block:', savedBlock);
+      console.log(`${isUpdate ? 'Updated' : 'Saved'} RPM block:`, savedBlock);
 
       // Update localStorage
       const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]");
@@ -420,8 +428,8 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     console.log("handleCapturelistClick - Saving with categoryId:", selectedCategory);
     console.log("handleCapturelistClick - Saving with type:", selectedOption);
 
-    // Create a new block based on the selected source
-    const newBlock = {
+    // Create a block based on the selected source
+    const blockData = {
       id: sourceId,
       massiveActions: massiveActions,
       result,
@@ -436,8 +444,8 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
     // Sla de data op in localStorage onder de key actionPlan-<id>
     const storageKey = `actionPlan-${sourceId}`
-    localStorage.setItem(storageKey, JSON.stringify(newBlock))
-    console.log(`Data opgeslagen in localStorage onder key: ${storageKey}`, newBlock)
+    localStorage.setItem(storageKey, JSON.stringify(blockData))
+    console.log(`Data opgeslagen in localStorage onder key: ${storageKey}`, blockData)
 
     // Retrieve existing rpmBlocks from localStorage
     const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
@@ -451,7 +459,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     }
 
     // Add the new block at the beginning of the list
-    existingBlocks.unshift(newBlock)
+    existingBlocks.unshift(blockData)
 
     // Save the updated list to localStorage
     localStorage.setItem("rpmBlocks", JSON.stringify(existingBlocks))

@@ -72,6 +72,32 @@ const setupAssociations = () => {
     foreignKey: 'category_id',
     as: 'category'
   });
+
+
+// Associations 
+
+RpmBlock.belongsTo(Category, {
+  foreignKey: 'category_id',
+  as: 'category',
+});
+RpmBlock.hasMany(RpmBlockMassiveAction, {
+  as: 'rpmMassiveActions',
+  foreignKey: 'rpmBlockId'
+});
+RpmBlockMassiveAction.belongsTo(RpmBlock, {
+  foreignKey: 'rpmBlockId'
+});
+
+// RpmBlockPurpose associaties
+RpmBlock.hasMany(RpmBlockPurpose, {
+  as: 'rpmBlockPurpose',
+  foreignKey: 'rpmBlockId'
+});
+
+RpmBlockPurpose.belongsTo(RpmBlock, {
+  foreignKey: 'rpmBlockId'
+});
+
   
   console.log('Associations set up successfully');
 };

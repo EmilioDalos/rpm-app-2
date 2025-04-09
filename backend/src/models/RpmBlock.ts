@@ -74,26 +74,8 @@ RpmBlock.init(
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+    underscored: false,
   }
 );
-
-// Associations 
-// RPMBlock associations
-RpmBlock.hasMany(RpmBlockMassiveAction, {
-  foreignKey: 'rpm_block_id',
-  as: 'massiveActions',
- });
-
-RpmBlock.hasMany(RpmBlockPurpose, {
-  foreignKey: 'rpm_block_id',
-  as: 'purposes',
-});
-
-RpmBlock.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'category',
-});
-
-  
 
 export default RpmBlock;

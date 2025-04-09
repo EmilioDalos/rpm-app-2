@@ -1,6 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
-import RPMBlock from './RpmBlock';
 
 interface RpmBlockPurposeAttributes {
   id: string;
@@ -52,11 +51,11 @@ RpmBlockPurpose.init(
     tableName: 'rpm_block_purpose',
     timestamps: true,
     createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    updatedAt: 'updated_at',
+    underscored: true,
   }
 );
 
-//  // RpmBlockPurpose associations
-
+// We'll set up associations in the index.ts file instead to avoid circular dependencies
 
 export default RpmBlockPurpose;

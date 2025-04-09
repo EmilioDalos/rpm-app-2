@@ -130,8 +130,11 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const handleDelete = async (id: string, isSaved: boolean) => {
     try {
       if (isSaved) {
-        const response = await fetch(`/api/rpmblocks/${id}`, {
+        const response = await fetch(`http://localhost:3001/api/rpmblocks/${id}`, {
           method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
 
         if (!response.ok) {

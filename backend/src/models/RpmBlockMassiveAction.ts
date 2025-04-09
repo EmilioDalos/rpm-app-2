@@ -1,6 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
-import RpmBlock from './RpmBlock';
 
 interface RpmBlockMassiveActionAttributes {
   id: string;
@@ -40,8 +39,8 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public isDateRange?: boolean;
   public hour?: number;
   public missedDate?: Date;
-  public createdAt!: Date;
-  public updatedAt!: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 RpmBlockMassiveAction.init({
@@ -130,9 +129,10 @@ RpmBlockMassiveAction.init({
   tableName: 'rpm_block_massive_action',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  underscored: true,
 });
 
-//RpmBlockMassiveAction associations
+// We'll set up associations in the index.ts file instead to avoid circular dependencies
 
 export default RpmBlockMassiveAction;
