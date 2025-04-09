@@ -142,10 +142,14 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { category_id, result, type, order, content } = req.body;
 
+    console.log('Updating RPM block with ID:', id);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     // Start een transactie
     const transaction = await sequelize.transaction();
 
     try {
+      console.log('Finding RPM block with ID:', id);
       const block = await RpmBlock.findByPk(id, {
         include: [
           { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
@@ -155,11 +159,21 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
       });
 
       if (!block) {
+        console.log('RPM block not found with ID:', id);
         await transaction.rollback();
         return res.status(404).json({ error: 'RPM block not found' });
       }
 
+      console.log('Found RPM block:', JSON.stringify(block, null, 2));
+
       // Update basis block data
+      console.log('Updating block with data:', {
+        categoryId: category_id || null,
+        result,
+        type,
+        order
+      });
+      
       await block.update({
         categoryId: category_id || null,
         result,
@@ -171,6 +185,7 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
       let parsedContent: { massiveActions?: MassiveAction[]; purposes?: Purpose[] } = {};
       try {
         parsedContent = content ? (typeof content === 'string' ? JSON.parse(content) : content) : {};
+        console.log('Parsed content:', JSON.stringify(parsedContent, null, 2));
       } catch (error) {
         console.error('Error parsing content:', error);
         parsedContent = {};
@@ -178,12 +193,14 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
 
       // Update massive actions
       if (parsedContent.massiveActions && Array.isArray(parsedContent.massiveActions)) {
+        console.log('Deleting existing massive actions for block ID:', id);
         // Verwijder bestaande massive actions
         await RpmBlockMassiveAction.destroy({
           where: { rpmBlockId: id },
           transaction
         });
 
+        console.log('Creating new massive actions:', JSON.stringify(parsedContent.massiveActions, null, 2));
         // Maak nieuwe massive actions aan
         await Promise.all(parsedContent.massiveActions.map((action: MassiveAction) => 
           RpmBlockMassiveAction.create({
@@ -200,12 +217,14 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
 
       // Update purposes
       if (parsedContent.purposes && Array.isArray(parsedContent.purposes)) {
+        console.log('Deleting existing purposes for block ID:', id);
         // Verwijder bestaande purposes
         await RpmBlockPurpose.destroy({
           where: { rpmBlockId: id },
           transaction
         });
 
+        console.log('Creating new purposes:', JSON.stringify(parsedContent.purposes, null, 2));
         // Maak nieuwe purposes aan
         await Promise.all(parsedContent.purposes.map((purpose: Purpose) => 
           RpmBlockPurpose.create({
@@ -216,9 +235,11 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
       }
 
       // Commit de transactie
+      console.log('Committing transaction');
       await transaction.commit();
 
       // Haal het bijgewerkte block op met alle relaties
+      console.log('Fetching updated block with ID:', id);
       const updatedBlock = await RpmBlock.findByPk(id, {
         include: [
           { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
@@ -227,9 +248,11 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
         ]
       });
 
+      console.log('Sending response with updated block');
       res.json(updatedBlock);
     } catch (error) {
       // Rollback bij error
+      console.error('Error in transaction:', error);
       await transaction.rollback();
       throw error;
     }

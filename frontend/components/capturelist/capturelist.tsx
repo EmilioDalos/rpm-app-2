@@ -7,16 +7,17 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ActionPlanPanel from "./action-plan-panel"
+import { v4 as uuidv4 } from 'uuid'
 
 type Action = {
-  id: number
+  id: string
   text: string
   checked: boolean
   isEditing?: boolean
 }
 
 type Group = {
-  id: number
+  id: string
   title: string
   actions: Action[]
   isEditing: boolean
@@ -30,8 +31,8 @@ export default function Capturelist() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const [showActionPlan, setShowActionPlan] = useState(false)
   const [selectedGroupForPlan, setSelectedGroupForPlan] = useState<Group | null>(null)
-  const [viewingGroup, setViewingGroup] = useState<number | null>(null)
-  const [editingGroupId, setEditingGroupId] = useState<number | null>(null)
+  const [viewingGroup, setViewingGroup] = useState<string | null>(null)
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
 
   // Load actions and groups from localStorage on mount
   useEffect(() => {
@@ -49,16 +50,16 @@ export default function Capturelist() {
 
   const addAction = () => {
     if (newAction.trim()) {
-      setActions([...actions, { id: Date.now(), text: newAction, checked: false }])
+      setActions([...actions, {id: uuidv4(), text: newAction, checked: false }])
       setNewAction("")
     }
   }
 
-  const removeAction = (id: number) => {
+  const removeAction = (id: string) => {
     setActions(actions.filter((action) => action.id !== id))
   }
 
-  const toggleAction = (id: number) => {
+  const toggleAction = (id: string) => {
     setActions(actions.map((action) => (action.id === id ? { ...action, checked: !action.checked } : action)))
   }
 
@@ -66,7 +67,7 @@ export default function Capturelist() {
     if (groupTitle.trim()) {
       const checkedActions = actions.filter((action) => action.checked)
       const newGroup = {
-        id: Date.now(),
+        id: uuidv4(),
         title: groupTitle,
         actions: checkedActions,
         isEditing: false,
@@ -81,7 +82,7 @@ export default function Capturelist() {
 
   const addToGroup = () => {
     if (selectedGroup) {
-      const groupId = Number.parseInt(selectedGroup)
+      const groupId = selectedGroup
       const checkedActions = actions.filter((action) => action.checked)
       setGroups(
         groups.map((group) =>
@@ -93,20 +94,20 @@ export default function Capturelist() {
     }
   }
 
-  const toggleGroupEditing = (groupId: number) => {
+  const toggleGroupEditing = (groupId: string) => {
     setEditingGroupId((prevId) => (prevId === groupId ? null : groupId))
   }
 
-  const updateGroupTitle = (groupId: number, newTitle: string) => {
+  const updateGroupTitle = (groupId: string, newTitle: string) => {
     setGroups((prevGroups) => prevGroups.map((group) => (group.id === groupId ? { ...group, title: newTitle } : group)))
   }
 
   const openActionPlan = (group: Group) => {
     // Sla de group op in localStorage onder de key actionPlan-<id>
     const actionPlanData = {
-      id: group.id.toString(),
+      id: group.id,
       massiveActions: group.actions.map((action) => ({
-        id: action.id.toString(),
+        id: action.id,
         text: action.text,
         leverage: "",
         durationAmount: 0,
@@ -135,16 +136,16 @@ export default function Capturelist() {
     setShowActionPlan(true);
   }
 
-  const toggleGroupView = (groupId: number) => {
+  const toggleGroupView = (groupId: string) => {
     setViewingGroup((prevViewingGroup) => (prevViewingGroup === groupId ? null : groupId))
   }
 
-  const deleteGroup = (groupId: number) => {
+  const deleteGroup = (groupId: string) => {
     setGroups(groups.filter((group) => group.id !== groupId))
     if (viewingGroup === groupId) setViewingGroup(null)
   }
 
-  const handleActionPlanClose = (deletedGroupId?: number) => {
+  const handleActionPlanClose = (deletedGroupId?: string) => {
     // We verwijderen de group niet meer hier, omdat dit al gebeurt in openActionPlan
     // if (deletedGroupId) {
     //   setGroups((prevGroups) => prevGroups.filter((group) => group.id !== deletedGroupId))
@@ -195,7 +196,7 @@ export default function Capturelist() {
             </SelectTrigger>
             <SelectContent>
               {groups.map((group) => (
-                <SelectItem key={group.id} value={group.id.toString()}>
+                <SelectItem key={group.id} value={group.id}>
                   {group.title}
                 </SelectItem>
               ))}

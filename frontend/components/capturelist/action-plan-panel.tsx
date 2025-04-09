@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { RpmBlock, MassiveAction, CalendarEvent } from "@/types"
+import { v4 as uuidv4 } from 'uuid';
 
 type ActionPlan = MassiveAction & {
   id: string
@@ -18,18 +19,18 @@ interface Purpose {
 
 type ActionPlanPanelProps = {
   group?: {
-    id: number
+    id: string
     title: string
-    actions: { id: number; text: string; checked: boolean }[]
+    actions: { id: string; text: string; checked: boolean }[]
   }
-  onClose: (deletedGroupId?: number) => void
+  onClose: (deletedGroupId?: string) => void
   selectedBlock?: RpmBlock
 }
 
 interface Group {
-  id: number;
+  id: string;
   title: string;
-  actions: { id: number; text: string; checked: boolean; }[];
+  actions: { id: string; text: string; checked: boolean; }[];
 }
 
 // Beschrijvingen voor de actie-statussleutels
@@ -140,9 +141,9 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   useEffect(() => {
     const dataSource: RpmBlock | undefined = group
       ? {
-          id: group.id.toString(),
+          id: group.id,
           massiveActions: group.actions.map((action) => ({
-            id: action.id.toString(),
+            id: action.id,
             text: action.text,
             leverage: "",
             durationAmount: 0,
@@ -155,7 +156,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           result: group.title,
           purposes: [`Purpose voor ${group.title}`],
           categoryId: "",
-          type: "day",
+          type: "Day",
           createdAt: new Date(),
           updatedAt: new Date(),
           saved: false,
@@ -168,7 +169,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     }
 
     // Zorg ervoor dat het ID correct wordt gebruikt
-    const sourceId = typeof dataSource.id === 'string' ? dataSource.id : String(dataSource.id)
+    const sourceId = dataSource.id
     console.log("Loading data with ID:", sourceId)
 
     const storageKey = `actionPlan-${sourceId}`
@@ -185,13 +186,13 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         if (parsedData.massiveActions && parsedData.massiveActions.length > 0) {
           setMassiveActions(parsedData.massiveActions.map((action: any) => ({
             ...action,
-            id: typeof action.id === 'string' ? action.id : String(action.id),
+            id: action.id,
           })))
         } else {
           // Als massiveActions leeg is, gebruik dan de acties uit dataSource
           setMassiveActions(dataSource.massiveActions?.map(action => ({
             ...action,
-            id: typeof action.id === 'string' ? action.id : String(action.id),
+            id: action.id,
             categoryId: dataSource.categoryId || "",
           })))
         }
@@ -219,14 +220,14 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         
         // Zet de selectedOption correct
         const typeMap: { [key: string]: string } = {
-          'day': 'Day',
-          'week': 'Week',
-          'month': 'Month',
-          'quarter': 'Quarter',
-          'project': 'Project',
-          'category': 'Category'
+          'Day': 'Day',
+          'Week': 'Week',
+          'Month': 'Month',
+          'Quarter': 'Quarter',
+          'Project': 'Project',
+          'Category': 'Category'
         };
-        setSelectedOption(typeMap[parsedData.type || dataSource.type || 'day'] || 'Day');
+        setSelectedOption(typeMap[parsedData.type || dataSource.type || 'Day'] || 'Day');
         
         // Als er een categoryId is, switch naar Category optie
         if (categoryId) {
@@ -238,7 +239,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         // Fallback naar dataSource bij parse error
         setMassiveActions(dataSource.massiveActions.map(action => ({
           ...action,
-          id: typeof action.id === 'string' ? action.id : String(action.id),
+          id: action.id,
           categoryId: dataSource.categoryId || "",
         })))
         setPurposes(dataSource.purposes || [])
@@ -257,7 +258,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       console.log("Geen opgeslagen data gevonden, gebruik dataSource:", dataSource)
       setMassiveActions(dataSource.massiveActions?.map(action => ({
         ...action,
-        id: typeof action.id === 'string' ? action.id : String(action.id),
+        id: action.id,
         categoryId: dataSource.categoryId || "",
       })))
       setPurposes(dataSource.purposes || [])
@@ -278,7 +279,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     if (!source?.id) return
 
     // Zorg ervoor dat het ID correct wordt gebruikt
-    const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+    const sourceId = source.id
 
     const storageKey = `actionPlan-${sourceId}`
     localStorage.setItem(
@@ -298,7 +299,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
   const addMassiveAction = () => {
     const newAction: ActionPlan = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       text: "",
       leverage: "",
       durationAmount: 0,
@@ -337,18 +338,18 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
 
       // Map selectedOption naar een geldige type waarde
       const typeMap: { [key: string]: string } = {
-        'Day': 'day',
-        'Week': 'week',
-        'Month': 'month',
-        'Quarter': 'quarter',
-        'Project': 'project',
-        'Category': 'category'
+        'Day': 'Day',
+        'Week': 'Week',
+        'Month': 'Month',
+        'Quarter': 'Quarter',
+        'Project': 'Project',
+        'Category': 'Category'
       };
 
       const blockData = {
         category_id: selectedCategory,
         result: result,
-        type: typeMap[selectedOption] || 'day', // Default to 'day' if no valid mapping
+        type: typeMap[selectedOption] || 'Day', // Default to 'Day' if no valid mapping
         order: 1,
         content: JSON.stringify({
           massiveActions: formattedMassiveActions,
@@ -357,12 +358,20 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         })
       };
 
+      // Debug logging
+      console.log('Block data being sent to server:', JSON.stringify(blockData, null, 2));
+      console.log('Selected block ID:', selectedBlock?.id);
+      console.log('Selected block type:', typeof selectedBlock?.id);
+
       // Determine if we're updating an existing block or creating a new one
       const isUpdate = selectedBlock?.id !== undefined;
       const url = isUpdate 
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${selectedBlock.id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`;
       
+      console.log('Request URL:', url);
+      console.log('Request method:', isUpdate ? 'PUT' : 'POST');
+
       const method = isUpdate ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -373,8 +382,11 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         body: JSON.stringify(blockData),
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response data:', errorData);
         throw new Error(errorData.details || `Failed to ${isUpdate ? 'update' : 'save'} RPM block`);
       }
 
@@ -395,7 +407,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       window.dispatchEvent(event);
 
       // Close the panel
-      onClose(typeof savedBlock.id === "number" ? savedBlock.id : Number.parseInt(savedBlock.id));
+      onClose(savedBlock.id);
     } catch (error) {
       console.error('Error saving RPM block:', error);
       // Toon een foutmelding aan de gebruiker
@@ -455,7 +467,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     }
 
     // Zorg ervoor dat het ID correct wordt overgenomen
-    const sourceId = typeof source.id === 'string' ? source.id : String(source.id)
+    const sourceId = source.id
 
     // Debug logging
     console.log("handleCapturelistClick - Saving with categoryId:", selectedCategory);
@@ -516,7 +528,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       setMassiveActions(
         selectedBlock.massiveActions.map((action) => ({
           ...action,
-          id: typeof action.id === "string" ? action.id : String(action.id),
+          id: action.id,
         })),
       )
       setResult(selectedBlock.result || "")
