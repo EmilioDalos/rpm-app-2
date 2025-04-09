@@ -81,7 +81,7 @@ RpmBlock.belongsTo(Category, {
 });
 
 RpmBlock.hasMany(RpmBlockMassiveAction, {
-  as: 'rpmBlockMassiveActions',
+  as: 'massiveActions',
   foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });
@@ -93,7 +93,7 @@ RpmBlockMassiveAction.belongsTo(RpmBlock, {
 
 // RpmBlockPurpose associaties
 RpmBlock.hasMany(RpmBlockPurpose, {
-  as: 'rpmBlockPurposes',
+  as: 'purposes',
   foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });

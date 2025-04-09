@@ -23,14 +23,20 @@ export const getRpmBlocks = async (req: Request, res: Response) => {
   try {
     const blocks = await RpmBlock.findAll({
       include: [
-        { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
-        { model: RpmBlockPurpose, as: 'rpmBlockPurposes' },
+        { model: RpmBlockMassiveAction, as: 'massiveActions' },
+        { model: RpmBlockPurpose, as: 'purposes' },
         { model: Category, as: 'category' }
       ],
       order: [['createdAt', 'DESC']]
     });
 
-    res.json(blocks);
+    // Add saved property to each block
+    const blocksWithSaved = blocks.map(block => ({
+      ...block.toJSON(),
+      saved: true
+    }));
+
+    res.json(blocksWithSaved);
   } catch (error) {
     console.error('Error fetching RPM blocks:', error);
     res.status(500).json({ error: 'Failed to fetch RPM blocks' });
@@ -42,8 +48,8 @@ export const getRpmBlockById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const block = await RpmBlock.findByPk(id, {
       include: [
-        { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
-        { model: RpmBlockPurpose, as: 'rpmBlockPurposes' },
+        { model: RpmBlockMassiveAction, as: 'massiveActions' },
+        { model: RpmBlockPurpose, as: 'purposes' },
         { model: Category, as: 'category' }
       ]
     });
@@ -115,8 +121,8 @@ export const createRpmBlock = async (req: Request, res: Response) => {
       // Haal het aangemaakte block op met alle relaties
       const createdBlock = await RpmBlock.findByPk(block.id, {
         include: [
-          { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
-          { model: RpmBlockPurpose, as: 'rpmBlockPurposes' },
+          { model: RpmBlockMassiveAction, as: 'massiveActions' },
+          { model: RpmBlockPurpose, as: 'purposes' },
           { model: Category, as: 'category' }
         ]
       });
@@ -152,8 +158,8 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
       console.log('Finding RPM block with ID:', id);
       const block = await RpmBlock.findByPk(id, {
         include: [
-          { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
-          { model: RpmBlockPurpose, as: 'rpmBlockPurposes' }
+          { model: RpmBlockMassiveAction, as: 'massiveActions' },
+          { model: RpmBlockPurpose, as: 'purposes' }
         ],
         transaction
       });
@@ -242,8 +248,8 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
       console.log('Fetching updated block with ID:', id);
       const updatedBlock = await RpmBlock.findByPk(id, {
         include: [
-          { model: RpmBlockMassiveAction, as: 'rpmBlockMassiveActions' },
-          { model: RpmBlockPurpose, as: 'rpmBlockPurposes' },
+          { model: RpmBlockMassiveAction, as: 'massiveActions' },
+          { model: RpmBlockPurpose, as: 'purposes' },
           { model: Category, as: 'category' }
         ]
       });

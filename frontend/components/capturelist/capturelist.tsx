@@ -102,39 +102,80 @@ export default function Capturelist() {
     setGroups((prevGroups) => prevGroups.map((group) => (group.id === groupId ? { ...group, title: newTitle } : group)))
   }
 
-  const openActionPlan = (group: Group) => {
-    // Sla de group op in localStorage onder de key actionPlan-<id>
-    const actionPlanData = {
-      id: group.id,
-      massiveActions: group.actions.map((action) => ({
-        id: action.id,
-        text: action.text,
-        leverage: "",
-        durationAmount: 0,
-        durationUnit: "min",
-        priority: 0,
-        key: "✘",
+  const openActionPlan = async (group: Group) => {
+    try {
+      console.log('Opening action plan for group:', group);
+      
+      // Stuur een POST verzoek naar de API om het blok in de database op te slaan
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: group.id,
+          result: group.title,
+          type: 'Day',
+          order: 1,
+          category_id: '',
+          content: JSON.stringify({
+            massiveActions: group.actions.map(action => ({
+              id: action.id,
+              text: action.text,
+              leverage: '',
+              durationAmount: 0,
+              durationUnit: 'min',
+              priority: 0,
+              key: '?',
+              categoryId: '',
+              notes: []
+            })),
+            purposes: [`Purpose voor ${group.title}`],
+            result: group.title
+          })
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error saving RPM Block: ${response.statusText}`);
+      }
+
+      // Sla de group op in localStorage onder de key actionPlan-<id>
+      const actionPlanData = {
+        id: group.id,
+        massiveActions: group.actions.map((action) => ({
+          id: action.id,
+          text: action.text,
+          leverage: "",
+          durationAmount: 0,
+          durationUnit: "min",
+          priority: 0,
+          key: "✘",
+          categoryId: "",
+          notes: [],
+        })),
+        result: group.title,
+        purposes: [`Purpose voor ${group.title}`],
         categoryId: "",
-        notes: [],
-      })),
-      result: group.title,
-      purposes: [`Purpose voor ${group.title}`],
-      categoryId: "",
-      type: "Day",
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Zorg ervoor dat de data correct wordt opgeslagen
-    console.log("Opslaan van group in actionPlan:", actionPlanData);
-    localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(actionPlanData));
-    
-    // Verwijder de group uit het overzicht
-    setGroups(groups.filter((g) => g.id !== group.id));
-    
-    // Open het ActionPlanPanel
-    setSelectedGroupForPlan(group);
-    setShowActionPlan(true);
-  }
+        type: "Day",
+        saved: true,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Zorg ervoor dat de data correct wordt opgeslagen
+      console.log("Opslaan van group in actionPlan:", actionPlanData);
+      localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(actionPlanData));
+      
+      // Verwijder de group uit het overzicht
+      setGroups(groups.filter((g) => g.id !== group.id));
+      
+      // Open het ActionPlanPanel
+      setSelectedGroupForPlan(group);
+      setShowActionPlan(true);
+    } catch (error) {
+      console.error(`Error saving RPM Block with ID ${group.id}:`, error);
+    }
+  };
 
   const toggleGroupView = (groupId: string) => {
     setViewingGroup((prevViewingGroup) => (prevViewingGroup === groupId ? null : groupId))
