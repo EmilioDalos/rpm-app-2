@@ -106,7 +106,7 @@ export default function Capturelist() {
     try {
       console.log('Opening action plan for group:', group);
       
-      // Stuur een POST verzoek naar de API om het blok in de database op te slaan
+      // Send a POST request to the API to save the block in the database
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`, {
         method: 'POST',
         headers: {
@@ -130,7 +130,7 @@ export default function Capturelist() {
               categoryId: '',
               notes: []
             })),
-            purposes: [`Purpose voor ${group.title}`],
+            purposes: [`Purpose for ${group.title}`],
             result: group.title
           })
         }),
@@ -155,7 +155,7 @@ export default function Capturelist() {
           notes: [],
         })),
         result: group.title,
-        purposes: [`Purpose voor ${group.title}`],
+        purposes: [`Purpose for ${group.title}`],
         categoryId: "",
         type: "Day",
         saved: true,

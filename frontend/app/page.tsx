@@ -12,10 +12,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);  // Controleer of de URL juist is
-
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
-        
         if (response.ok) {
           const data = await response.json();
           setCategories(data);

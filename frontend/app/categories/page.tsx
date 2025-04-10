@@ -5,9 +5,6 @@ import { CategoryList } from "@/components/categories/category-list";
 import { Category } from "@/types";
 import { Header } from "@/components/layout/header";
 
-// Fallback API URL if environment variable is not set
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -15,8 +12,8 @@ export default function CategoriesPage() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        console.log('Fetching categories from:', `${API_URL}/api/categories`);
-        const response = await fetch(`${API_URL}/api/categories`, {
+        console.log('Fetching categories from:', `${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -44,7 +41,7 @@ export default function CategoriesPage() {
 
   const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
     try {
-      const response = await fetch(`${API_URL}/api/categories`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +65,7 @@ export default function CategoriesPage() {
 
   const handleUpdateCategory = async (updatedCategory: Category) => {
     try {
-      const response = await fetch(`${API_URL}/api/categories/${updatedCategory.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${updatedCategory.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +94,7 @@ export default function CategoriesPage() {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/categories/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

@@ -3049,3 +3049,6 @@
 {"level":"info","message":"GET /api/categories","timestamp":"2025-04-10T14:49:52.220Z"}
 {"level":"info","message":"GET /api/calendar-events","timestamp":"2025-04-10T14:49:52.224Z"}
 {"level":"info","message":"GET /api/categories","timestamp":"2025-04-10T14:49:52.225Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-10T15:34:13.968Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-10T15:34:13.969Z"}
+{"level":"info","message":"GET /api/calendar-events","timestamp":"2025-04-10T15:34:13.970Z"}

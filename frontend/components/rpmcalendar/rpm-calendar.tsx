@@ -51,7 +51,13 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/categories');
+      console.log('Fetching categories from API...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+      console.log('Categories API response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -61,7 +67,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const fetchRpmBlocks = async () => {
     try {
-      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`);
       const data = await response.json();
       setRpmBlocks(data);
     } catch (error) {
@@ -71,7 +77,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const fetchCalendarEvents = async () => {
     try {
-      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`);
       const data = await response.json();
       setCalendarEvents(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -169,7 +175,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     });
 
     try {
-      await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dateKey, action: newAction }),

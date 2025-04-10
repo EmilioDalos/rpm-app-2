@@ -11,26 +11,22 @@ export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
 
   useEffect(() => {
-    async function fetchRoles() {
+    const fetchRoles = async () => {
       try {
-        const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/roles');
-        if (response.ok) {
-          const data = await response.json();
-          setRoles(data);
-        } else {
-          console.error('Failed to fetch roles');
-        }
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`);
+        const data = await response.json();
+        setRoles(data);
       } catch (error) {
         console.error('Error fetching roles:', error);
       }
-    }
+    };
 
     fetchRoles();
   }, []);
 
   const handleAddRole = async (newRole: Omit<Role, 'id'>) => {
     try {
-      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/roles', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
