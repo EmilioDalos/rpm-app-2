@@ -396,7 +396,14 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       // Update localStorage
       const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]");
       const updatedBlocks = existingBlocks.filter((block: any) => block.id !== savedBlock.id);
-      updatedBlocks.unshift(savedBlock);
+      
+      // Voeg saved: true toe aan het opgeslagen blok
+      const blockWithSavedFlag = {
+        ...savedBlock,
+        saved: true
+      };
+      
+      updatedBlocks.unshift(blockWithSavedFlag);
       localStorage.setItem("rpmBlocks", JSON.stringify(updatedBlocks));
 
       // Remove the corresponding action plan from localStorage
