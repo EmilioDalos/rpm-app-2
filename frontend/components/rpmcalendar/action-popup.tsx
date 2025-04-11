@@ -26,6 +26,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
   const [hour, setHour] = useState<number | undefined>(action.hour !== undefined ? action.hour : 8);
   const [durationAmount, setDurationAmount] = useState<number>(action.durationAmount || 1);
   const [durationUnit, setDurationUnit] = useState<string>(action.durationUnit || 'min');
+  const [title, setTitle] = useState<string>(action.text || '');
 
   useEffect(() => {
     setIsCompleted(action.key === '✔')
@@ -36,11 +37,13 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
     setHour(action.hour !== undefined ? action.hour : 8)
     setDurationAmount(action.durationAmount || 1)
     setDurationUnit(action.durationUnit || 'min')
+    setTitle(action.text || '')
   }, [action])
 
   const handleUpdate = () => {
     const updatedAction: MassiveAction = {
       ...action,
+      text: title,
       key: isCompleted ? '✔' : action.key,
       isDateRange,
       startDate,
@@ -67,7 +70,14 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{action.text}</DialogTitle>
+          <DialogTitle>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-lg font-semibold"
+              placeholder="Enter action title"
+            />
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex items-center gap-2">

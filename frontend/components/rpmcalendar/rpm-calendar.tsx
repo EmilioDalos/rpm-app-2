@@ -25,6 +25,10 @@ import MiniCalendar from './mini-calendar';
 const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false });
 const CalendarPopup = dynamic(() => import('./calendar-popup'), { ssr: false });
 
+interface Purpose {
+  purpose: string;
+}
+
 interface RpmCalendarProps {
   isDropDisabled: boolean;
 }
@@ -118,10 +122,14 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const updateCalendarEvent = async (dateKey: string, action: MassiveAction) => {
-    const response = await fetch(`/api/calendar-events/${dateKey}/actions/${action.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${action.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ 
+        action,
+        title: action.text || 'Nieuwe actie',
+        description: action.leverage || ''
+      }),
     });
 
     if (!response.ok) {
@@ -178,7 +186,15 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dateKey, action: newAction }),
+        body: JSON.stringify({ 
+          dateKey, 
+          action: newAction,
+          title: newAction.text || 'Nieuwe actie',
+          description: newAction.leverage || '',
+          startDate: new Date(dateKey).toISOString(),
+          endDate: new Date(dateKey).toISOString(),
+          categoryId: newAction.categoryId
+        }),
       });
     } catch (error) {
       console.error('Error saving action:', error);
@@ -200,7 +216,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     );
   
     try {
-      await fetch(`/api/calendar-events/${dateKey}/actions/${actionId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${actionId}`, {
         method: 'DELETE',
       });
     } catch (error) {
@@ -418,8 +434,10 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                       <AccordionTrigger>Purposes</AccordionTrigger>
                       <AccordionContent>
                         <ul>
-                          {block.purposes?.map((purpose, index) => (
-                            <li key={`${block.id}-purpose-${index}`}>{purpose}</li>
+                          {block.purposes?.map((purpose: string | Purpose, index) => (
+                            <li key={`${block.id}-purpose-${index}`}>
+                              {typeof purpose === 'string' ? purpose : purpose.purpose}
+                            </li>
                           ))}
                         </ul>
                       </AccordionContent>
