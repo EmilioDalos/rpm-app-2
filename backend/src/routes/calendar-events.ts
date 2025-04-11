@@ -19,7 +19,7 @@ const router = Router();
 router.post('/', createCalendarEvent);
 
 // Update a calendar event
-//router.put('/:id', updateCalendarEvent);
+router.put('/:id', updateCalendarEvent);
 
 // Delete a calendar event
 //router.delete('/:id', deleteCalendarEvent);

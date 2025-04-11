@@ -103,6 +103,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       hour,
       categoryId
     } = req.body;
+    console.log("🔥 updateCalendarEvent reached")
     console.log('id', id);
     console.log('title', title);
 

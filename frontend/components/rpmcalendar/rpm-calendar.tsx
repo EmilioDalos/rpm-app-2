@@ -100,7 +100,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         endDate.setHours(23, 59, 59, 999);
       }
 
-      console.log("📅 Fetching calendar events from:", `${process.env.NEXT_PUBLIC_API_URL}/api/calendarevents/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
       );
@@ -110,7 +109,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       }
       
       const data = await response.json();
-      console.log("📅 Calendar events fetched:", data);
       
       // Transformeer de API response naar het verwachte CalendarEvent formaat
       const transformedEvents: CalendarEvent[] = [];
@@ -162,7 +160,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         });
       }
       
-      console.log("📅 Transformed calendar events:", transformedEvents);
       setCalendarEvents(transformedEvents);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
@@ -277,10 +274,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     });
 
     try {
-      // Eerst proberen we de bestaande event te vinden
-      const existingEvent = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${newAction.id}`);
       
-      if (existingEvent.ok) {
         // Als de event bestaat, update deze
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${newAction.id}`, {
           method: 'PUT',
@@ -295,29 +289,14 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
           }),
         });
-      } else {
-        // Als de event niet bestaat, maak een nieuwe aan
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            dateKey, 
-            action: newAction,
-            title: newAction.text || 'Nieuwe actie',
-            description: newAction.leverage || '',
-            startDate: new Date(dateKey).toISOString(),
-            endDate: new Date(dateKey).toISOString(),
-            categoryId: newAction.categoryId,
-            rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
-          }),
-        });
-      }
+      
     } catch (error) {
       console.error('Error saving/updating action:', error);
     }
   };
 
   const handleActionRemove = async (actionId: string, dateKey: string) => {
+    // Update the local state to remove the action from the calendar view
     setCalendarEvents((prevEvents) =>
       prevEvents.map((event) => {
         if (event.date === dateKey) {
@@ -332,11 +311,22 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     );
   
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${actionId}`, {
-        method: 'DELETE',
+      // Instead of deleting the action, update it to clear the startDate and endDate
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          startDate: null,
+          endDate: null,
+          isDateRange: false,
+          hour: null
+        }),
       });
+      
+      // Refresh calendar events to ensure UI is in sync with backend
+      fetchCalendarEvents();
     } catch (error) {
-      console.error('Error deleting action:', error);
+      console.error('Error removing action from calendar:', error);
     }
   };
 
