@@ -81,14 +81,99 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const fetchCalendarEvents = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`);
+      let startDate: Date;
+      let endDate: Date;
+
+      // Bepaal de start- en einddatum op basis van de viewMode
+      if (viewMode === "day") {
+        startDate = new Date(currentDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(currentDate);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (viewMode === "week") {
+        startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
+        endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
+        endDate.setHours(23, 59, 59, 999);
+      } else { // month
+        startDate = startOfMonth(currentDate);
+        endDate = endOfMonth(currentDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      console.log("📅 Fetching calendar events from:", `${process.env.NEXT_PUBLIC_API_URL}/api/calendarevents/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setCalendarEvents(Array.isArray(data) ? data : []);
+      console.log("📅 Calendar events fetched:", data);
+      
+      // Transformeer de API response naar het verwachte CalendarEvent formaat
+      const transformedEvents: CalendarEvent[] = [];
+      
+      if (Array.isArray(data)) {
+        data.forEach(event => {
+          // Maak een MassiveAction object van de event data
+          const massiveAction: MassiveAction = {
+            id: event.id,
+            text: event.text || event.title,
+            color: event.color,
+            textColor: event.textColor,
+            leverage: event.leverage || '',
+            durationAmount: event.durationAmount || 0,
+            durationUnit: event.durationUnit || 'min',
+            priority: event.priority || 0,
+            notes: [],
+            key: event.key || '?',
+            categoryId: event.categoryId,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            isDateRange: event.isDateRange || false,
+            hour: event.hour,
+            missedDate: event.missedDate,
+            createdAt: event.createdAt,
+            updatedAt: event.updatedAt
+          };
+          
+          // Bepaal de datum voor dit event
+          const eventDate = event.startDate ? new Date(event.startDate) : new Date();
+          const dateKey = format(eventDate, "yyyy-MM-dd");
+          
+          // Zoek of er al een event bestaat voor deze datum
+          const existingEventIndex = transformedEvents.findIndex(e => e.date === dateKey);
+          
+          if (existingEventIndex >= 0) {
+            // Voeg de massiveAction toe aan het bestaande event
+            transformedEvents[existingEventIndex].massiveActions.push(massiveAction);
+          } else {
+            // Maak een nieuw event aan voor deze datum
+            transformedEvents.push({
+              id: `${dateKey}-${event.id}`,
+              date: dateKey,
+              massiveActions: [massiveAction],
+              createdAt: event.createdAt,
+              updatedAt: event.updatedAt
+            });
+          }
+        });
+      }
+      
+      console.log("📅 Transformed calendar events:", transformedEvents);
+      setCalendarEvents(transformedEvents);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       setCalendarEvents([]);
     }
   };
+
+  // Update fetchCalendarEvents when viewMode or currentDate changes
+  useEffect(() => {
+    fetchCalendarEvents();
+  }, [viewMode, currentDate]);
 
   const handleActionClick = (action: MassiveAction, dateKey: string) => {
     setSelectedAction(action);
@@ -139,6 +224,15 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
     const category = categories.find(c => c.id === item.categoryId);
+    
+    // Zoek het RPM block waar deze actie bij hoort
+    const parentBlock = rpmBlocks.find(block => 
+      block.massiveActions && block.massiveActions.some(action => action.id === item.id)
+    );
+    
+    // Haal het rpmBlockId op
+    const rpmBlockId = parentBlock?.id || item.id;
+    
     const newAction: MassiveAction = {
       ...item,
       leverage: item.leverage || '',
@@ -183,21 +277,43 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     });
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          dateKey, 
-          action: newAction,
-          title: newAction.text || 'Nieuwe actie',
-          description: newAction.leverage || '',
-          startDate: new Date(dateKey).toISOString(),
-          endDate: new Date(dateKey).toISOString(),
-          categoryId: newAction.categoryId
-        }),
-      });
+      // Eerst proberen we de bestaande event te vinden
+      const existingEvent = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${newAction.id}`);
+      
+      if (existingEvent.ok) {
+        // Als de event bestaat, update deze
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${newAction.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: newAction,
+            title: newAction.text || 'Nieuwe actie',
+            description: newAction.leverage || '',
+            startDate: new Date(dateKey).toISOString(),
+            endDate: new Date(dateKey).toISOString(),
+            categoryId: newAction.categoryId,
+            rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
+          }),
+        });
+      } else {
+        // Als de event niet bestaat, maak een nieuwe aan
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            dateKey, 
+            action: newAction,
+            title: newAction.text || 'Nieuwe actie',
+            description: newAction.leverage || '',
+            startDate: new Date(dateKey).toISOString(),
+            endDate: new Date(dateKey).toISOString(),
+            categoryId: newAction.categoryId,
+            rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
+          }),
+        });
+      }
     } catch (error) {
-      console.error('Error saving action:', error);
+      console.error('Error saving/updating action:', error);
     }
   };
 

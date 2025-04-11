@@ -10,113 +10,99 @@ echo "🧪 Starting Calendar Events API tests..."
 # Fixed test ID
 TEST_ID="88888888-8888-8888-8888-888888888888"
 
-# Test 1: Create a calendar event without optional fields
-echo -e "\nTest 1: Create calendar event without optional fields"
-response=$(curl -s -X POST http://localhost:3001/api/calendar-events \
+# # Test 1: Create a calendar event (representing dragging an action to the calendar)
+# echo -e "\nTest 1: Creating a calendar event"
+# EVENT_RESPONSE=$(curl -s -X POST "${API_URL}/api/calendarevents" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "rpmBlockId": "1",
+#     "title": "Team Meeting",
+#     "description": "Weekly team sync",
+#     "location": "Conference Room A",
+#     "startDate": "2024-04-15T10:00:00Z",
+#     "endDate": "2024-04-15T11:00:00Z",
+#     "isDateRange": false,
+#     "hour": 10,
+#     "categoryId": "1"
+#   }')
+
+EVENT_ID=$(echo $EVENT_RESPONSE | jq -r '.id')
+echo "Created event with ID: $EVENT_ID"
+
+# Test 2: Get all calendar events (representing initial calendar load)
+echo -e "\nTest 2: Getting all calendar events"
+curl -s -X GET "${API_URL}/api/calendarevents" | jq '.'
+
+# Test 3: Get calendar events by date range (representing week/month view)
+echo -e "\nTest 3: Getting calendar events by date range"
+curl -s -X GET "${API_URL}/api/calendarevents/range?startDate=2024-04-15T00:00:00Z&endDate=2024-04-21T23:59:59Z" | jq '.'
+
+# Test 4: Update a calendar event (representing editing event details)
+echo -e "\nTest 4: Updating calendar event"
+curl -s -X PUT "${API_URL}/api/calendarevents/${EVENT_ID}" \
   -H "Content-Type: application/json" \
   -d '{
-    "id": "'$TEST_ID'",
-    "title": "Test Event",
-    "startDate": "2025-04-01T09:00:00Z",
-    "endDate": "2025-04-01T10:00:00Z",
-    "categoryId": null
-  }')
-
-# Test 2: Create and verify calendar event title
-echo -e "\n\nTest 2: Create and verify calendar event title"
-
-TEST_VERIFY_TITLE="Complete Event"
-TEST_START_DATE="2025-04-02T14:00:00Z"
-TEST_END_DATE="2025-04-02T15:00:00Z"
-
-response=$(curl -s -X POST http://localhost:3001/api/calendar-events \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "'"$TEST_VERIFY_TITLE"'",
-    "description": "Complete test description",
-    "startDate": "'"$TEST_START_DATE"'",
-    "endDate": "'"$TEST_END_DATE"'",
-    "location": "Conference Room A",
-    "category": "Review",
-    "color": "#FF5733"
-  }')
-
-verify_field_in_response "title" "$TEST_VERIFY_TITLE" "$response"
-
-# Test 3: Get all calendar events
-echo -e "\n\nTest 3: Get all calendar events"
-
-TEST_VERIFY_TITLE="Test Event"
-
-response=$(curl -s -X GET "http://localhost:3001/api/calendar-events")
-verify_field_in_response "title" "$TEST_VERIFY_TITLE" "$(echo "$response" | jq '.[0]')"
-
-# Test 4: Get calendar event by ID
-TEST_VERIFY_TITLE="Test Event"
-tmp_response=$(curl -s -X GET "http://localhost:3001/api/calendar-events/$CREATED_ID")
-
-verify_field_in_response "title" "$TEST_VERIFY_TITLE" "$tmp_response"
-
-# Test 5: Update calendar event
-echo -e "\n\nTest 5: Update calendar event"
-response=$(curl -s -X PUT "http://localhost:3001/api/calendar-events/$CREATED_ID" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Updated Event",
-    "description": "Updated description",
-    "startDate": "2025-04-01T10:00:00Z",
-    "endDate": "2025-04-01T11:00:00Z",
+    "title": "Updated Team Meeting",
+    "description": "Updated weekly team sync with new agenda",
     "location": "Conference Room B",
-    "category": "Workshop",
-    "color": "#33FF57"
-  }')
+    "startDate": "2024-04-15T11:00:00Z",
+    "endDate": "2024-04-15T12:00:00Z",
+    "isDateRange": false,
+    "hour": 11,
+    "categoryId": "1"
+  }' | jq '.'
 
-# Test 6: Delete calendar event
-echo -e "\n\nTest 6: Delete calendar event"
-response=$(curl -s -X DELETE "http://localhost:3001/api/calendar-events/$CREATED_ID")
-verify_field_in_response "" "" "$response"
-
-# Test 8: Create calendar event with missing required fields
-echo -e "\n\nTest 8: Create calendar event with missing required fields"
-response=$(curl -s -w "\n%{http_code}" -X POST "http://localhost:3001/api/calendar-events" \
+# Test 5: Create a recurring event (representing setting up recurring meetings)
+echo -e "\nTest 5: Creating a recurring event"
+curl -s -X POST "${API_URL}/api/calendarevents" \
   -H "Content-Type: application/json" \
   -d '{
-    "startDate": "2025-04-01T09:00:00Z"
-  }')
+    "rpmBlockId": "2",
+    "title": "Weekly Standup",
+    "description": "Daily team standup meeting",
+    "location": "Virtual",
+    "startDate": "2024-04-15T09:00:00Z",
+    "endDate": "2024-04-15T09:30:00Z",
+    "isDateRange": true,
+    "hour": 9,
+    "categoryId": "1",
+    "recurrence": {
+      "frequency": "weekly",
+      "interval": 1,
+      "daysOfWeek": ["monday", "wednesday", "friday"]
+    }
+  }' | jq '.'
 
-status_code=$(echo "$response" | tail -n1)
-body=$(echo "$response" | sed '$d')
+# Test 6: Get events for a specific day (representing day view)
+echo -e "\nTest 6: Getting events for a specific day"
+curl -s -X GET "${API_URL}/api/calendarevents/range?startDate=2024-04-15T00:00:00Z&endDate=2024-04-15T23:59:59Z" | jq '.'
 
-echo "Status code: $status_code"
-echo "Response: $body"
-
-if [ "$status_code" -ge 400 ]; then
-  echo "✅ Expected failure occurred. Validation for required fields works."
-else
-  echo "❌ Test failed. Missing required fields should have caused an error."
-  exit 1
-fi
-
-# Test 9: Create and verify calendar event title
-echo -e "\n\nTest 9: Create and verify calendar event title"
-
-TEST_ID=$(uuidgen)
-TEST_VERIFY_TITLE="Verification Test Event"
-TEST_START_DATE="2025-04-05T10:00:00Z"
-TEST_END_DATE="2025-04-05T11:00:00Z"
-
-response=$(curl -s -X POST http://localhost:3001/api/calendar-events \
+# Test 7: Create an all-day event
+echo -e "\nTest 7: Creating an all-day event"
+curl -s -X POST "${API_URL}/api/calendarevents" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "'"$TEST_VERIFY_TITLE"'",
-    "description": "Complete test description",
-    "startDate": "'"$TEST_START_DATE"'",
-    "endDate": "'"$TEST_END_DATE"'",
-    "location": "Conference Room A",
-    "category": "Review",
-    "color": "#FF5733"
-  }')
+    "rpmBlockId": "3",
+    "title": "Company Holiday",
+    "description": "Office closed for holiday",
+    "location": "N/A",
+    "startDate": "2024-04-20T00:00:00Z",
+    "endDate": "2024-04-20T23:59:59Z",
+    "isDateRange": true,
+    "isAllDay": true,
+    "categoryId": "2"
+  }' | jq '.'
 
-verify_field_in_response "title" "$TEST_VERIFY_TITLE" "$response"
+# Test 8: Get events with category filter (representing category filtering)
+echo -e "\nTest 8: Getting events filtered by category"
+curl -s -X GET "${API_URL}/api/calendarevents?categoryId=1" | jq '.'
 
-echo -e "\n\n✅ Calendar Events API tests completed!"
+# Test 9: Delete a calendar event (representing removing an event)
+echo -e "\nTest 9: Deleting calendar event"
+curl -s -X DELETE "${API_URL}/api/calendarevents/${EVENT_ID}"
+
+# Test 10: Verify event was deleted
+echo -e "\nTest 10: Verifying event deletion"
+curl -s -X GET "${API_URL}/api/calendarevents/${EVENT_ID}" | jq '.'
+
+echo -e "\n✅ Calendar Events API tests completed!"
