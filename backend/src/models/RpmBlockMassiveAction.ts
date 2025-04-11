@@ -1,5 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
+import RpmBlock from './RpmBlock';
+import Category from './Category';
 
 interface RpmBlockMassiveActionAttributes {
   id: string;
@@ -17,6 +19,10 @@ interface RpmBlockMassiveActionAttributes {
   isDateRange?: boolean;
   hour?: number;
   missedDate?: Date;
+  title: string;
+  description?: string;
+  location?: string;
+  categoryId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +45,10 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public isDateRange?: boolean;
   public hour?: number;
   public missedDate?: Date;
+  public title!: string;
+  public description?: string;
+  public location?: string;
+  public categoryId?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -52,6 +62,10 @@ RpmBlockMassiveAction.init({
   rpmBlockId: {
     type: DataTypes.UUID,
     allowNull: false,
+    references: {
+      model: RpmBlock,
+      key: 'id',
+    },
     field: 'rpm_block_id'
   },
   text: {
@@ -102,7 +116,8 @@ RpmBlockMassiveAction.init({
   isDateRange: {
     type: DataTypes.BOOLEAN,
     allowNull: true,
-    field: 'is_date_range'
+    field: 'is_date_range',
+    defaultValue: false
   },
   hour: {
     type: DataTypes.INTEGER,
@@ -112,6 +127,23 @@ RpmBlockMassiveAction.init({
     type: DataTypes.DATE,
     allowNull: true,
     field: 'missed_date'
+  },
+  title: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
+  },
+  description: {
+    type: DataTypes.TEXT,
+  },
+  location: {
+    type: DataTypes.STRING(255),
+  },
+  categoryId: {
+    type: DataTypes.UUID,
+    references: {
+      model: Category,
+      key: 'id',
+    },
   },
   createdAt: {
     type: DataTypes.DATE,

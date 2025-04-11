@@ -1,28 +1,28 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import CalendarEvent from '../models/CalendarEvent';
+import RpmBlockMassiveAction from '../models/RpmBlockMassiveAction';
 import sequelize from '../config/db';
 import { Op } from 'sequelize';
+import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
 
 export const getAllCalendarEvents = async (req: Request, res: Response) => {
   try {
-    const { start, end } = req.query;
-    
-    let whereClause = {};
-    if (start && end) {
-      whereClause = {
-        startDate: {
-          [Op.gte]: new Date(start as string),
-          [Op.lte]: new Date(end as string)
+    // Get all events and filter in memory to avoid type issues
+    const allEvents = await RpmBlockMassiveAction.findAll({
+      include: [
+        { 
+          association: 'category',
+          attributes: ['id', 'name', 'type', 'color']
         }
-      };
-    }
-
-    const events = await CalendarEvent.findAll({
-      where: whereClause,
+      ],
       order: [['startDate', 'ASC']]
     });
-    res.json(events);
+    
+    // Filter events with startDate not null
+    const events = allEvents.filter(event => event.startDate !== null);
+
+    const sanitizedEvents = events.map(event => sanitizeSequelizeModel(event));
+    res.json(sanitizedEvents);
   } catch (error) {
     console.error('Error fetching calendar events:', error);
     res.status(500).json({ error: 'Failed to fetch calendar events' });
@@ -32,13 +32,21 @@ export const getAllCalendarEvents = async (req: Request, res: Response) => {
 export const getCalendarEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const event = await CalendarEvent.findByPk(id);
-    
+    const event = await RpmBlockMassiveAction.findByPk(id, {
+      include: [
+        { 
+          association: 'category',
+          attributes: ['id', 'name', 'type', 'color']
+        }
+      ]
+    });
+
     if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
-    
-    res.json(event);
+
+    const sanitizedEvent = sanitizeSequelizeModel(event);
+    res.json(sanitizedEvent);
   } catch (error) {
     console.error('Error fetching calendar event:', error);
     res.status(500).json({ error: 'Failed to fetch calendar event' });
@@ -47,29 +55,33 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
 
 export const createCalendarEvent = async (req: Request, res: Response) => {
   try {
-    const { title, description, startDate, endDate, location, category, categoryId, color } = req.body;
+    const {
+      rpmBlockId,
+      title,
+      description,
+      location,
+      startDate,
+      endDate,
+      isDateRange,
+      hour,
+      categoryId
+    } = req.body;
 
-    // Start a transaction
-    const result = await sequelize.transaction(async (t) => {
-      // Only use categoryId if it's a valid UUID, otherwise set to null
-      const validCategoryId = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId) 
-        ? categoryId 
-        : null;
-
-      const event = await CalendarEvent.create({
-        title,
-        description,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        location,
-        categoryId: validCategoryId, // Use the validated categoryId
-        color
-      }, { transaction: t });
-
-      return event;
+    const event = await RpmBlockMassiveAction.create({
+      rpmBlockId,
+      text: title,
+      title,
+      description,
+      location,
+      startDate,
+      endDate,
+      isDateRange,
+      hour,
+      categoryId
     });
 
-    res.status(201).json(result);
+    const sanitizedEvent = sanitizeSequelizeModel(event);
+    res.status(201).json(sanitizedEvent);
   } catch (error) {
     console.error('Error creating calendar event:', error);
     res.status(500).json({ error: 'Failed to create calendar event' });
@@ -79,38 +91,36 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
 export const updateCalendarEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, endDate, location, category, categoryId, color } = req.body;
+    const {
+      title,
+      description,
+      location,
+      startDate,
+      endDate,
+      isDateRange,
+      hour,
+      categoryId
+    } = req.body;
 
-    // Start a transaction
-    const result = await sequelize.transaction(async (t) => {
-      const event = await CalendarEvent.findByPk(id);
-      if (!event) {
-        return null;
-      }
-
-      // Only use categoryId if it's a valid UUID, otherwise set to null
-      const validCategoryId = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId) 
-        ? categoryId 
-        : null;
-
-      await event.update({
-        title,
-        description,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        location,
-        categoryId: validCategoryId, // Use the validated categoryId
-        color
-      }, { transaction: t });
-
-      return event;
-    });
-
-    if (!result) {
+    const event = await RpmBlockMassiveAction.findByPk(id);
+    if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
 
-    res.json(result);
+    await event.update({
+      text: title,
+      title,
+      description,
+      location,
+      startDate,
+      endDate,
+      isDateRange,
+      hour,
+      categoryId
+    });
+
+    const sanitizedEvent = sanitizeSequelizeModel(event);
+    res.json(sanitizedEvent);
   } catch (error) {
     console.error('Error updating calendar event:', error);
     res.status(500).json({ error: 'Failed to update calendar event' });
@@ -120,8 +130,8 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
 export const deleteCalendarEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    const event = await CalendarEvent.findByPk(id);
+    const event = await RpmBlockMassiveAction.findByPk(id);
+    
     if (!event) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }

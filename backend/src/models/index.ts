@@ -3,7 +3,6 @@ import RpmBlock from './RpmBlock';
 import RpmBlockMassiveAction from './RpmBlockMassiveAction';
 import RpmBlockPurpose from './RpmBlockPurpose';
 import Category from './Category';
-import CalendarEvent from './CalendarEvent';
 import Role from './Role';
 import CategoryThreeToThrive from './CategoryThreeToThrive';
 import CategoryResult from './CategoryResult';
@@ -30,18 +29,7 @@ const setupAssociations = () => {
     foreignKey: 'category_id',
     as: 'rpmBlocks',
   });
-
-  // CalendarEvent associations
-  CalendarEvent.belongsTo(Category, {
-    foreignKey: 'category_id',
-    as: 'categoryRef',
-  });
-
-  Category.hasMany(CalendarEvent, {
-    foreignKey: 'category_id',
-    as: 'calendarEvents',
-  });
-
+  
   // Category - CategoryThreeToThrive associations
   Category.hasMany(CategoryThreeToThrive, {
     foreignKey: 'category_id',
@@ -91,6 +79,17 @@ RpmBlockMassiveAction.belongsTo(RpmBlock, {
   as: 'rpmBlock'
 });
 
+// Add the missing category association for RpmBlockMassiveAction
+RpmBlockMassiveAction.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category'
+});
+
+Category.hasMany(RpmBlockMassiveAction, {
+  foreignKey: 'categoryId',
+  as: 'massiveActions'
+});
+
 // RpmBlockPurpose associaties
 RpmBlock.hasMany(RpmBlockPurpose, {
   as: 'purposes',
@@ -124,7 +123,6 @@ export {
   RpmBlockMassiveAction,
   RpmBlockPurpose,
   Category,
-  CalendarEvent,
   Role,
   CategoryThreeToThrive,
   CategoryResult,

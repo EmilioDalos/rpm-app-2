@@ -84,22 +84,26 @@ CREATE TABLE IF NOT EXISTS "rpm_block_purpose" (
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  rpm_block_id UUID REFERENCES "rpm_block"(id) ON DELETE CASCADE,
+  rpm_block_id UUID NOT NULL REFERENCES "rpm_block"(id) ON DELETE CASCADE,
   text TEXT NOT NULL,
   color VARCHAR(7),
   text_color VARCHAR(7),
   leverage TEXT,
-  duration_amount INT,
+  duration_amount INTEGER,
   duration_unit VARCHAR(50),
-  priority INT,
+  priority INTEGER,
   key VARCHAR(50),
-  start_date DATE,
-  end_date DATE,
-  is_date_range BOOLEAN,
-  hour INT,
-  missed_date DATE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  start_date TIMESTAMP WITH TIME ZONE,
+  end_date TIMESTAMP WITH TIME ZONE,
+  is_date_range BOOLEAN DEFAULT FALSE,
+  hour INTEGER,
+  missed_date TIMESTAMP WITH TIME ZONE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  location VARCHAR(255),
+  category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
@@ -116,22 +120,4 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note_metric" (
   value NUMERIC,
   unit VARCHAR(50),
   timestamp TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS "calendar_event" (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  start_date TIMESTAMP NOT NULL,
-  end_date TIMESTAMP NOT NULL,
-  location TEXT,
-  category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
-  color VARCHAR(7),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS "calendar_event_massive_action" (
-  calendar_event_id UUID REFERENCES "calendar_event"(id) ON DELETE CASCADE,
-  massive_action_id UUID REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE
 );
