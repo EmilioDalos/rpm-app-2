@@ -59,7 +59,7 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
   try {
     const {
       rpmBlockId,
-      title,
+      text,
       description,
       location,
       startDate,
@@ -71,8 +71,7 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
 
     const event = await RpmBlockMassiveAction.create({
       rpmBlockId,
-      text: title,
-      title,
+      text,
       description,
       location,
       startDate,
@@ -94,7 +93,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const {
-      title,
+      text,
       description,
       location,
       startDate,
@@ -105,7 +104,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     } = req.body;
     console.log("🔥 updateCalendarEvent reached")
     console.log('id', id);
-    console.log('title', title);
+    console.log('text', text);
 
 
     const event = await RpmBlockMassiveAction.findByPk(id);
@@ -114,8 +113,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     }
 
     await event.update({
-      text: title,
-      title,
+      text,
       description,
       location,
       startDate,

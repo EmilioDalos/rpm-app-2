@@ -33,6 +33,7 @@ export default function Capturelist() {
   const [selectedGroupForPlan, setSelectedGroupForPlan] = useState<Group | null>(null)
   const [viewingGroup, setViewingGroup] = useState<string | null>(null)
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // Load actions and groups from localStorage on mount
   useEffect(() => {
@@ -47,6 +48,24 @@ export default function Capturelist() {
     localStorage.setItem("actions", JSON.stringify(actions))
     localStorage.setItem("groups", JSON.stringify(groups))
   }, [actions, groups])
+
+  // Add event listener for beforeunload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Update hasUnsavedChanges when actions or groups change
+  useEffect(() => {
+    setHasUnsavedChanges(true);
+  }, [actions, groups]);
 
   const addAction = () => {
     if (newAction.trim()) {
@@ -103,77 +122,34 @@ export default function Capturelist() {
   }
 
   const openActionPlan = async (group: Group) => {
-    try {
-      console.log('Opening action plan for group:', group);
-      
-      // Send a POST request to the API to save the block in the database
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: group.id,
-          result: group.title,
-          type: 'Day',
-          order: 1,
-          category_id: '',
-          content: JSON.stringify({
-            massiveActions: group.actions.map(action => ({
-              id: action.id,
-              text: action.text,
-              leverage: '',
-              durationAmount: 0,
-              durationUnit: 'min',
-              priority: 0,
-              key: '?',
-              categoryId: '',
-              notes: []
-            })),
-            purposes: [`Purpose for ${group.title}`],
-            result: group.title
-          })
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error saving RPM Block: ${response.statusText}`);
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je deze pagina wilt verlaten?');
+      if (!confirmLeave) {
+        return;
       }
+    }
 
-      // Sla de group op in localStorage onder de key actionPlan-<id>
-      const actionPlanData = {
-        id: group.id,
-        massiveActions: group.actions.map((action) => ({
-          id: action.id,
-          text: action.text,
-          leverage: "",
-          durationAmount: 0,
-          durationUnit: "min",
-          priority: 0,
-          key: "✘",
-          categoryId: "",
-          notes: [],
-        })),
-        result: group.title,
-        purposes: [`Purpose for ${group.title}`],
-        categoryId: "",
-        type: "Day",
-        saved: true,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      // Zorg ervoor dat de data correct wordt opgeslagen
-      console.log("Opslaan van group in actionPlan:", actionPlanData);
-      localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify(actionPlanData));
-      
-      // Verwijder de group uit het overzicht
-      setGroups(groups.filter((g) => g.id !== group.id));
-      
-      // Open het ActionPlanPanel
-      setSelectedGroupForPlan(group);
+    try {
+      // Fetch the latest version of the RPM block
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${group.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch RPM block');
+      }
+      const updatedGroup = await response.json();
+
+      // Store the updated group in localStorage
+      localStorage.setItem(`actionPlan-${group.id}`, JSON.stringify({
+        ...updatedGroup,
+        saved: true
+      }));
+
+      // Remove from overview and open action plan panel
+      setGroups(groups.filter(g => g.id !== group.id));
+      setSelectedGroup(updatedGroup);
       setShowActionPlan(true);
+      setHasUnsavedChanges(false);
     } catch (error) {
-      console.error(`Error saving RPM Block with ID ${group.id}:`, error);
+      console.error('Error opening action plan:', error);
     }
   };
 

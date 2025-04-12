@@ -55,26 +55,6 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   const [selectedOption, setSelectedOption] = useState<string>("Day")
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
-  // Haal kalendergebeurtenissen op om te controleren welke acties zijn gepland
-  useEffect(() => {
-    const fetchCalendarEvents = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`);
-        if (response.ok) {
-          const data = await response.json();
-          setCalendarEvents(Array.isArray(data) ? data : []);
-        } else {
-          console.error('Failed to fetch calendar events');
-          setCalendarEvents([]);
-        }
-      } catch (error) {
-        console.error('Error fetching calendar events:', error);
-        setCalendarEvents([]);
-      }
-    };
-    
-    fetchCalendarEvents();
-  }, []);
   
   // Functie om te controleren of een actie gepland is
   const isActionPlanned = (actionId: string): boolean => {

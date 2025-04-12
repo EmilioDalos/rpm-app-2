@@ -19,7 +19,6 @@ interface RpmBlockMassiveActionAttributes {
   isDateRange?: boolean;
   hour?: number;
   missedDate?: Date;
-  title: string;
   description?: string;
   location?: string;
   categoryId?: string;
@@ -45,7 +44,6 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public isDateRange?: boolean;
   public hour?: number;
   public missedDate?: Date;
-  public title!: string;
   public description?: string;
   public location?: string;
   public categoryId?: string;
@@ -127,10 +125,6 @@ RpmBlockMassiveAction.init({
     type: DataTypes.DATE,
     allowNull: true,
     field: 'missed_date'
-  },
-  title: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
   },
   description: {
     type: DataTypes.TEXT,

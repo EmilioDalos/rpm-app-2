@@ -98,7 +98,6 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   is_date_range BOOLEAN DEFAULT FALSE,
   hour INTEGER,
   missed_date TIMESTAMP WITH TIME ZONE,
-  title VARCHAR(255) NOT NULL,
   description TEXT,
   location VARCHAR(255),
   category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,

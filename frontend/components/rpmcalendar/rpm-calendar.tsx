@@ -50,7 +50,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   useEffect(() => {
     fetchCategories();
     fetchRpmBlocks();
-    fetchCalendarEvents();
   }, []);
 
   const fetchCategories = async () => {
@@ -79,99 +78,6 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }
   };
 
-  const fetchCalendarEvents = async () => {
-    try {
-      let startDate: Date;
-      let endDate: Date;
-
-      // Bepaal de start- en einddatum op basis van de viewMode
-      if (viewMode === "day") {
-        startDate = new Date(currentDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(currentDate);
-        endDate.setHours(23, 59, 59, 999);
-      } else if (viewMode === "week") {
-        startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
-        endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
-        endDate.setHours(23, 59, 59, 999);
-      } else { // month
-        startDate = startOfMonth(currentDate);
-        endDate = endOfMonth(currentDate);
-        endDate.setHours(23, 59, 59, 999);
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Transformeer de API response naar het verwachte CalendarEvent formaat
-      const transformedEvents: CalendarEvent[] = [];
-      
-      if (Array.isArray(data)) {
-        data.forEach(event => {
-          // Maak een MassiveAction object van de event data
-          const massiveAction: MassiveAction = {
-            id: event.id,
-            text: event.text || event.title,
-            color: event.color,
-            textColor: event.textColor,
-            leverage: event.leverage || '',
-            durationAmount: event.durationAmount || 0,
-            durationUnit: event.durationUnit || 'min',
-            priority: event.priority || 0,
-            notes: [],
-            key: event.key || '?',
-            categoryId: event.categoryId,
-            startDate: event.startDate,
-            endDate: event.endDate,
-            isDateRange: event.isDateRange || false,
-            hour: event.hour,
-            missedDate: event.missedDate,
-            createdAt: event.createdAt,
-            updatedAt: event.updatedAt
-          };
-          
-          // Bepaal de datum voor dit event
-          const eventDate = event.startDate ? new Date(event.startDate) : new Date();
-          const dateKey = format(eventDate, "yyyy-MM-dd");
-          
-          // Zoek of er al een event bestaat voor deze datum
-          const existingEventIndex = transformedEvents.findIndex(e => e.date === dateKey);
-          
-          if (existingEventIndex >= 0) {
-            // Voeg de massiveAction toe aan het bestaande event
-            transformedEvents[existingEventIndex].massiveActions.push(massiveAction);
-          } else {
-            // Maak een nieuw event aan voor deze datum
-            transformedEvents.push({
-              id: `${dateKey}-${event.id}`,
-              date: dateKey,
-              massiveActions: [massiveAction],
-              createdAt: event.createdAt,
-              updatedAt: event.updatedAt
-            });
-          }
-        });
-      }
-      
-      setCalendarEvents(transformedEvents);
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-      setCalendarEvents([]);
-    }
-  };
-
-  // Update fetchCalendarEvents when viewMode or currentDate changes
-  useEffect(() => {
-    fetchCalendarEvents();
-  }, [viewMode, currentDate]);
-
   const handleActionClick = (action: MassiveAction, dateKey: string) => {
     setSelectedAction(action);
     setSelectedDateKey(dateKey);
@@ -182,6 +88,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     try {
       await updateCalendarEvent(dateKey, updatedAction);
 
+      // Update calendar events
       setCalendarEvents((prevEvents) =>
         prevEvents.map((event) => {
           if (event.date === dateKey) {
@@ -197,20 +104,42 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         })
       );
 
-      await fetchCalendarEvents();
+      // Update rpmBlocks to reflect changes in the category column
+      setRpmBlocks((prevBlocks) =>
+        prevBlocks.map((block) => {
+          // Check if this block contains the updated action
+          if (block.massiveActions && block.massiveActions.some(action => action.id === updatedAction.id)) {
+            return {
+              ...block,
+              massiveActions: block.massiveActions.map((action) =>
+                action.id === updatedAction.id ? updatedAction : action
+              ),
+              updatedAt: new Date()
+            };
+          }
+          return block;
+        })
+      );
+
+      // Refresh the RPM blocks to get the latest data
+      await fetchRpmBlocks();
     } catch (error) {
       console.error('Error updating action:', error);
     }
   };
 
   const updateCalendarEvent = async (dateKey: string, action: MassiveAction) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${dateKey}/actions/${action.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        action,
-        title: action.text || 'Nieuwe actie',
-        description: action.leverage || ''
+        text: action.text || 'Nieuwe actie',
+        description: action.leverage || '',
+        startDate: action.startDate,
+        endDate: action.endDate,
+        isDateRange: action.isDateRange,
+        hour: action.hour,
+        categoryId: action.categoryId
       }),
     });
 
@@ -281,7 +210,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             action: newAction,
-            title: newAction.text || 'Nieuwe actie',
+            text: newAction.text || 'Nieuwe actie',
             description: newAction.leverage || '',
             startDate: new Date(dateKey).toISOString(),
             endDate: new Date(dateKey).toISOString(),
@@ -323,8 +252,8 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         }),
       });
       
-      // Refresh calendar events to ensure UI is in sync with backend
-      fetchCalendarEvents();
+      // Refresh the RPM blocks to get the latest data
+      await fetchRpmBlocks();
     } catch (error) {
       console.error('Error removing action from calendar:', error);
     }

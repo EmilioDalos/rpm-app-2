@@ -18,27 +18,7 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
   const [categories, setCategories] = useState<Array<{id: string, name: string, roles?: any[]}>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  
-  // Fetch calendar events to check which actions are planned
-  useEffect(() => {
-    const fetchCalendarEvents = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events`);
-        if (response.ok) {
-          const data = await response.json();
-          setCalendarEvents(Array.isArray(data) ? data : []);
-        } else {
-          console.error('Failed to fetch calendar events:', response.statusText);
-          setCalendarEvents([]);
-        }
-      } catch (error) {
-        console.error('Error fetching calendar events:', error);
-        setCalendarEvents([]);
-      }
-    };
 
-    fetchCalendarEvents();
-  }, []);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -143,15 +123,32 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
       }
     };
 
+    // Laad blocks bij mount en page refresh
     reloadCombinedBlocks();
+    fetchRpmBlocks();
 
     // Event listener voor updates
     window.addEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
+    window.addEventListener('beforeunload', reloadCombinedBlocks);
 
     return () => {
       window.removeEventListener('rpmBlocksUpdated', reloadCombinedBlocks);
+      window.removeEventListener('beforeunload', reloadCombinedBlocks);
     };
   }, [blocks, selectedCategory, calendarEvents]);
+
+  const fetchRpmBlocks = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch RPM blocks');
+      }
+      const data = await response.json();
+      setStoredBlocks(data);
+    } catch (error) {
+      console.error('Error fetching RPM blocks:', error);
+    }
+  };
 
   const handleDelete = async (id: string, isSaved: boolean) => {
     try {

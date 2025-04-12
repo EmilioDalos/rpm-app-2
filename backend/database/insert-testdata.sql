@@ -88,12 +88,12 @@ VALUES
   ('33333333-cccc-cccc-cccc-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Build endurance');
 
 -- ⚙️ rpm_block_massive_action
-INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date, title, description, location, category_id)
+INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date, description, location, category_id)
 VALUES 
-  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-01', '2025-04-03', TRUE, 2, NULL, 'Landing Page Design', 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
-  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-05', TRUE, 1, NULL, 'User Feedback Collection', 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111'),
-  ('44444444-dddd-dddd-dddd-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Morning Run', '#3357FF', '#FFFFFF', 'Daily consistency', 1, 'hours', 1, 'Exercise', '2025-04-01', '2025-04-01', FALSE, 7, NULL, 'Morning Training Run', 'Complete 5K training run', 'Local Park', '33333333-1111-1111-1111-111111111111'),
-  ('44444444-eeee-eeee-eeee-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Evening Stretches', '#FF33A8', '#FFFFFF', 'Recovery', 30, 'minutes', 2, 'Recovery', '2025-04-01', '2025-04-01', FALSE, 19, NULL, 'Evening Flexibility', 'Complete stretching routine', 'Home', '33333333-1111-1111-1111-111111111111');
+  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-01', '2025-04-03', TRUE, 2, NULL, 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
+  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-05', TRUE, 1, NULL, 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111'),
+  ('44444444-dddd-dddd-dddd-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Morning Run', '#3357FF', '#FFFFFF', 'Daily consistency', 1, 'hours', 1, 'Exercise', '2025-04-01', '2025-04-01', FALSE, 7, NULL, 'Complete 5K training run', 'Local Park', '33333333-1111-1111-1111-111111111111'),
+  ('44444444-eeee-eeee-eeee-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Evening Stretches', '#FF33A8', '#FFFFFF', 'Recovery', 30, 'minutes', 2, 'Recovery', '2025-04-01', '2025-04-01', FALSE, 19, NULL, 'Evening Flexibility', 'Home', '33333333-1111-1111-1111-111111111111');
 
 -- ⚙️ rpm_block_massive_action_note
 INSERT INTO "rpm_block_massive_action_note" (id, massive_action_id, text, type)
