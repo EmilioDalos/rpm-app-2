@@ -254,14 +254,26 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     }
   }, [group, selectedBlock])
 
+  // Update hasUnsavedChanges when massiveActions change
   useEffect(() => {
-    const source = group?.id ? group : selectedBlock
-    if (!source?.id) return
+    const hasChanges = massiveActions.length > 0;
+    
+    // Dispatch event when massiveActions change
+    const event = new CustomEvent('rpmBlocksUpdated', { 
+      detail: { hasUnsavedChanges: hasChanges } 
+    });
+    window.dispatchEvent(event);
+  }, [massiveActions]);
+
+  // Auto-save when massiveActions, result, purposes, selectedCategory, or selectedOption change
+  useEffect(() => {
+    const source = group?.id ? group : selectedBlock;
+    if (!source?.id) return;
 
     // Zorg ervoor dat het ID correct wordt gebruikt
-    const sourceId = source.id
+    const sourceId = source.id;
 
-    const storageKey = `actionPlan-${sourceId}`
+    const storageKey = `actionPlan-${sourceId}`;
     localStorage.setItem(
       storageKey,
       JSON.stringify({
@@ -273,9 +285,9 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         type: selectedOption,
         updatedAt: new Date().toISOString(),
       }),
-    )
-    console.log(`Data automatisch opgeslagen in localStorage onder key: ${storageKey}`)
-  }, [massiveActions, result, purposes, selectedCategory, selectedOption, group, selectedBlock])
+    );
+    console.log(`Data automatisch opgeslagen in localStorage onder key: ${storageKey}`);
+  }, [massiveActions, result, purposes, selectedCategory, selectedOption, group, selectedBlock]);
 
   const addMassiveAction = () => {
     const newAction: ActionPlan = {
@@ -297,110 +309,6 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   const updateMassiveAction = (index: number, updatedAction: Partial<ActionPlan>) => {
     setMassiveActions((prev) => prev.map((action, i) => (i === index ? { ...action, ...updatedAction } : action)))
   }
-
-  const handleSave = async () => {
-    try {
-      if (!massiveActions || massiveActions.length === 0 || !result) {
-        console.error('No actions or result to save');
-        return;
-      }
-
-      // Format massive actions voor opslaan
-      const formattedMassiveActions = massiveActions.map(action => ({
-        text: action.text,
-        leverage: action.leverage || '',
-        durationAmount: action.durationAmount || 0,
-        durationUnit: action.durationUnit || 'min',
-        priority: action.priority || 0,
-        key: action.key || '?',
-        categoryId: selectedCategory || ''
-      }));
-
-      // Map selectedOption naar een geldige type waarde
-      const typeMap: { [key: string]: string } = {
-        'Day': 'Day',
-        'Week': 'Week',
-        'Month': 'Month',
-        'Quarter': 'Quarter',
-        'Project': 'Project',
-        'Category': 'Category'
-      };
-
-      const blockData = {
-        category_id: selectedCategory,
-        result: result,
-        type: typeMap[selectedOption] || 'Day', // Default to 'Day' if no valid mapping
-        order: 1,
-        content: JSON.stringify({
-          massiveActions: formattedMassiveActions,
-          purposes: purposes.map(p => typeof p === 'string' ? p : p.purpose),
-          result
-        })
-      };
-
-      // Debug logging
-      console.log('Block data being sent to server:', JSON.stringify(blockData, null, 2));
-      console.log('Selected block ID:', selectedBlock?.id);
-      console.log('Selected block type:', typeof selectedBlock?.id);
-
-      // Determine if we're updating an existing block or creating a new one
-      const isUpdate = selectedBlock?.id !== undefined;
-      const url = isUpdate 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${selectedBlock.id}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`;
-      
-      console.log('Request URL:', url);
-      console.log('Request method:', isUpdate ? 'PUT' : 'POST');
-
-      const method = isUpdate ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(blockData),
-      });
-
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response data:', errorData);
-        throw new Error(errorData.details || `Failed to ${isUpdate ? 'update' : 'save'} RPM block`);
-      }
-
-      const savedBlock = await response.json();
-      console.log(`${isUpdate ? 'Updated' : 'Saved'} RPM block:`, savedBlock);
-
-      // Update localStorage
-      const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]");
-      const updatedBlocks = existingBlocks.filter((block: any) => block.id !== savedBlock.id);
-      
-      // Voeg saved: true toe aan het opgeslagen blok
-      const blockWithSavedFlag = {
-        ...savedBlock,
-        saved: true
-      };
-      
-      updatedBlocks.unshift(blockWithSavedFlag);
-      localStorage.setItem("rpmBlocks", JSON.stringify(updatedBlocks));
-
-      // Remove the corresponding action plan from localStorage
-      localStorage.removeItem(`actionPlan-${savedBlock.id}`);
-
-      // Emit custom event
-      const event = new CustomEvent("rpmBlocksUpdated");
-      window.dispatchEvent(event);
-
-      // Close the panel
-      onClose(savedBlock.id);
-    } catch (error) {
-      console.error('Error saving RPM block:', error);
-      // Toon een foutmelding aan de gebruiker
-      alert(`Error saving the action plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
   const removeMassiveAction = (index: number) => {
     setMassiveActions(massiveActions.filter((_, i) => i !== index))
@@ -728,10 +636,6 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
               </SelectContent>
             </Select>
           )}
-          {/* Save button */}
-          <Button onClick={handleSave} className="bg-black text-white hover:bg-gray-800">
-            Save
-          </Button>
         </div>
       </div>
     </div>

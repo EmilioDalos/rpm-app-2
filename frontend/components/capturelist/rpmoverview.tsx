@@ -224,11 +224,9 @@ export default function RpmOverview({ blocks }: { blocks: RpmBlock[] }) {
             <div
               key={block.id}
               className={`block p-3 rounded-lg transition-colors ${
-                block.saved
-                  ? index % 2 === 0
-                    ? 'bg-gray-100 hover:bg-gray-200'
-                    : 'bg-gray-200 hover:bg-gray-300'
-                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                index % 2 === 0
+                  ? 'bg-gray-100 hover:bg-gray-200'
+                  : 'bg-gray-200 hover:bg-gray-300'
               }`}
             >
               <div className="grid grid-cols-12 gap-2">
