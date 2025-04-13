@@ -19,6 +19,7 @@ import dynamic from 'next/dynamic';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDrag } from 'react-dnd';
+import { Badge } from "@/components/ui/badge";
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
 
@@ -569,16 +570,29 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       <div 
         ref={drag}
         className={cn(
-          "p-2 rounded cursor-move",
+          "mb-2 p-2 rounded-md shadow-sm cursor-move",
           isPlanned ? "bg-green-100" : "bg-gray-100",
           isDragging ? "opacity-50" : ""
         )}
         onClick={onClick}
       >
-        <div className="font-medium">{action.text}</div>
-        <div className="text-sm text-gray-500">
-          {isPlanned ? "Already planned" : "Click to plan"}
+        <div className="flex items-center justify-between">
+          <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
+            {action.key}
+          </Badge>
+          <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
         </div>
+        <p className="text-sm font-medium mt-1">{action.text}</p>
+        {isPlanned && (
+          <Badge variant="outline" className="mt-1">
+            Gepland
+          </Badge>
+        )}
+        {action.missedDate && (
+          <div className="text-xs text-red-500 mt-1">
+            Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}
+          </div>
+        )}
       </div>
     );
   };
