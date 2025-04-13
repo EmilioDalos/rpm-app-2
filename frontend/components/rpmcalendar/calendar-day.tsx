@@ -57,8 +57,74 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
 
   const isDateInRange = (action: MassiveAction, currentDate: string) => {
     if (!action.isDateRange || !action.startDate || !action.endDate) return false;
-    return currentDate >= action.startDate && currentDate <= action.endDate;
+    
+    const start = new Date(action.startDate);
+    const end = new Date(action.endDate);
+    const current = new Date(currentDate);
+    
+    // Set time to midnight for date comparison
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    current.setHours(0, 0, 0, 0);
+    
+    const isInRange = current >= start && current <= end;
+    console.log(`Date range check for ${action.text}: ${currentDate} is ${isInRange ? 'in' : 'not in'} range ${action.startDate} to ${action.endDate}`);
+
+    return isInRange;
   };
+
+  const getEventsForDay = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    console.log(`Getting events for day ${dateStr}:`, events);
+
+    return events.filter(event => {
+      if (!event.date) return false;
+      
+      // Check if any of the massive actions in this event fall within the date range
+      return event.massiveActions.some(action => {
+        // If the action has a date range
+        if (action.isDateRange && action.startDate && action.endDate) {
+          const start = new Date(action.startDate);
+          const end = new Date(action.endDate);
+          const current = new Date(date);
+          
+          // Set time to midnight for date comparison
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          current.setHours(0, 0, 0, 0);
+          
+          const isInRange = current >= start && current <= end;
+          console.log(`Checking date range for ${action.text}:`, {
+            start: start.toISOString(),
+            end: end.toISOString(),
+            current: current.toISOString(),
+            isInRange
+          });
+          
+          return isInRange;
+        }
+        
+        // For single-day events, check if the date matches
+        if (!action.startDate) return false;
+        
+        const eventDate = new Date(action.startDate);
+        eventDate.setHours(0, 0, 0, 0);
+        const currentDate = new Date(date);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        const isSameDay = eventDate.getTime() === currentDate.getTime();
+        console.log(`Checking single day event ${action.text}:`, {
+          eventDate: eventDate.toISOString(),
+          currentDate: currentDate.toISOString(),
+          isSameDay
+        });
+        
+        return isSameDay;
+      });
+    });
+  };
+
+  const dayEvents = getEventsForDay(date);
 
   const confirmRemoveAction = (actionId: string) => {
     setActionToRemove(actionId);
@@ -92,7 +158,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       </div>
       <ScrollArea className="h-24">
         <TooltipProvider>
-          {events.map((event) => (
+          {dayEvents.map((event) => (
             event.massiveActions.map((action) => (
               <Tooltip key={action.id}>
                 <TooltipTrigger asChild>

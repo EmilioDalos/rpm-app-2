@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FC } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import { enGB } from 'date-fns/locale';
 import { nl as nlLocale } from "date-fns/locale";
 import dynamic from 'next/dynamic';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useDrag } from 'react-dnd';
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
 
@@ -35,7 +37,7 @@ interface RpmCalendarProps {
 
 type ViewMode = "day" | "week" | "month";
 
-const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
+const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [rpmBlocks, setRpmBlocks] = useState<RpmBlock[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -51,6 +53,10 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     fetchCategories();
     fetchRpmBlocks();
   }, []);
+
+  useEffect(() => {
+    fetchCalendarEvents();
+  }, [currentDate, viewMode]);
 
   const fetchCategories = async () => {
     try {
@@ -75,6 +81,119 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       setRpmBlocks(data);
     } catch (error) {
       console.error('Error fetching RPM blocks:', error);
+    }
+  };
+
+  const fetchCalendarEvents = async () => {
+    try {
+      let startDate: Date;
+      let endDate: Date;
+
+      // Calculate date range based on view mode
+      if (viewMode === "month") {
+        startDate = startOfMonth(currentDate);
+        endDate = endOfMonth(currentDate);
+      } else if (viewMode === "week") {
+        startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
+        endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
+      } else {
+        // Day view
+        startDate = new Date(currentDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(currentDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      console.log(`Fetching calendar events for ${viewMode} view:`, {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`Received ${data.length} calendar events from API:`, data);
+      
+      // Process the events to ensure they have the correct structure
+      const processedEvents = data.flatMap((action: MassiveAction) => {
+        // For date range events, create an entry for each day in the range
+        if (action.isDateRange && action.startDate && action.endDate) {
+          const start = new Date(action.startDate);
+          const end = new Date(action.endDate);
+          
+          // Set time to midnight for date comparison
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          
+          const events = [];
+          let currentDate = new Date(start);
+          
+          // Make sure we include the end date in the range
+          while (currentDate <= end) {
+            const currentDateKey = format(currentDate, "yyyy-MM-dd");
+            events.push({
+              id: `${currentDateKey}-${action.id}`,
+              date: currentDateKey,
+              massiveActions: [{
+                ...action,
+                // Preserve the original start and end dates
+                startDate: action.startDate,
+                endDate: action.endDate,
+                isDateRange: true
+              }],
+              createdAt: action.createdAt,
+              updatedAt: action.updatedAt
+            });
+            
+            // Move to next day
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          
+          return events;
+        }
+        
+        // For single-day events
+        const dateKey = action.startDate ? format(new Date(action.startDate), "yyyy-MM-dd") : "";
+        return [{
+          id: `${dateKey}-${action.id}`,
+          date: dateKey,
+          massiveActions: [action],
+          createdAt: action.createdAt,
+          updatedAt: action.updatedAt
+        }];
+      });
+      
+      // Group events by date
+      const groupedEvents = processedEvents.reduce((acc: { [key: string]: CalendarEvent }, event: CalendarEvent) => {
+        if (!event.date) return acc;
+        
+        if (acc[event.date]) {
+          // If we already have events for this date, merge the massiveActions
+          acc[event.date].massiveActions = [
+            ...acc[event.date].massiveActions,
+            ...event.massiveActions
+          ];
+        } else {
+          // Otherwise, add the event to the accumulator
+          acc[event.date] = event;
+        }
+        
+        return acc;
+      }, {});
+      
+      // Convert the grouped events back to an array
+      const finalEvents = Object.values(groupedEvents) as CalendarEvent[];
+      console.log(`Processed ${finalEvents.length} unique dates with events:`, finalEvents);
+      
+      setCalendarEvents(finalEvents);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
     }
   };
 
@@ -123,6 +242,9 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
       // Refresh the RPM blocks to get the latest data
       await fetchRpmBlocks();
+      
+      // Refresh calendar events after updating an action
+      await fetchCalendarEvents();
     } catch (error) {
       console.error('Error updating action:', error);
     }
@@ -218,6 +340,9 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
           }),
         });
+        
+        // Refresh calendar events after successful drop
+        await fetchCalendarEvents();
       
     } catch (error) {
       console.error('Error saving/updating action:', error);
@@ -254,6 +379,9 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       
       // Refresh the RPM blocks to get the latest data
       await fetchRpmBlocks();
+      
+      // Refresh calendar events after removing an action
+      await fetchCalendarEvents();
     } catch (error) {
       console.error('Error removing action from calendar:', error);
     }
@@ -397,35 +525,62 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const renderCalendar = () => {
-    if (viewMode === "month") {
-      return renderMonthCalendar();
-    } else if (viewMode === "week") {
-      return renderWeekCalendar();
-    } else {
-      return renderDayCalendar();
+    switch (viewMode) {
+      case "day":
+        return renderDayCalendar();
+      case "week":
+        return renderWeekCalendar();
+      case "month":
+        return renderMonthCalendar();
+      default:
+        return null;
+    }
+  };
+
+  const getCalendarTitle = () => {
+    switch (viewMode) {
+      case "day":
+        return format(currentDate, "EEEE, d MMMM yyyy");
+      case "week":
+        return `Week ${format(currentDate, "w")} van ${format(currentDate, "MMMM yyyy")}`;
+      case "month":
+        return format(currentDate, "MMMM yyyy");
+      default:
+        return "Kalender";
     }
   };
 
   const isActionPlanned = (actionId: string) => {
-    return calendarEvents?.some((event) => 
-      event.massiveActions?.some((action) => action.id === actionId)
+    return calendarEvents.some(event => 
+      event.massiveActions?.some(action => action.id === actionId)
     );
   };
 
-  const filteredRpmBlocks = activeCategory
-    ? rpmBlocks.filter(block => block.categoryId === activeCategory)
-    : rpmBlocks;
+  const ActionItem = ({ action, isPlanned, onClick }: { action: any; isPlanned: boolean; onClick: () => void }) => {
+    const [{ isDragging }, drag] = useDrag(() => ({
+      type: 'action',
+      item: action,
+      collect: (monitor) => ({
+        isDragging: !!monitor.isDragging(),
+      }),
+    }));
 
-  const getCalendarTitle = () => {
-    if (viewMode === "week") {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return `${format(weekStart, "dd MMM", { locale: nlLocale })} - ${format(weekEnd, "dd MMM yyyy", { locale: nlLocale })}`;
-    } else if (viewMode === "month") {
-      return format(currentDate, "MMMM yyyy", { locale: nlLocale });
-    } else {
-      return format(currentDate, "EEEE dd MMMM yyyy", { locale: nlLocale });
-    }
+    return (
+      <div 
+        ref={drag}
+        className={cn(
+          "p-2 rounded cursor-move",
+          isPlanned ? "bg-green-100" : "bg-gray-100",
+          isDragging ? "opacity-50" : ""
+        )}
+        onClick={onClick}
+      >
+        <div className="font-medium">{action.text}</div>
+        <div className="text-sm text-gray-500">
+          {isPlanned ? "Already planned" : "Click to plan"}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -446,7 +601,7 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                 ? `RPM Plannen - ${categories.find(c => c.id === activeCategory)?.name}` 
                 : 'Alle RPM Plannen'}
             </h2>
-            {filteredRpmBlocks?.map((block) => (
+            {rpmBlocks?.map((block) => (
               <Card key={block.id} className="mb-4">
                 <CardHeader>
                   <CardTitle className="flex flex-col">
@@ -563,4 +718,3 @@ const RpmCalendar: React.FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 };
 
 export default RpmCalendar;
-
