@@ -601,7 +601,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                 ? `RPM Plannen - ${categories.find(c => c.id === activeCategory)?.name}` 
                 : 'Alle RPM Plannen'}
             </h2>
-            {rpmBlocks?.map((block) => (
+               {rpmBlocks?.map((block) => (
               <Card key={block.id} className="mb-4">
                 <CardHeader>
                   <CardTitle className="flex flex-col">

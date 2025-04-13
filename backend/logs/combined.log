@@ -4170,3 +4170,12 @@
 {"level":"info","message":"GET /api/calendar-events/range?startDate=2025-04-06T22:00:00.000Z&endDate=2025-04-13T21:59:59.999Z","timestamp":"2025-04-13T20:09:52.149Z"}
 {"level":"info","message":"PUT /api/calendar-events/44444444-eeee-eeee-eeee-444444444444","timestamp":"2025-04-13T20:09:56.891Z"}
 {"level":"info","message":"GET /api/calendar-events/range?startDate=2025-04-06T22:00:00.000Z&endDate=2025-04-13T21:59:59.999Z","timestamp":"2025-04-13T20:09:56.904Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-13T20:18:22.899Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-13T20:18:22.904Z"}
+{"level":"info","message":"GET /api/calendar-events/range?startDate=2025-04-06T22:00:00.000Z&endDate=2025-04-13T21:59:59.999Z","timestamp":"2025-04-13T20:18:22.907Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-13T20:20:48.221Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-13T20:20:48.223Z"}
+{"level":"info","message":"GET /api/calendar-events/range?startDate=2025-04-06T22:00:00.000Z&endDate=2025-04-13T21:59:59.999Z","timestamp":"2025-04-13T20:20:48.227Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-13T20:21:29.091Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-13T20:21:29.095Z"}
+{"level":"info","message":"GET /api/calendar-events/range?startDate=2025-04-06T22:00:00.000Z&endDate=2025-04-13T21:59:59.999Z","timestamp":"2025-04-13T20:21:29.099Z"}
