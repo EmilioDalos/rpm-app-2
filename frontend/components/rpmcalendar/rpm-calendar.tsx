@@ -127,7 +127,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         if (action.isDateRange && action.startDate && action.endDate) {
           const start = new Date(action.startDate);
           const end = new Date(action.endDate);
-          
+         
           // Set time to midnight for date comparison
           start.setHours(0, 0, 0, 0);
           end.setHours(23, 59, 59, 999);
@@ -419,7 +419,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     // Voor maandweergave, inclusief dagen uit vorige/volgende maand
     const startDate = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
     const endDate = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
-
+    console.log(`Rendering month calendar for ${currentDate.toISOString()}:`, )
+    
     let currentDay = startDate;
 
     while (currentDay <= endDate) {
@@ -461,6 +462,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const currentDay = addDays(weekStart, i);
       const dateKey = format(currentDay, "yyyy-MM-dd");
       const isCurrentDay = isSameDay(currentDay, todayDate);
+      console.log(`Rendering week calendar for ${currentDate.toISOString()}:`, )  
 
       const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
 

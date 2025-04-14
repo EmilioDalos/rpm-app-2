@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface CalendarDayProps {
   day: number;
@@ -74,7 +75,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   };
 
   const getEventsForDay = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, "yyyy-MM-dd");
     console.log(`Getting events for day ${dateStr}:`, events);
 
     return events.filter(event => {
@@ -88,16 +89,16 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
           const end = new Date(action.endDate);
           const current = new Date(date);
           
-          // Set time to midnight for date comparison
+          // Set time to local midnight for date comparison
           start.setHours(0, 0, 0, 0);
           end.setHours(23, 59, 59, 999);
           current.setHours(0, 0, 0, 0);
           
           const isInRange = current >= start && current <= end;
           console.log(`Checking date range for ${action.text}:`, {
-            start: start.toISOString(),
-            end: end.toISOString(),
-            current: current.toISOString(),
+            start: format(start, "yyyy-MM-dd"),
+            end: format(end, "yyyy-MM-dd"),
+            current: format(current, "yyyy-MM-dd"),
             isInRange
           });
           
@@ -108,14 +109,16 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
         if (!action.startDate) return false;
         
         const eventDate = new Date(action.startDate);
-        eventDate.setHours(0, 0, 0, 0);
         const currentDate = new Date(date);
+        
+        // Set both dates to local midnight
+        eventDate.setHours(0, 0, 0, 0);
         currentDate.setHours(0, 0, 0, 0);
         
         const isSameDay = eventDate.getTime() === currentDate.getTime();
         console.log(`Checking single day event ${action.text}:`, {
-          eventDate: eventDate.toISOString(),
-          currentDate: currentDate.toISOString(),
+          eventDate: format(eventDate, "yyyy-MM-dd"),
+          currentDate: format(currentDate, "yyyy-MM-dd"),
           isSameDay
         });
         
