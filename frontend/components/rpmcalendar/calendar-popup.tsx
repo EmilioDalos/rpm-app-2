@@ -38,7 +38,11 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [startDate, setStartDate] = useState(action.startDate || dateKey)
   const [endDate, setEndDate] = useState(action.endDate || dateKey)
   const [recurringDays, setRecurringDays] = useState<string[]>(action.selectedDays || [])
-  const [actionHour, setActionHour] = useState(action.hour || 8)
+  const [selectedHour, setSelectedHour] = useState<string>(
+    action.hour !== undefined 
+      ? `${Math.floor(action.hour)}-${Math.round((action.hour % 1) * 60)}` 
+      : '8-0'
+  )
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
 
   useEffect(() => {
@@ -48,7 +52,11 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     setStartDate(action.startDate || dateKey)
     setEndDate(action.endDate || dateKey)
     setRecurringDays(action.selectedDays || [])
-    setActionHour(action.hour || 8)
+    if (action.hour !== undefined) {
+      const hour = Math.floor(action.hour);
+      const minutes = Math.round((action.hour % 1) * 60);
+      setSelectedHour(`${hour}-${minutes}`);
+    }
   }, [action])
 
   const addNote = useCallback(() => {
@@ -83,7 +91,24 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     );
   };
 
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        const timeValue = `${hour}-${minute}`;
+        const displayTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        options.push({ value: timeValue, label: displayTime });
+      }
+    }
+    return options;
+  };
+
   const handleUpdate = () => {
+    const [hourStr, minuteStr] = selectedHour.split('-');
+    const hour = parseInt(hourStr);
+    const minutes = parseInt(minuteStr);
+    const decimalHour = hour + (minutes / 60);
+
     const updatedAction: MassiveAction = {
       ...action,
       key: isCompleted ? '✔' : action.key,
@@ -92,12 +117,14 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       startDate,
       endDate,
       selectedDays: recurringDays,
-      hour: actionHour,
+      hour: decimalHour,
       updatedAt: new Date().toISOString()
     }
     onUpdate(updatedAction, dateKey)
     onClose()
   }
+
+  const timeOptions = generateTimeOptions();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -187,16 +214,24 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </div>
             </div>
           )}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="action-hour">Tijdstip</Label>
-            <Select value={actionHour.toString()} onValueChange={(value) => setActionHour(parseInt(value))}>
-              <SelectTrigger id="action-hour">
-                <SelectValue placeholder="Selecteer een tijdstip" />
+          <div className="grid gap-2">
+            <Label htmlFor="time">Tijdstip</Label>
+            <Select
+              value={selectedHour}
+              onValueChange={setSelectedHour}
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  {timeOptions.find(opt => opt.value === selectedHour)?.label || 'Selecteer tijd'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <SelectItem key={i} value={i.toString()}>
-                    {i < 10 ? `0${i}` : i}:00
+                {timeOptions.map((option) => (
+                  <SelectItem 
+                    key={option.value} 
+                    value={option.value}
+                  >
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

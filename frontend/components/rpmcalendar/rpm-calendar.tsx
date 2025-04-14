@@ -11,7 +11,7 @@ import CalendarDay from './calendar-day';
 import HourSlot from './hour-slot';
 import ActionItem from './action-item';
 import CategoryBar from './category-bar';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { format, addDays, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { enGB } from 'date-fns/locale';
 import { nl as nlLocale } from "date-fns/locale";
@@ -206,32 +206,62 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
     try {
-      await updateCalendarEvent(dateKey, updatedAction);
+      console.log('Updating action:', updatedAction);
+      
+      // Update the calendar event via API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: updatedAction.text || 'Nieuwe actie',
+          description: updatedAction.leverage || '',
+          startDate: updatedAction.startDate,
+          endDate: updatedAction.endDate,
+          isDateRange: updatedAction.isDateRange,
+          hour: updatedAction.hour,
+          categoryId: updatedAction.categoryId
+        }),
+      });
 
-      // Update calendar events
-      setCalendarEvents((prevEvents) =>
-        prevEvents.map((event) => {
-          if (event.date === dateKey) {
-            return {
-              ...event,
-              massiveActions: event.massiveActions.map((action) =>
-                action.id === updatedAction.id ? updatedAction : action
-              ),
-              updatedAt: new Date().toISOString()
-            };
-          }
-          return event;
-        })
-      );
+      if (!response.ok) {
+        throw new Error('Failed to update calendar event');
+      }
 
-      // Update rpmBlocks to reflect changes in the category column
+      // Update local calendar events state
+      setCalendarEvents((prevEvents) => {
+        const newEvents = [...prevEvents];
+        const eventIndex = newEvents.findIndex(event => event.date === dateKey);
+        
+        if (eventIndex >= 0) {
+          // Update existing event
+          newEvents[eventIndex] = {
+            ...newEvents[eventIndex],
+            massiveActions: newEvents[eventIndex].massiveActions.map(action =>
+              action.id === updatedAction.id ? updatedAction : action
+            ),
+            updatedAt: new Date().toISOString()
+          };
+        } else {
+          // Create new event
+          newEvents.push({
+            id: `${dateKey}-${updatedAction.id}`,
+            date: dateKey,
+            massiveActions: [updatedAction],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+        
+        return newEvents;
+      });
+
+      // Update RPM blocks if the action exists there
       setRpmBlocks((prevBlocks) =>
         prevBlocks.map((block) => {
-          // Check if this block contains the updated action
-          if (block.massiveActions && block.massiveActions.some(action => action.id === updatedAction.id)) {
+          if (block.massiveActions?.some(action => action.id === updatedAction.id)) {
             return {
               ...block,
-              massiveActions: block.massiveActions.map((action) =>
+              massiveActions: block.massiveActions.map(action =>
                 action.id === updatedAction.id ? updatedAction : action
               ),
               updatedAt: new Date()
@@ -241,33 +271,14 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         })
       );
 
-      // Refresh the RPM blocks to get the latest data
-      await fetchRpmBlocks();
-      
-      // Refresh calendar events after updating an action
-      await fetchCalendarEvents();
+      // Refresh data
+      await Promise.all([
+        fetchCalendarEvents(),
+        fetchRpmBlocks()
+      ]);
+
     } catch (error) {
       console.error('Error updating action:', error);
-    }
-  };
-
-  const updateCalendarEvent = async (dateKey: string, action: MassiveAction) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        text: action.text || 'Nieuwe actie',
-        description: action.leverage || '',
-        startDate: action.startDate,
-        endDate: action.endDate,
-        isDateRange: action.isDateRange,
-        hour: action.hour,
-        categoryId: action.categoryId
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update calendar event');
     }
   };
 
@@ -416,7 +427,6 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     const calendarDays = [];
     const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
 
-    // Voor maandweergave, inclusief dagen uit vorige/volgende maand
     const startDate = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
     const endDate = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
     console.log(`Rendering month calendar for ${currentDate.toISOString()}:`, )
@@ -443,6 +453,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           onActionClick={(action) => handleActionClick(action, dateKey)}
           onDrop={handleDrop}
           onActionRemove={handleActionRemove}
+          viewMode="month"
         />
       );
 
@@ -478,6 +489,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           onActionClick={(action) => handleActionClick(action, dateKey)}
           onDrop={handleDrop}
           onActionRemove={handleActionRemove}
+          viewMode="week"
         />
       );
     }
@@ -491,25 +503,65 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     const isCurrentDay = isSameDay(currentDate, todayDate);
 
     const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
-
-    // Genereer 24 tijdslots voor de dag
+    console.log(`Events for day ${dateKey}:`, eventsForDay);
+    
+    // Genereer 24 tijdslots voor de dag, elk met 4 kwartieren
     const hourSlots = [];
     for (let hour = 0; hour < 24; hour++) {
       hourSlots.push(
-        <div key={`${dateKey}-${hour}`} className="flex items-center">
-          <div className="w-16 text-right pr-2 text-sm text-muted-foreground">
-            {hour}:00
+        <div key={`${dateKey}-${hour}`} className="flex items-start border-t border-gray-200">
+          <div className="w-16 text-right pr-2 text-sm text-muted-foreground py-2">
+            {hour.toString().padStart(2, '0')}:00
           </div>
-          <div className="flex-1">
-            <HourSlot
-              dateKey={dateKey}
-              hour={hour}
-              events={eventsForDay}
-              isToday={isCurrentDay}
-              onActionClick={(action) => handleActionClick(action, dateKey)}
-              onDrop={(item) => handleDrop(item, dateKey)}
-              onActionRemove={(actionId) => handleActionRemove(actionId, dateKey)}
-            />
+          <div className="flex-1 relative min-h-[60px]">
+            {/* Kwartierlijnen */}
+            <div className="absolute w-full h-[15px] border-t border-gray-100" style={{ top: '15px' }} />
+            <div className="absolute w-full h-[15px] border-t border-gray-100" style={{ top: '30px' }} />
+            <div className="absolute w-full h-[15px] border-t border-gray-100" style={{ top: '45px' }} />
+            
+            {/* Events die in dit uur vallen */}
+            {eventsForDay.map((event) => 
+              event.massiveActions
+                .filter(action => action.hour === hour)
+                .map((action) => {
+                  const durationInMinutes = action.durationAmount * (action.durationUnit === 'hours' ? 60 : 1);
+                  const heightInMinutes = Math.max(15, durationInMinutes); // Minimaal 15 minuten
+                  
+                  return (
+                    <div
+                      key={action.id}
+                      className="absolute left-0 right-2 rounded-md p-1 shadow-sm cursor-pointer hover:brightness-95 transition-all"
+                      style={{
+                        backgroundColor: action.color || '#e0e0e0',
+                        color: action.textColor || '#000000',
+                        height: `${heightInMinutes}px`,
+                        minHeight: '15px',
+                        zIndex: 10
+                      }}
+                      onClick={() => handleActionClick(action, dateKey)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium">{action.text}</span>
+                        <span className="text-xs opacity-75">
+                          {durationInMinutes} min
+                        </span>
+                      </div>
+                      {heightInMinutes >= 30 && action.leverage && (
+                        <p className="text-xs mt-1 opacity-75">{action.leverage}</p>
+                      )}
+                      <button
+                        className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleActionRemove(action.id, dateKey);
+                        }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })
+            )}
           </div>
         </div>
       );
@@ -517,9 +569,11 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
     return (
       <ScrollArea className="h-[calc(100vh-12rem)]">
-        <div className="flex flex-col gap-1">
-          <div className="text-xl font-semibold mb-2">{format(currentDate, "EEEE dd MMMM yyyy", { locale: nlLocale })}</div>
-          <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col">
+          <div className="text-xl font-semibold mb-4">
+            {format(currentDate, "EEEE dd MMMM yyyy", { locale: nlLocale })}
+          </div>
+          <div className="flex flex-col">
             {hourSlots}
           </div>
         </div>
@@ -568,34 +622,91 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       }),
     }));
 
+    const [showPopup, setShowPopup] = useState(false);
+
+    const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
+      try {
+        // Update the action in the RPM blocks
+        const updatedBlocks = rpmBlocks.map(block => {
+          if (block.massiveActions?.some(a => a.id === updatedAction.id)) {
+            return {
+              ...block,
+              massiveActions: block.massiveActions.map(a =>
+                a.id === updatedAction.id ? updatedAction : a
+              )
+            };
+          }
+          return block;
+        });
+        setRpmBlocks(updatedBlocks);
+
+        // Als de actie gepland is, update deze in de kalender via de API
+        if (updatedAction.startDate) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              text: updatedAction.text || 'Nieuwe actie',
+              description: updatedAction.leverage || '',
+              startDate: updatedAction.startDate,
+              endDate: updatedAction.endDate,
+              isDateRange: updatedAction.isDateRange,
+              hour: updatedAction.hour,
+              categoryId: updatedAction.categoryId
+            }),
+          });
+
+          // Ververs de kalendergebeurtenissen
+          await fetchCalendarEvents();
+        }
+
+        // Ververs de RPM blocks om de laatste data te krijgen
+        await fetchRpmBlocks();
+      } catch (error) {
+        console.error('Error updating action:', error);
+      }
+    };
+
     return (
-      <div 
-        ref={drag}
-        className={cn(
-          "mb-2 p-2 rounded-md shadow-sm cursor-move",
-          isPlanned ? "bg-green-100" : "bg-gray-100",
-          isDragging ? "opacity-50" : ""
-        )}
-        onClick={onClick}
-      >
-        <div className="flex items-center justify-between">
-          <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
-            {action.key}
-          </Badge>
-          <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
-        </div>
-        <p className="text-sm font-medium mt-1">{action.text}</p>
-        {isPlanned && (
-          <Badge variant="outline" className="mt-1">
-            Gepland
-          </Badge>
-        )}
-        {action.missedDate && (
-          <div className="text-xs text-red-500 mt-1">
-            Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}
+      <>
+        <div 
+          ref={drag}
+          className={cn(
+            "mb-2 p-2 rounded-md shadow-sm cursor-pointer",
+            isPlanned ? "bg-green-100" : "bg-gray-100",
+            isDragging ? "opacity-50" : ""
+          )}
+          onClick={() => setShowPopup(true)}
+        >
+          <div className="flex items-center justify-between">
+            <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
+              {action.key}
+            </Badge>
+            <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
           </div>
+          <p className="text-sm font-medium mt-1">{action.text}</p>
+          {isPlanned && (
+            <Badge variant="outline" className="mt-1">
+              Gepland
+            </Badge>
+          )}
+          {action.missedDate && (
+            <div className="text-xs text-red-500 mt-1">
+              Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+
+        {showPopup && (
+          <CalendarPopup
+            action={action}
+            dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
+            isOpen={showPopup}
+            onClose={() => setShowPopup(false)}
+            onUpdate={handleActionUpdate}
+          />
         )}
-      </div>
+      </>
     );
   };
 

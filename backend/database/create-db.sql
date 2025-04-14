@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
   is_date_range BOOLEAN DEFAULT FALSE,
-  hour INTEGER,
+  hour NUMERIC,
   missed_date TIMESTAMP WITH TIME ZONE,
   description TEXT,
   location VARCHAR(255),
