@@ -502,7 +502,27 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     const dateKey = format(currentDate, "yyyy-MM-dd");
     const isCurrentDay = isSameDay(currentDate, todayDate);
 
-    const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
+    // Filter events for the current day, including date range events
+    const eventsForDay = calendarEvents.filter((event) => {
+      if (!event.date) return false;
+
+      return event.massiveActions.some(action => {
+        if (action.isDateRange && action.startDate && action.endDate) {
+          const start = new Date(action.startDate);
+          const end = new Date(action.endDate);
+          const current = new Date(dateKey);
+          
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          current.setHours(0, 0, 0, 0);
+          
+          return current >= start && current <= end;
+        }
+        
+        return event.date === dateKey;
+      });
+    });
+
     console.log(`Events for day ${dateKey}:`, eventsForDay);
     
     // Genereer 24 tijdslots voor de dag, elk met 4 kwartieren
@@ -522,10 +542,14 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             {/* Events die in dit uur vallen */}
             {eventsForDay.map((event) => 
               event.massiveActions
-                .filter(action => action.hour === hour)
+                .filter(action => {
+                  const actionHour = action.hour !== undefined ? Math.floor(action.hour) : 0;
+                  return actionHour === hour;
+                })
                 .map((action) => {
                   const durationInMinutes = action.durationAmount * (action.durationUnit === 'hours' ? 60 : 1);
                   const heightInMinutes = Math.max(15, durationInMinutes); // Minimaal 15 minuten
+                  const minuteOffset = action.hour !== undefined ? Math.round((action.hour % 1) * 60) : 0; // Bereken minuten offset
                   
                   return (
                     <div
@@ -536,6 +560,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                         color: action.textColor || '#000000',
                         height: `${heightInMinutes}px`,
                         minHeight: '15px',
+                        top: `${minuteOffset}px`,
                         zIndex: 10
                       }}
                       onClick={() => handleActionClick(action, dateKey)}
