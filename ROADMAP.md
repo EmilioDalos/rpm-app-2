@@ -1,6 +1,8 @@
 Hier is een eenvoudige roadmap waarin de openstaande functionaliteit en implementatieplanning voor de app zijn beschreven:
 
 ### Roadmap voor App Functionaliteit
+- koppelen api's andere agenda's
+https://chatgpt.com/share/67fcddef-aacc-800a-9fc5-08766ac66f35
 
 ###BUGS
 - deleten van een category komt er geen handje meer om iets te wijzigen
