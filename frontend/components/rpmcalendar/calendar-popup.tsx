@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MassiveAction, Note } from '@/types'
+import { MassiveAction, Note, DayOfWeek } from '@/types'
 import { Checkbox } from "@/components/ui/checkbox"
 import { MoreHorizontal, Pencil, X } from 'lucide-react'
 import { format } from 'date-fns'
@@ -29,6 +29,8 @@ interface CalendarPopupProps {
   onUpdate: (updatedAction: MassiveAction, dateKey: string) => void
 }
 
+const DAYS_OF_WEEK: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate }) => {
   const [notes, setNotes] = useState<Note[]>(action.notes || [])
   const [newNote, setNewNote] = useState('')
@@ -44,6 +46,8 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       : '8-0'
   )
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
 
   useEffect(() => {
     setNotes(action.notes || [])
@@ -56,6 +60,10 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       const hour = Math.floor(action.hour);
       const minutes = Math.round((action.hour % 1) * 60);
       setSelectedHour(`${hour}-${minutes}`);
+    }
+    if (action.recurrencePattern) {
+      setIsRecurring(true);
+      setSelectedDays(action.recurrencePattern.map(pattern => pattern.dayOfWeek));
     }
   }, [action])
 
@@ -103,7 +111,22 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     return options;
   };
 
-  const handleUpdate = () => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const hour = parseFloat(e.target.value);
+    setSelectedHour(`${Math.floor(hour)}-${Math.round((hour % 1) * 60)}`);
+  };
+
+  const handleDayToggle = (day: DayOfWeek) => {
+    setSelectedDays(prev => {
+      if (prev.includes(day)) {
+        return prev.filter(d => d !== day);
+      } else {
+        return [...prev, day];
+      }
+    });
+  };
+
+  const handleUpdate = async () => {
     const [hourStr, minuteStr] = selectedHour.split('-');
     const hour = parseInt(hourStr);
     const minutes = parseInt(minuteStr);
@@ -118,10 +141,30 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       endDate,
       selectedDays: recurringDays,
       hour: decimalHour,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      recurrencePattern: isRecurring ? selectedDays.map(day => ({
+        id: `${action.id}-${day}`,
+        actionId: action.id,
+        dayOfWeek: day
+      })) : undefined
     }
-    onUpdate(updatedAction, dateKey)
-    onClose()
+
+    try {
+      // Eerst de actie bijwerken
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updatedAction,
+          recurrencePattern: updatedAction.recurrencePattern
+        }),
+      });
+
+      onUpdate(updatedAction, dateKey);
+      onClose();
+    } catch (error) {
+      console.error('Error updating action:', error);
+    }
   }
 
   const timeOptions = generateTimeOptions();
@@ -237,6 +280,34 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </SelectContent>
             </Select>
           </div>
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-2">
+              <Checkbox
+                checked={isRecurring}
+                onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
+              />
+              Herhalende actie
+            </Label>
+          </div>
+          {isRecurring && (
+            <div className="grid gap-2">
+              <Label>Herhaal op</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <Label
+                    key={day}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedDays.includes(day)}
+                      onCheckedChange={() => handleDayToggle(day)}
+                    />
+                    <span>{day}</span>
+                  </Label>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">

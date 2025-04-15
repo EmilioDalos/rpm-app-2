@@ -105,6 +105,14 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS "rpm_massive_action_recurrence" (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  action_id UUID REFERENCES rpm_block_massive_action(id) ON DELETE CASCADE,
+  day_of_week VARCHAR(9) CHECK (day_of_week IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
   id UUID PRIMARY KEY,
   massive_action_id UUID REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE,

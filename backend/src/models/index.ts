@@ -7,6 +7,7 @@ import Role from './Role';
 import CategoryThreeToThrive from './CategoryThreeToThrive';
 import CategoryResult from './CategoryResult';
 import CategoryActionPlan from './CategoryActionPlan';
+import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
 
 // Define associations
 const setupAssociations = () => {
@@ -62,7 +63,6 @@ const setupAssociations = () => {
   });
 
 
-
 RpmBlock.belongsTo(Category, {
   foreignKey: 'category_id',
   as: 'category',
@@ -102,6 +102,17 @@ RpmBlockPurpose.belongsTo(RpmBlock, {
   as: 'rpmBlock'
 });
 
+RpmBlockMassiveAction.hasMany(RpmMassiveActionRecurrence, { 
+  foreignKey: 'actionId', 
+  as: 'recurrencePattern',
+  onDelete: 'CASCADE'
+});
+
+RpmMassiveActionRecurrence.belongsTo(RpmBlockMassiveAction, { 
+  foreignKey: 'actionId',
+  as: 'action'
+});
+
   
   console.log('Associations set up successfully');
 };
@@ -127,6 +138,7 @@ export {
   CategoryThreeToThrive,
   CategoryResult,
   CategoryActionPlan,
+  RpmMassiveActionRecurrence,
   setupAssociations,
   testDatabaseConnection
 };

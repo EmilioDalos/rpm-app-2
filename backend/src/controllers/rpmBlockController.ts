@@ -5,6 +5,7 @@ import RpmBlockPurpose from '../models/RpmBlockPurpose';
 import Category from '../models/Category';
 import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
 import sequelize from '../config/db';
+import RpmMassiveActionRecurrence from '../models/RpmMassiveActionRecurrence';
 
 interface MassiveAction {
   text: string;
@@ -23,7 +24,16 @@ export const getRpmBlocks = async (req: Request, res: Response) => {
   try {
     const blocks = await RpmBlock.findAll({
       include: [
-        { model: RpmBlockMassiveAction, as: 'massiveActions' },
+        { 
+          model: RpmBlockMassiveAction, 
+          as: 'massiveActions',
+          include: [
+            {
+              model: RpmMassiveActionRecurrence,
+              as: 'recurrencePattern'
+            }
+          ]
+        },
         { model: RpmBlockPurpose, as: 'purposes' },
         { model: Category, as: 'category' }
       ],

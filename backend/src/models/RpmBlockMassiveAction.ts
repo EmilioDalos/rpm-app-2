@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
 import RpmBlock from './RpmBlock';
 import Category from './Category';
+import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
 
 interface RpmBlockMassiveActionAttributes {
   id: string;
@@ -24,9 +25,10 @@ interface RpmBlockMassiveActionAttributes {
   categoryId?: string;
   createdAt: Date;
   updatedAt: Date;
+  recurrencePattern?: RpmMassiveActionRecurrence[];
 }
 
-interface RpmBlockMassiveActionCreationAttributes extends Omit<RpmBlockMassiveActionAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface RpmBlockMassiveActionCreationAttributes extends Omit<RpmBlockMassiveActionAttributes, 'id' | 'createdAt' | 'updatedAt' | 'recurrencePattern'> {}
 
 class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBlockMassiveActionCreationAttributes> {
   public id!: string;
@@ -49,6 +51,7 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public categoryId?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public recurrencePattern?: RpmMassiveActionRecurrence[];
 }
 
 RpmBlockMassiveAction.init({

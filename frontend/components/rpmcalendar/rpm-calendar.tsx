@@ -423,6 +423,11 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     setCurrentDate(date);
   };
 
+  const handleDayClick = (date: Date) => {
+    setCurrentDate(date);
+    setViewMode('day');
+  };
+
   const renderMonthCalendar = () => {
     const calendarDays = [];
     const todayDate = new Date(new Date().setHours(0, 0, 0, 0));
@@ -454,6 +459,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           onDrop={handleDrop}
           onActionRemove={handleActionRemove}
           viewMode="month"
+          onDayClick={handleDayClick}
         />
       );
 
@@ -490,6 +496,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           onDrop={handleDrop}
           onActionRemove={handleActionRemove}
           viewMode="week"
+          onDayClick={handleDayClick}
         />
       );
     }
@@ -753,8 +760,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                 ? `RPM Plannen - ${categories.find(c => c.id === activeCategory)?.name}` 
                 : 'Alle RPM Plannen'}
             </h2>
-               {rpmBlocks?.map((block) => (
-              <Card key={block.id} className="mb-4">
+            {Array.isArray(rpmBlocks) && rpmBlocks.map((block) => (
+               <Card key={block.id} className="mb-4">
                 <CardHeader>
                   <CardTitle className="flex flex-col">
                     {block.categoryId ? (

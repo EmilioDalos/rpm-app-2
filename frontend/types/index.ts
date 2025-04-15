@@ -70,26 +70,35 @@ export interface RpmBlock {
   saved?: boolean;
 }
 
+export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+export interface RecurrencePattern {
+  id: string;
+  actionId: string;
+  dayOfWeek: DayOfWeek;
+}
+
 export interface MassiveAction {
-  id: string; // Unieke ID voor de actie
-  text: string; // Beschrijving van de actie
-  color?: string; // Optioneel: kleur voor visuele representatie
-  textColor?: string; // Optioneel: tekstkleur
-  leverage: string; // Impact of effect van de actie
-  durationAmount: number; // Duur van de actie
-  durationUnit: string; // Eenheid van duur: "min", "hour", "day"
-  priority: number; // Prioriteit van de actie
-  notes: Note[]; // Notities gekoppeld aan de actie
-  key: string; // Status zoals "✔" of "pending"
-  categoryId: string; // CategoryId voor ook het tonen van de category in de kalender TODO
-  startDate?: string; // Optioneel: ISO 8601 datum voor start van de actie
-  endDate?: string; // Optioneel: ISO 8601 datum voor einde van de actie
-  isDateRange?: boolean; // Of de actie over meerdere dagen gaat
-  selectedDays?: string[]; // Geselecteerde dagen voor terugkerende acties
-  hour?: number; // Optioneel: uur van de dag voor planning
-  missedDate?: string; // Datum waarop de actie niet werd opgepakt
-  createdAt?: string; // Datum van aanmaak van de actie
-  updatedAt?: string; // Laatst bijgewerkt datum
+  id: string;
+  text: string;
+  leverage?: string;
+  durationAmount: number;
+  durationUnit: string;
+  priority: number;
+  key: string;
+  notes: Note[];
+  isDateRange: boolean;
+  selectedDays: string[];
+  color?: string;
+  textColor?: string;
+  categoryId?: string;
+  hour?: number;
+  startDate?: string;
+  endDate?: string;
+  missedDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  recurrencePattern?: RecurrencePattern[];
 }
 
 export interface Note {

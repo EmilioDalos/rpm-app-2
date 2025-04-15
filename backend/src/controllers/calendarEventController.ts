@@ -4,6 +4,12 @@ import RpmBlockMassiveAction from '../models/RpmBlockMassiveAction';
 import sequelize from '../config/db';
 import { Op } from 'sequelize';
 import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
+import RpmMassiveActionRecurrence from '../models/RpmMassiveActionRecurrence';
+import { format, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
+
+interface RecurrencePattern {
+  dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+}
 
 export const getAllCalendarEvents = async (req: Request, res: Response) => {
   try {
@@ -92,41 +98,66 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
 export const updateCalendarEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const rpmBlockId = id;
-    const {
-      text,
-      description,
-      location,
-      startDate,
-      endDate,
-      isDateRange,
-      hour,
-      categoryId
+    const { 
+      text, 
+      description, 
+      startDate, 
+      endDate, 
+      isDateRange, 
+      hour, 
+      categoryId,
+      recurrencePattern 
     } = req.body;
-    console.log("🔥 updateCalendarEvent reached")
-    console.log('id', id);
-    console.log('text', text);
 
+    // Start a transaction
+    const transaction = await sequelize.transaction();
 
-    const event = await RpmBlockMassiveAction.findByPk(id);
-    if (!event) {
-      console.log("updateCalendarEvent not found event with id", id);
-      return res.status(404).json({ error: 'Calendar event with RpmBlockMassiveAction id ' + id + ' not found' });
+    try {
+      // Update the massive action
+      const [updatedCount] = await RpmBlockMassiveAction.update({
+        text: text || 'Nieuwe actie',
+        description: description || '',
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isDateRange: isDateRange || false,
+        hour: hour || undefined,
+        categoryId: categoryId || undefined
+      }, {
+        where: { id },
+        transaction
+      });
+
+      if (updatedCount === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Calendar event not found' });
+      }
+
+      // Handle recurrence pattern updates
+      if (recurrencePattern) {
+        // Delete existing recurrence patterns
+        await RpmMassiveActionRecurrence.destroy({
+          where: { actionId: id },
+          transaction
+        });
+
+        // Create new recurrence patterns
+        if (Array.isArray(recurrencePattern) && recurrencePattern.length > 0) {
+          await RpmMassiveActionRecurrence.bulkCreate(
+            recurrencePattern.map((pattern: RecurrencePattern) => ({
+              actionId: id,
+              dayOfWeek: pattern.dayOfWeek
+            })),
+            { transaction }
+          );
+        }
+      }
+
+      await transaction.commit();
+      res.json({ message: 'Calendar event updated successfully' });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-
-    await event.update({
-      text,
-      description,
-      location,
-      startDate,
-      endDate,
-      isDateRange,
-      hour,
-      categoryId
-    });
-    console.log('event updated');
-    const sanitizedEvent = sanitizeSequelizeModel(event);
-    res.json(sanitizedEvent);
   } catch (error) {
     console.error('Error updating calendar event:', error);
     res.status(500).json({ error: 'Failed to update calendar event' });
@@ -153,60 +184,88 @@ export const deleteCalendarEvent = async (req: Request, res: Response) => {
 export const getCalendarEventsByDateRange = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    console.log("🔥 getCalendarEventsByDateRange reached")
-    console.log("Start date:", startDate);
-    console.log("End date:", endDate);
-
+    
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start date and end date are required' });
     }
 
-    const startDateObj = new Date(startDate as string);
-    const endDateObj = new Date(endDate as string);
+    const start = new Date(startDate as string);
+    const end = new Date(endDate as string);
 
-    // Find events that:
-    // 1. Start within the date range, OR
-    // 2. End within the date range, OR
-    // 3. Span across the date range (start before range and end after range)
+    // Get all events that fall within the date range
     const events = await RpmBlockMassiveAction.findAll({
       where: {
         [Op.or]: [
-          // Events that start within the date range
+          // Events that start within the range
           {
             startDate: {
-              [Op.between]: [startDateObj, endDateObj]
+              [Op.between]: [start, end]
             }
           },
-          // Events that end within the date range
+          // Events that end within the range
           {
             endDate: {
-              [Op.between]: [startDateObj, endDateObj]
+              [Op.between]: [start, end]
             }
           },
-          // Events that span across the date range
+          // Events that span across the range
           {
             [Op.and]: [
-              { startDate: { [Op.lte]: startDateObj } },
-              { endDate: { [Op.gte]: endDateObj } }
+              { startDate: { [Op.lte]: start } },
+              { endDate: { [Op.gte]: end } }
             ]
           }
         ]
       },
       include: [
-        { 
-          association: 'category',
-          attributes: ['id', 'name', 'type', 'color']
+        {
+          model: RpmMassiveActionRecurrence,
+          as: 'recurrencePattern',
+          required: false
         }
-      ],
-      order: [['startDate', 'ASC']],
+      ]
     });
 
-    console.log(`Found ${events.length} events in the date range`);
-    
-    const sanitizedEvents = events.map(event => sanitizeSequelizeModel(event));
-    res.json(sanitizedEvents);
+    // Process recurring events
+    const processedEvents = events.flatMap(event => {
+      const events = [event];
+      const eventData = event.toJSON();
+
+      // If the event has recurrence patterns, create additional events
+      if (eventData.recurrencePattern && eventData.recurrencePattern.length > 0) {
+        const recurrenceEvents = eventData.recurrencePattern.flatMap((pattern: RecurrencePattern) => {
+          const dayEvents = [];
+          let currentDate = new Date(start);
+          
+          while (currentDate <= end) {
+            // Check if the current day matches the recurrence pattern
+            const dayName = format(currentDate, 'EEEE');
+            if (dayName === pattern.dayOfWeek) {
+              // Create a new event for this day
+              const dayEvent = {
+                ...eventData,
+                id: `${eventData.id}-${format(currentDate, 'yyyy-MM-dd')}`,
+                startDate: format(currentDate, 'yyyy-MM-dd'),
+                endDate: format(currentDate, 'yyyy-MM-dd'),
+                isDateRange: false,
+                recurrencePattern: [pattern]
+              };
+              dayEvents.push(dayEvent);
+            }
+            currentDate = addDays(currentDate, 1);
+          }
+          return dayEvents;
+        });
+        events.push(...recurrenceEvents);
+      }
+
+      return events;
+    });
+
+    console.log(`Found ${processedEvents.length} events for the date range`);
+    res.json(processedEvents);
   } catch (error) {
-    console.error('Error fetching calendar events by date range:', error);
+    console.error('Error fetching calendar events:', error);
     res.status(500).json({ error: 'Failed to fetch calendar events' });
   }
 };

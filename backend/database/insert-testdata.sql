@@ -16,7 +16,6 @@ VALUES
   ('44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222', 'Project Manager', 'Deliver quality projects', 'Managing teams and resources', 'I am an effective leader', NOW(), NOW()),
   ('55555555-5555-5555-5555-555555555555', '33333333-1111-1111-1111-111111111111', 'Health Enthusiast', 'Maintain optimal health', 'Living a healthy lifestyle', 'I am strong and healthy', NOW(), NOW());
 
-
 -- ==============================
 -- Role Incantation Table
 -- ==============================
@@ -91,20 +90,25 @@ VALUES
 INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date, description, location, category_id)
 VALUES 
   ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-01', '2025-04-03', TRUE, 2, NULL, 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
-  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-05', TRUE, 1, NULL, 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111'),
-  ('44444444-dddd-dddd-dddd-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Morning Run', '#3357FF', '#FFFFFF', 'Daily consistency', 1, 'hours', 1, 'Exercise', '2025-04-01', '2025-04-01', FALSE, 7, NULL, 'Complete 5K training run', 'Local Park', '33333333-1111-1111-1111-111111111111'),
-  ('44444444-eeee-eeee-eeee-444444444444', '22222222-aaaa-aaaa-aaaa-222222222222', 'Evening Stretches', '#FF33A8', '#FFFFFF', 'Recovery', 30, 'minutes', 2, 'Recovery', '2025-04-01', '2025-04-01', FALSE, 19, NULL, 'Evening Flexibility', 'Home', '33333333-1111-1111-1111-111111111111');
-
+  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-05', TRUE, 1, NULL, 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111');
+  
 -- ⚙️ rpm_block_massive_action_note
 INSERT INTO "rpm_block_massive_action_note" (id, massive_action_id, text, type)
 VALUES 
-  ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-dddd-dddd-dddd-333333333333', 'Started designing homepage', 'Progress'),
-  ('44444444-bbbb-bbbb-bbbb-444444444444', '33333333-eeee-eeee-eeee-333333333333', 'Sent first batch of surveys', 'Update'),
-  ('55555555-aaaa-aaaa-aaaa-555555555555', '44444444-dddd-dddd-dddd-444444444444', 'Completed 3K run', 'Progress'),
-  ('55555555-bbbb-bbbb-bbbb-555555555555', '44444444-eeee-eeee-eeee-444444444444', 'Improved flexibility', 'Update');
+  ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-eeee-eeee-eeee-333333333333', 'Sent first batch of surveys', 'Update'),
+  ('55555555-aaaa-aaaa-aaaa-555555555555', '33333333-dddd-dddd-dddd-333333333333', 'Completed 3K run', 'Progress'),
+  ('55555555-bbbb-bbbb-bbbb-555555555555', '33333333-eeee-eeee-eeee-333333333333', 'Improved flexibility', 'Update');
 
 -- ⚙️ rpm_block_massive_action_note_metric
 INSERT INTO "rpm_block_massive_action_note_metric" (note_id, name, value, unit, timestamp)
 VALUES 
   ('44444444-aaaa-aaaa-aaaa-444444444444', 'Homepage Completion', 60, 'percent', NOW()),
   ('55555555-aaaa-aaaa-aaaa-555555555555', 'Distance Covered', 3, 'kilometers', NOW());
+
+-- ⚙️ rpm_massive_action_recurrence
+INSERT INTO "rpm_massive_action_recurrence" (id, action_id, day_of_week, created_at, updated_at)
+VALUES
+  ('66666666-aaaa-aaaa-aaaa-666666666666', '33333333-dddd-dddd-dddd-333333333333', 'Monday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('66666666-bbbb-bbbb-bbbb-666666666666', '33333333-dddd-dddd-dddd-333333333333', 'Friday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('66666666-cccc-cccc-cccc-666666666666', '33333333-eeee-eeee-eeee-333333333333', 'Monday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('66666666-dddd-dddd-dddd-666666666666', '33333333-eeee-eeee-eeee-333333333333', 'Friday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
