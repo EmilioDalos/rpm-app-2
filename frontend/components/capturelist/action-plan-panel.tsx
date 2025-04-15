@@ -6,12 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Plus, Trash2 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { RpmBlock, MassiveAction, CalendarEvent } from "@/types"
+import type { RpmBlock, MassiveAction, CalendarEvent, Note, RecurrencePattern } from "@/types"
 import { v4 as uuidv4 } from 'uuid';
 
-type ActionPlan = MassiveAction & {
-  id: string
-}
+type ActionPlan = MassiveAction
 
 interface Purpose {
   purpose: string;
@@ -132,6 +130,11 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
             key: "✘",
             categoryId: "",
             notes: [],
+            isDateRange: false,
+            selectedDays: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            recurrencePattern: []
           })),
           result: group.title,
           purposes: [`Purpose voor ${group.title}`],
@@ -167,6 +170,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           setMassiveActions(parsedData.massiveActions.map((action: any) => ({
             ...action,
             id: action.id,
+            isDateRange: action.isDateRange || false,
+            selectedDays: action.selectedDays || [],
+            notes: action.notes || [],
+            createdAt: action.createdAt || new Date().toISOString(),
+            updatedAt: action.updatedAt || new Date().toISOString(),
+            recurrencePattern: action.recurrencePattern || []
           })))
         } else {
           // Als massiveActions leeg is, gebruik dan de acties uit dataSource
@@ -174,6 +183,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
             ...action,
             id: action.id,
             categoryId: dataSource.categoryId || "",
+            isDateRange: action.isDateRange || false,
+            selectedDays: action.selectedDays || [],
+            notes: action.notes || [],
+            createdAt: action.createdAt || new Date().toISOString(),
+            updatedAt: action.updatedAt || new Date().toISOString(),
+            recurrencePattern: action.recurrencePattern || []
           })))
         }
         
@@ -221,6 +236,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
           ...action,
           id: action.id,
           categoryId: dataSource.categoryId || "",
+          isDateRange: action.isDateRange || false,
+          selectedDays: action.selectedDays || [],
+          notes: action.notes || [],
+          createdAt: action.createdAt || new Date().toISOString(),
+          updatedAt: action.updatedAt || new Date().toISOString(),
+          recurrencePattern: action.recurrencePattern || []
         })))
         setPurposes(dataSource.purposes || [])
         setResult(dataSource.result || "")
@@ -240,6 +261,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         ...action,
         id: action.id,
         categoryId: dataSource.categoryId || "",
+        isDateRange: action.isDateRange || false,
+        selectedDays: action.selectedDays || [],
+        notes: action.notes || [],
+        createdAt: action.createdAt || new Date().toISOString(),
+        updatedAt: action.updatedAt || new Date().toISOString(),
+        recurrencePattern: action.recurrencePattern || []
       })))
       setPurposes(dataSource.purposes || [])
       setResult(dataSource.result || "")
@@ -278,7 +305,15 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
       storageKey,
       JSON.stringify({
         id: sourceId,
-        massiveActions,
+        massiveActions: massiveActions.map(action => ({
+          ...action,
+          isDateRange: action.isDateRange || false,
+          selectedDays: action.selectedDays || [],
+          notes: action.notes || [],
+          createdAt: action.createdAt || new Date().toISOString(),
+          updatedAt: action.updatedAt || new Date().toISOString(),
+          recurrencePattern: action.recurrencePattern || []
+        })),
         result,
         purposes,
         categoryId: selectedCategory,
@@ -290,20 +325,29 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
   }, [massiveActions, result, purposes, selectedCategory, selectedOption, group, selectedBlock]);
 
   const addMassiveAction = () => {
-    const newAction: ActionPlan = {
-      id: uuidv4(),
-      text: "",
-      leverage: "",
+    const newAction: MassiveAction = {
+      id: Date.now().toString(),
+      text: '',
+      leverage: '',
       durationAmount: 0,
-      durationUnit: "min",
-      priority: massiveActions.length + 1,
-      key: "?",
-      categoryId: selectedCategory || "",
+      durationUnit: 'minutes',
+      priority: 1,
+      key: '',
+      categoryId: selectedCategory || '',
       notes: [],
+      isDateRange: false,
+      selectedDays: [],
+      color: '#000000',
+      textColor: '#ffffff',
+      hour: 0,
+      startDate: undefined,
+      endDate: undefined,
+      missedDate: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      recurrencePattern: []
     }
-    
-    // Gebruik een callback met de huidige state om race conditions te voorkomen
-    setMassiveActions(prevActions => [...prevActions, newAction])
+    setMassiveActions([...massiveActions, newAction])
   }
 
   const updateMassiveAction = (index: number, updatedAction: Partial<ActionPlan>) => {
@@ -343,7 +387,7 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     }
   }
 
-  const handleCapturelistClick = () => {
+  const handleCapturelistClick = async () => {
     // Determine the source (group or selectedBlock)
     const source = group?.id ? group : selectedBlock
 
@@ -369,49 +413,114 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
     console.log("handleCapturelistClick - Saving with type:", selectedOption);
 
     // Create a block based on the selected source
-    const blockData = {
+    const blockData: RpmBlock = {
       id: sourceId,
-      massiveActions: massiveActions,
+      massiveActions: massiveActions.map(action => ({
+        ...action,
+        isDateRange: action.isDateRange || false,
+        selectedDays: action.selectedDays || [],
+        notes: action.notes || [],
+        createdAt: action.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        recurrencePattern: action.recurrencePattern || []
+      })),
       result,
-      purposes: purposes,
+      purposes: purposes.map(p => typeof p === 'string' ? p : p.purpose),
       categoryId: selectedCategory,
       type: selectedOption,
       saved: false,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date()
     }
 
-    console.log("Saving to rpmBlocks with ID:", sourceId)
 
-    // Sla de data op in localStorage onder de key actionPlan-<id>
-    const storageKey = `actionPlan-${sourceId}`
-    localStorage.setItem(storageKey, JSON.stringify(blockData))
-    console.log(`Data opgeslagen in localStorage onder key: ${storageKey}`, blockData)
+    try {
+      // Save to database
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks/${sourceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category_id: selectedCategory,
+          result: result,
+          type: selectedOption,
+          content: {
+            massiveActions: blockData.massiveActions.map(action => ({
+              ...action,
+              isDateRange: action.isDateRange || false,
+              selectedDays: action.selectedDays || [],
+              notes: action.notes || [],
+              createdAt: action.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              recurrencePattern: action.recurrencePattern || []
+            })),
+            purposes: purposes.map(p => typeof p === 'string' ? p : p.purpose),
+            result: result
+          }
+        })
+      });
+      console.log("Saving to rpmBlocks with ID:", sourceId)
+      console.log("Response:", response)
 
-    // Retrieve existing rpmBlocks from localStorage
-    const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
+      if (!response.ok) {
+        throw new Error('Failed to save to database');
+      }
 
-    // Check if the block already exists
-    const existingBlockIndex = existingBlocks.findIndex((block: any) => block.id === sourceId)
+      // Update blockData with saved status
+      blockData.saved = true;
 
-    if (existingBlockIndex !== -1) {
-      // Replace the existing block
-      existingBlocks.splice(existingBlockIndex, 1) // Remove the old block
+      // Sla de data op in localStorage onder de key actionPlan-<id>
+      const storageKey = `actionPlan-${sourceId}`
+      localStorage.setItem(storageKey, JSON.stringify(blockData))
+      console.log(`Data opgeslagen in localStorage onder key: ${storageKey}`, blockData)
+
+      // Retrieve existing rpmBlocks from localStorage
+      const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
+
+      // Check if the block already exists
+      const existingBlockIndex = existingBlocks.findIndex((block: RpmBlock) => block.id === sourceId)
+
+      if (existingBlockIndex !== -1) {
+        // Replace the existing block
+        existingBlocks.splice(existingBlockIndex, 1) // Remove the old block
+      }
+
+      // Add the new block at the beginning of the list
+      existingBlocks.unshift(blockData)
+
+      // Save the updated list to localStorage
+      localStorage.setItem("rpmBlocks", JSON.stringify(existingBlocks))
+
+      // Emit custom event
+      const event = new CustomEvent("rpmBlocksUpdated")
+      window.dispatchEvent(event)
+
+      console.log("Updated rpmBlocks:", existingBlocks)
+
+      // Close the panel
+      onClose()
+    } catch (error) {
+      console.error('Error saving to database:', error);
+      // Still save to localStorage even if database save fails
+      const storageKey = `actionPlan-${sourceId}`
+      localStorage.setItem(storageKey, JSON.stringify(blockData))
+      
+      // Retrieve existing rpmBlocks from localStorage
+      const existingBlocks = JSON.parse(localStorage.getItem("rpmBlocks") || "[]")
+      const existingBlockIndex = existingBlocks.findIndex((block: RpmBlock) => block.id === sourceId)
+      if (existingBlockIndex !== -1) {
+        existingBlocks.splice(existingBlockIndex, 1)
+      }
+      existingBlocks.unshift(blockData)
+      localStorage.setItem("rpmBlocks", JSON.stringify(existingBlocks))
+      
+      // Emit custom event
+      const event = new CustomEvent("rpmBlocksUpdated")
+      window.dispatchEvent(event)
+      
+      // Close the panel
+      onClose()
     }
-
-    // Add the new block at the beginning of the list
-    existingBlocks.unshift(blockData)
-
-    // Save the updated list to localStorage
-    localStorage.setItem("rpmBlocks", JSON.stringify(existingBlocks))
-
-    // Emit custom event
-    const event = new CustomEvent("rpmBlocksUpdated")
-    window.dispatchEvent(event)
-
-    console.log("Updated rpmBlocks:", existingBlocks)
-
-    // Close the panel
-    onClose()
   }
 
   const { totalTime, totalMustTime } = calculateTotalTime()
@@ -424,6 +533,12 @@ export default function ActionPlanPanel({ group, onClose, selectedBlock }: Actio
         selectedBlock.massiveActions.map((action) => ({
           ...action,
           id: action.id,
+          isDateRange: action.isDateRange || false,
+          selectedDays: action.selectedDays || [],
+          notes: action.notes || [],
+          createdAt: action.createdAt || new Date().toISOString(),
+          updatedAt: action.updatedAt || new Date().toISOString(),
+          recurrencePattern: action.recurrencePattern || []
         })),
       )
       setResult(selectedBlock.result || "")
