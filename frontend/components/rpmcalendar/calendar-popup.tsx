@@ -18,6 +18,7 @@ import dynamic from 'next/dynamic'
 import { Editor } from '@tiptap/react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckedState } from '@radix-ui/react-checkbox'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
 
@@ -27,11 +28,21 @@ interface CalendarPopupProps {
   isOpen: boolean
   onClose: () => void
   onUpdate: (updatedAction: MassiveAction, dateKey: string) => void
+  isPlanned: boolean
 }
 
 const DAYS_OF_WEEK: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_LABELS: Record<string, string> = {
+  Monday: 'Mon',
+  Tuesday: 'Tue',
+  Wednesday: 'Wed',
+  Thursday: 'Thu',
+  Friday: 'Fri',
+  Saturday: 'Sat',
+  Sunday: 'Sun',
+};
 
-const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate }) => {
+const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate, isPlanned }) => {
   const [notes, setNotes] = useState<Note[]>(action.notes || [])
   const [newNote, setNewNote] = useState('')
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
@@ -39,15 +50,17 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
   const [startDate, setStartDate] = useState(action.startDate || dateKey)
   const [endDate, setEndDate] = useState(action.endDate || dateKey)
-  const [recurringDays, setRecurringDays] = useState<string[]>(action.selectedDays || [])
+  const [title, setTitle] = useState(action.text)
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(
+    (action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek)
+  )
   const [selectedHour, setSelectedHour] = useState<string>(
     action.hour !== undefined 
       ? `${Math.floor(action.hour)}-${Math.round((action.hour % 1) * 60)}` 
       : '8-0'
   )
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
+  const [isRecurring, setIsRecurring] = useState(action.recurrencePattern && action.recurrencePattern.length > 0)
 
   useEffect(() => {
     setNotes(action.notes || [])
@@ -55,17 +68,15 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     setIsDateRange(action.isDateRange || false)
     setStartDate(action.startDate || dateKey)
     setEndDate(action.endDate || dateKey)
-    setRecurringDays(action.selectedDays || [])
+    setTitle(action.text)
+    setSelectedDays((action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek))
     if (action.hour !== undefined) {
       const hour = Math.floor(action.hour);
       const minutes = Math.round((action.hour % 1) * 60);
       setSelectedHour(`${hour}-${minutes}`);
     }
-    if (action.recurrencePattern) {
-      setIsRecurring(true);
-      setSelectedDays(action.recurrencePattern.map(pattern => pattern.dayOfWeek));
-    }
-  }, [action])
+    setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0)
+  }, [action, dateKey])
 
   const addNote = useCallback(() => {
     if (newNote.trim()) {
@@ -93,8 +104,8 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     setNotes(prevNotes => prevNotes.filter(note => note.id !== id))
   }, [])
 
-  const handleRecurringDayChange = (day: string) => {
-    setRecurringDays(prev =>
+  const handleDayChange = (day: DayOfWeek) => {
+    setSelectedDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
   };
@@ -111,21 +122,6 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     return options;
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const hour = parseFloat(e.target.value);
-    setSelectedHour(`${Math.floor(hour)}-${Math.round((hour % 1) * 60)}`);
-  };
-
-  const handleDayToggle = (day: DayOfWeek) => {
-    setSelectedDays(prev => {
-      if (prev.includes(day)) {
-        return prev.filter(d => d !== day);
-      } else {
-        return [...prev, day];
-      }
-    });
-  };
-
   const handleUpdate = async () => {
     const [hourStr, minuteStr] = selectedHour.split('-');
     const hour = parseInt(hourStr);
@@ -134,29 +130,30 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
 
     const updatedAction: MassiveAction = {
       ...action,
+      text: title,
       key: isCompleted ? '✔' : action.key,
       notes,
       isDateRange,
       startDate,
       endDate,
-      selectedDays: recurringDays,
+      selectedDays: isRecurring ? selectedDays : [],
       hour: decimalHour,
-      updatedAt: new Date().toISOString(),
-      recurrencePattern: isRecurring ? selectedDays.map(day => ({
-        id: `${action.id}-${day}`,
-        actionId: action.id,
-        dayOfWeek: day
-      })) : undefined
+      updatedAt: new Date().toISOString()
     }
 
     try {
-      // Eerst de actie bijwerken
+      // Create the recurrence pattern if isDateRange is true and days are selected
+      const recurrencePattern = (isDateRange && selectedDays.length > 0) ? selectedDays.map(day => ({
+        dayOfWeek: day
+      })) : [];
+
+      // Update the action with recurrence pattern
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...updatedAction,
-          recurrencePattern: updatedAction.recurrencePattern
+          recurrencePattern
         }),
       });
 
@@ -173,7 +170,14 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{action.text}</DialogTitle>
+          <VisuallyHidden>
+            <DialogTitle>Actie bewerken</DialogTitle>
+          </VisuallyHidden>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-xl font-semibold border-none focus-visible:ring-0 px-0"
+          />
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex items-center gap-2">
@@ -190,72 +194,60 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          {action.missedDate && (
-            <div className="text-sm text-red-500">
-              Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}
+          {isPlanned && (
+            <div className="text-sm text-semibold">
+              Gepland
             </div>
           )}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="completed"
-              checked={isCompleted}
-              onCheckedChange={(checked: CheckedState) => 
-                setIsCompleted(checked === true)
-              }
-            />
-            <label
-              htmlFor="completed"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Actie voltooid
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="date-range"
-              checked={isDateRange}
-              onCheckedChange={setIsDateRange}
-            />
-            <Label htmlFor="date-range">Actie over meerdere dagen</Label>
-          </div>
-          {isDateRange && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col space-y-2">
-                <Label htmlFor="start-date">Startdatum</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+          {!isPlanned && (
+            <>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="date-range"
+                  checked={isDateRange}
+                  onCheckedChange={setIsDateRange}
                 />
+                <Label htmlFor="date-range">
+                  Actie over meerdere dagen
+                </Label>
               </div>
-              <div className="flex flex-col space-y-2">
-                <Label htmlFor="end-date">Einddatum</Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          {isDateRange && (
-            <div className="mt-4">
-              <Label>Recurring Days</Label>
-              <div className="flex space-x-2 mt-2">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                  <Button
-                    key={day}
-                    variant={recurringDays.includes(day) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleRecurringDayChange(day)}
-                  >
-                    {day}
-                  </Button>
-                ))}
-              </div>
-            </div>
+              {isDateRange && selectedDays.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="start-date">Startdatum</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="end-date">Einddatum</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+              {isDateRange && (
+                <div className="grid grid-cols-7 gap-2">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <Button
+                      key={day}
+                      variant={selectedDays.includes(day) ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDayChange(day)}
+                    >
+                      {DAY_LABELS[day]}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
           <div className="grid gap-2">
             <Label htmlFor="time">Tijdstip</Label>
@@ -280,34 +272,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
-            <Label className="flex items-center gap-2">
-              <Checkbox
-                checked={isRecurring}
-                onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
-              />
-              Herhalende actie
-            </Label>
-          </div>
-          {isRecurring && (
-            <div className="grid gap-2">
-              <Label>Herhaal op</Label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS_OF_WEEK.map((day) => (
-                  <Label
-                    key={day}
-                    className="flex items-center space-x-2 cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selectedDays.includes(day)}
-                      onCheckedChange={() => handleDayToggle(day)}
-                    />
-                    <span>{day}</span>
-                  </Label>
-                ))}
-              </div>
-            </div>
-          )}
+         
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">
@@ -376,4 +341,3 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
 }
 
 export default CalendarPopup
-

@@ -109,23 +109,52 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       recurrencePattern 
     } = req.body;
 
+    console.log('Received update request for action:', id);
+    console.log('Request body:', req.body);
+    console.log('startDate type:', typeof startDate, 'value:', startDate);
+    console.log('endDate type:', typeof endDate, 'value:', endDate);
+
     // Start a transaction
     const transaction = await sequelize.transaction();
 
     try {
       // Update the massive action
-      const [updatedCount] = await RpmBlockMassiveAction.update({
+      const updateData: any = {
         text: text || 'Nieuwe actie',
         description: description || '',
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
         isDateRange: isDateRange || false,
-        hour: hour || undefined,
         categoryId: categoryId || undefined
-      }, {
+      };
+      
+      // Handle startDate - explicitly set to null if null is provided
+      if (startDate === null) {
+        updateData.startDate = null;
+      } else if (startDate) {
+        updateData.startDate = new Date(startDate);
+      }
+      
+      // Handle endDate - explicitly set to null if null is provided
+      if (endDate === null) {
+        updateData.endDate = null;
+      } else if (endDate) {
+        updateData.endDate = new Date(endDate);
+      }
+      
+      // Handle hour - explicitly set to null if null is provided
+      if (hour === null) {
+        updateData.hour = null;
+      } else if (hour !== undefined) {
+        updateData.hour = hour;
+      }
+      
+      console.log('Update data being sent to database:', updateData);
+      
+      const [updatedCount] = await RpmBlockMassiveAction.update(updateData, {
         where: { id },
         transaction
       });
+
+      console.log('Update result:', updatedCount);
 
       if (updatedCount === 0) {
         await transaction.rollback();
@@ -228,38 +257,72 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
 
     // Process recurring events
     const processedEvents = events.flatMap(event => {
-      const events = [event];
       const eventData = event.toJSON();
+      const resultEvents = [];
 
-      // If the event has recurrence patterns, create additional events
+      // If the event has recurrence patterns, only show on specified days
       if (eventData.recurrencePattern && eventData.recurrencePattern.length > 0) {
-        const recurrenceEvents = eventData.recurrencePattern.flatMap((pattern: RecurrencePattern) => {
-          const dayEvents = [];
-          let currentDate = new Date(start);
+        console.log(`Processing event with recurrence pattern: ${eventData.id}`);
+        
+        // For each day in the range, check if it matches any of the recurrence patterns
+        let currentDate = new Date(start);
+        while (currentDate <= end) {
+          const dayName = format(currentDate, 'EEEE');
+          const isRecurringDay = eventData.recurrencePattern.some(
+            (pattern: RecurrencePattern) => pattern.dayOfWeek === dayName
+          );
           
-          while (currentDate <= end) {
-            // Check if the current day matches the recurrence pattern
-            const dayName = format(currentDate, 'EEEE');
-            if (dayName === pattern.dayOfWeek) {
-              // Create a new event for this day
-              const dayEvent = {
-                ...eventData,
-                id: `${eventData.id}-${format(currentDate, 'yyyy-MM-dd')}`,
-                startDate: format(currentDate, 'yyyy-MM-dd'),
-                endDate: format(currentDate, 'yyyy-MM-dd'),
-                isDateRange: false,
-                recurrencePattern: [pattern]
-              };
-              dayEvents.push(dayEvent);
-            }
-            currentDate = addDays(currentDate, 1);
+          // Only include the day if it matches a recurrence pattern
+          if (isRecurringDay) {
+            const dateKey = format(currentDate, 'yyyy-MM-dd');
+            resultEvents.push({
+              ...eventData,
+              id: `${eventData.id}-${dateKey}`,
+              startDate: dateKey,
+              endDate: dateKey,
+              isDateRange: false,
+              recurrencePattern: eventData.recurrencePattern
+            });
           }
-          return dayEvents;
-        });
-        events.push(...recurrenceEvents);
+          
+          currentDate = addDays(currentDate, 1);
+        }
+      } 
+      // If no recurrence pattern, show on all days in the range
+      else if (eventData.isDateRange && eventData.startDate && eventData.endDate) {
+        console.log(`Processing date range event without recurrence: ${eventData.id}`);
+        
+        const eventStart = new Date(eventData.startDate);
+        const eventEnd = new Date(eventData.endDate);
+        
+        // Set time to midnight for date comparison
+        eventStart.setHours(0, 0, 0, 0);
+        eventEnd.setHours(23, 59, 59, 999);
+        
+        // Calculate the effective start and end dates (intersection with query range)
+        const effectiveStart = eventStart > start ? eventStart : start;
+        const effectiveEnd = eventEnd < end ? eventEnd : end;
+        
+        let currentDate = new Date(effectiveStart);
+        while (currentDate <= effectiveEnd) {
+          const dateKey = format(currentDate, 'yyyy-MM-dd');
+          resultEvents.push({
+            ...eventData,
+            id: `${eventData.id}-${dateKey}`,
+            startDate: dateKey,
+            endDate: dateKey,
+            isDateRange: true
+          });
+          
+          currentDate = addDays(currentDate, 1);
+        }
+      } 
+      // For single-day events, just include them as is
+      else {
+        resultEvents.push(eventData);
       }
 
-      return events;
+      return resultEvents;
     });
 
     console.log(`Found ${processedEvents.length} events for the date range`);

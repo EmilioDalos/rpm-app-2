@@ -97,9 +97,10 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   };
 
   const handleRemoveAction = () => {
+    console.log('Removing handleRemoveAction action:', actionToRemove);
     if (actionToRemove) {
       onActionRemove(actionToRemove, dateKey);
-      setActionToRemove(null);
+      setActionToRemove(actionToRemove);
       setIsDialogOpen(false);
     }
   };

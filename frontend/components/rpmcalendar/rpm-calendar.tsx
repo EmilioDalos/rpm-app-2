@@ -121,68 +121,28 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const data = await response.json();
       console.log(`Received ${data.length} calendar events from API:`, data);
       
-      // Process the events to ensure they have the correct structure
-      const processedEvents = data.flatMap((action: MassiveAction) => {
-        // For date range events, create an entry for each day in the range
-        if (action.isDateRange && action.startDate && action.endDate) {
-          const start = new Date(action.startDate);
-          const end = new Date(action.endDate);
-         
-          // Set time to midnight for date comparison
-          start.setHours(0, 0, 0, 0);
-          end.setHours(23, 59, 59, 999);
-          
-          const events = [];
-          let currentDate = new Date(start);
-          
-          // Make sure we include the end date in the range
-          while (currentDate <= end) {
-            const currentDateKey = format(currentDate, "yyyy-MM-dd");
-            events.push({
-              id: `${currentDateKey}-${action.id}`,
-              date: currentDateKey,
-              massiveActions: [{
-                ...action,
-                // Preserve the original start and end dates
-                startDate: action.startDate,
-                endDate: action.endDate,
-                isDateRange: true
-              }],
-              createdAt: action.createdAt,
-              updatedAt: action.updatedAt
-            });
-            
-            // Move to next day
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-          
-          return events;
-        }
+      // The backend now handles the recurrence patterns correctly,
+      // so we just need to group the events by date
+      const groupedEvents = data.reduce((acc: { [key: string]: CalendarEvent }, action: MassiveAction) => {
+        if (!action.startDate) return acc;
         
-        // For single-day events
-        const dateKey = action.startDate ? format(new Date(action.startDate), "yyyy-MM-dd") : "";
-        return [{
-          id: `${dateKey}-${action.id}`,
-          date: dateKey,
-          massiveActions: [action],
-          createdAt: action.createdAt,
-          updatedAt: action.updatedAt
-        }];
-      });
-      
-      // Group events by date
-      const groupedEvents = processedEvents.reduce((acc: { [key: string]: CalendarEvent }, event: CalendarEvent) => {
-        if (!event.date) return acc;
+        const dateKey = format(new Date(action.startDate), "yyyy-MM-dd");
         
-        if (acc[event.date]) {
+        if (acc[dateKey]) {
           // If we already have events for this date, merge the massiveActions
-          acc[event.date].massiveActions = [
-            ...acc[event.date].massiveActions,
-            ...event.massiveActions
+          acc[dateKey].massiveActions = [
+            ...acc[dateKey].massiveActions,
+            action
           ];
         } else {
           // Otherwise, add the event to the accumulator
-          acc[event.date] = event;
+          acc[dateKey] = {
+            id: dateKey,
+            date: dateKey,
+            massiveActions: [action],
+            createdAt: action.createdAt,
+            updatedAt: action.updatedAt
+          };
         }
         
         return acc;
@@ -363,6 +323,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleActionRemove = async (actionId: string, dateKey: string) => {
     // Update the local state to remove the action from the calendar view
+    console.log('Removing action:', actionId, dateKey);
     setCalendarEvents((prevEvents) =>
       prevEvents.map((event) => {
         if (event.date === dateKey) {
@@ -377,17 +338,36 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     );
   
     try {
-      // Instead of deleting the action, update it to clear the startDate and endDate
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}`, {
+      // Find the action to check if it has a recurrence pattern
+      const actionToRemove = calendarEvents
+        .flatMap(event => event.massiveActions)
+        .find(action => action.id === actionId);
+
+      // Only clear dates if there's no recurrence pattern
+      const updateData = actionToRemove?.recurrencePattern?.length 
+        ? { hour: null }
+        : { 
+            startDate: null,
+            endDate: null,
+            isDateRange: false,
+            hour: null,
+            text: actionToRemove?.text // Preserve the title
+          };
+
+      console.log('Sending update data to backend:', updateData);
+
+      // Update the action in the database
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          startDate: null,
-          endDate: null,
-          isDateRange: false,
-          hour: null
-        }),
+        body: JSON.stringify(updateData),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response from server:', errorData);
+        throw new Error(`Failed to update action: ${response.status}`);
+      }
       
       // Refresh the RPM blocks to get the latest data
       await fetchRpmBlocks();
@@ -733,6 +713,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <CalendarPopup
             action={action}
             dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
+            isPlanned={isActionPlanned(action.id)}
             isOpen={showPopup}
             onClose={() => setShowPopup(false)}
             onUpdate={handleActionUpdate}
@@ -863,6 +844,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             action={selectedAction}
             dateKey={selectedDateKey}
             isOpen={isCalendarPopupOpen}
+            isPlanned={isActionPlanned(selectedAction.id)}
             onClose={() => {
               setIsCalendarPopupOpen(false);
               setSelectedAction(null);
