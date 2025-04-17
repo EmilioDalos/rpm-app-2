@@ -343,6 +343,11 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         .flatMap(event => event.massiveActions)
         .find(action => action.id === actionId);
 
+      if (!actionToRemove) {
+        console.error('Action not found:', actionId);
+        return;
+      }
+
       // Only clear dates if there's no recurrence pattern
       const updateData = actionToRemove?.recurrencePattern?.length 
         ? { hour: null }
@@ -356,7 +361,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
       console.log('Sending update data to backend:', updateData);
 
-      // Update the action in the database
+      // Update the action in the database using the actual UUID
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -619,10 +624,24 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }
   };
 
-  const isActionPlanned = (actionId: string) => {
-    return calendarEvents.some(event => 
+  const isActionPlanned = (actionId: string, massiveAction: MassiveAction) => {
+
+    // Check if the action is in the calendar events
+    const isInCalendar = calendarEvents.some(event => 
       event.massiveActions?.some(action => action.id === actionId)
     );
+    
+    console.log("recurrencePattern :", calendarEvents) 
+
+    // Check if the action has a recurrence pattern
+    const hasRecurrencePattern = (massiveAction.recurrencePattern?.length ?? 0) > 0;
+        
+    console.log('actionId:', actionId);
+    console.log('isInCalendar:', isInCalendar);
+    console.log('hasRecurrencePattern:', hasRecurrencePattern);
+    
+    // An action is considered planned if it's in the calendar or has a recurrence pattern
+    return isInCalendar || hasRecurrencePattern;
   };
 
   const ActionItem = ({ action, isPlanned, onClick }: { action: any; isPlanned: boolean; onClick: () => void }) => {
@@ -713,7 +732,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <CalendarPopup
             action={action}
             dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
-            isPlanned={isActionPlanned(action.id)}
+            isPlanned={isActionPlanned(action.id, action)}
             isOpen={showPopup}
             onClose={() => setShowPopup(false)}
             onUpdate={handleActionUpdate}
@@ -779,7 +798,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                           <ActionItem
                             key={`${block.id}-${action.id}`}
                             action={action}
-                            isPlanned={isActionPlanned(action.id)}
+                            isPlanned={isActionPlanned(action.id, action)}
                             onClick={() => {
                               setSelectedAction(action);
                               setIsPopupOpen(true);
@@ -843,8 +862,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <CalendarPopup
             action={selectedAction}
             dateKey={selectedDateKey}
+            isPlanned={isActionPlanned(selectedAction.id, selectedAction)}
             isOpen={isCalendarPopupOpen}
-            isPlanned={isActionPlanned(selectedAction.id)}
             onClose={() => {
               setIsCalendarPopupOpen(false);
               setSelectedAction(null);

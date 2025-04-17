@@ -48,8 +48,16 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
-  const [startDate, setStartDate] = useState(action.startDate || dateKey)
-  const [endDate, setEndDate] = useState(action.endDate || dateKey)
+  const [startDate, setStartDate] = useState(
+    action.startDate 
+      ? format(new Date(action.startDate), 'MM-dd-yyyy') 
+      : format(new Date(dateKey), 'MM-dd-yyyy')
+  )
+  const [endDate, setEndDate] = useState(
+    action.endDate 
+      ? format(new Date(action.endDate), 'MM-dd-yyyy') 
+      : format(new Date(dateKey), 'MM-dd-yyyy')
+  )
   const [title, setTitle] = useState(action.text)
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(
     (action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek)
@@ -66,8 +74,16 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     setNotes(action.notes || [])
     setIsCompleted(action.key === '✔')
     setIsDateRange(action.isDateRange || false)
-    setStartDate(action.startDate || dateKey)
-    setEndDate(action.endDate || dateKey)
+    setStartDate(
+      action.startDate 
+        ? format(new Date(action.startDate), 'yyyy-MM-dd') 
+        : format(new Date(dateKey), 'yyyy-MM-dd')
+    )
+    setEndDate(
+      action.endDate 
+        ? format(new Date(action.endDate), 'yyyy-MM-dd') 
+        : format(new Date(dateKey), 'yyyy-MM-dd')
+    )
     setTitle(action.text)
     setSelectedDays((action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek))
     if (action.hour !== undefined) {
@@ -194,12 +210,12 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          {isPlanned && (
+          {!isPlanned || !isRecurring && (
             <div className="text-sm text-semibold">
               Gepland
             </div>
           )}
-          {!isPlanned && (
+           {!isPlanned && !isRecurring && (
             <>
               <div className="flex items-center space-x-2">
                 <Switch
@@ -211,7 +227,21 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                   Actie over meerdere dagen
                 </Label>
               </div>
-              {isDateRange && selectedDays.length > 0 && (
+            </>
+          )}  
+          {isRecurring && isPlanned && (
+            <>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="date-range"
+                  checked={isDateRange}
+                  onCheckedChange={setIsDateRange}
+                />
+                <Label htmlFor="date-range">
+                  Actie over meerdere dagen
+                </Label>
+              </div>
+              {isDateRange && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-2">
                     <Label htmlFor="start-date">Startdatum</Label>
