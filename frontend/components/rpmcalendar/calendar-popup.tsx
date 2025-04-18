@@ -222,7 +222,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          {(isPlanned) && (
+          {(isPlanned) && !isDateRange && (
              <div className="grid gap-2">
                 <Label htmlFor="time">Gepland</Label>
                 <div className="flex items-center space-x-2">
@@ -234,6 +234,23 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                   />
                 </div>
               </div>
+          )}
+          
+          {(!isPlanned) && !isDateRange && (
+            <div className="grid gap-2">
+              <Label htmlFor="time">Datum</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setIsPlanned(true);
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </div>
           )}
           
           {(!isPlanned || isRecurring) && (            <>
