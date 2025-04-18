@@ -150,14 +150,17 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     const formattedStartDate = startDate ? format(new Date(startDate), 'yyyy-MM-dd') : null;
     const formattedEndDate = endDate ? format(new Date(endDate), 'yyyy-MM-dd') : null;
 
+    // Determine if the action is planned based on having a start date
+    const isActionPlanned = !!formattedStartDate;
+
     const updatedAction: MassiveAction = {
       ...action,
       text: title,
-      key: isCompleted ? '✔' : action.key,
+      key: isActionPlanned ? '📅' : (isCompleted ? '✔' : action.key),
       notes,
       isDateRange,
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
+      startDate: formattedStartDate || undefined,
+      endDate: formattedEndDate || undefined,
       selectedDays: isRecurring ? selectedDays : [],
       hour: decimalHour,
       updatedAt: new Date().toISOString()
@@ -168,7 +171,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       const recurrencePattern = (isDateRange && selectedDays.length > 0) ? selectedDays.map(day => ({
         dayOfWeek: day
       })) : [];
-
+      
       // Update the action with recurrence pattern
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
         method: 'PUT',
@@ -180,7 +183,9 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update calendar event');
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(`Failed to update calendar event: ${errorData.error || 'Unknown error'}`);
       }
 
       // Call onUpdate with the new dateKey if the date has changed
