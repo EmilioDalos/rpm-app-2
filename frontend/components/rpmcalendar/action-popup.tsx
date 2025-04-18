@@ -114,7 +114,7 @@ const ActionPopup: React.FC<ActionPopupProps> = ({ action, dateKey, isOpen, onCl
               <Label htmlFor="recurring" className="text-base font-medium">
                 📆 Recurring Days
               </Label>
-              <div className="flex items-center space-x-2">
+              ch<div className="flex items-center space-x-2">
                 <Switch id="recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
                 <Label htmlFor="recurring">Actie over meerdere dagen</Label>
               </div>

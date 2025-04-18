@@ -28,7 +28,6 @@ interface CalendarPopupProps {
   isOpen: boolean
   onClose: () => void
   onUpdate: (updatedAction: MassiveAction, dateKey: string) => void
-  isPlanned: boolean
 }
 
 const DAYS_OF_WEEK: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -42,7 +41,7 @@ const DAY_LABELS: Record<string, string> = {
   Sunday: 'Sun',
 };
 
-const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate, isPlanned }) => {
+const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, onClose, onUpdate }) => {
   const [notes, setNotes] = useState<Note[]>(action.notes || [])
   const [newNote, setNewNote] = useState('')
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
@@ -69,7 +68,9 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   )
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
   const [isRecurring, setIsRecurring] = useState(action.recurrencePattern && action.recurrencePattern.length > 0)
-
+  const [isPlanned, setIsPlanned] = useState(
+    action.startDate != null || action.endDate != null
+  )
   useEffect(() => {
     setNotes(action.notes || [])
     setIsCompleted(action.key === '✔')
@@ -92,6 +93,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       setSelectedHour(`${hour}-${minutes}`);
     }
     setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0)
+    setIsPlanned(!!action.startDate || !!action.endDate)
   }, [action, dateKey])
 
   const addNote = useCallback(() => {
@@ -210,27 +212,14 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          {!isPlanned || !isRecurring && (
+          geplaned : {isPlanned}
+          {isPlanned || isRecurring && (
             <div className="text-sm text-semibold">
               Gepland
             </div>
           )}
-           {!isPlanned && !isRecurring && (
-            <>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="date-range"
-                  checked={isDateRange}
-                  onCheckedChange={setIsDateRange}
-                />
-                <Label htmlFor="date-range">
-                  Actie over meerdere dagen
-                </Label>
-              </div>
-            </>
-          )}  
-          {isRecurring && isPlanned && (
-            <>
+          
+          {(!isPlanned || isRecurring) && (            <>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="date-range"
