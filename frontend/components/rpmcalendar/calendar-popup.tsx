@@ -93,7 +93,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       setSelectedHour(`${hour}-${minutes}`);
     }
     setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0)
-    setIsPlanned(!!action.startDate || !!action.endDate)
+    setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring)
   }, [action, dateKey])
 
   const addNote = useCallback(() => {
@@ -146,14 +146,18 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     const minutes = parseInt(minuteStr);
     const decimalHour = hour + (minutes / 60);
 
+    // Format dates to ensure they're in the correct format for the API
+    const formattedStartDate = startDate ? format(new Date(startDate), 'yyyy-MM-dd') : null;
+    const formattedEndDate = endDate ? format(new Date(endDate), 'yyyy-MM-dd') : null;
+
     const updatedAction: MassiveAction = {
       ...action,
       text: title,
       key: isCompleted ? '✔' : action.key,
       notes,
       isDateRange,
-      startDate,
-      endDate,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
       selectedDays: isRecurring ? selectedDays : [],
       hour: decimalHour,
       updatedAt: new Date().toISOString()
@@ -166,7 +170,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       })) : [];
 
       // Update the action with recurrence pattern
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +179,13 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
         }),
       });
 
-      onUpdate(updatedAction, dateKey);
+      if (!response.ok) {
+        throw new Error('Failed to update calendar event');
+      }
+
+      // Call onUpdate with the new dateKey if the date has changed
+      const newDateKey = formattedStartDate || dateKey;
+      onUpdate(updatedAction, newDateKey);
       onClose();
     } catch (error) {
       console.error('Error updating action:', error);
@@ -212,10 +222,18 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          {(isPlanned || isRecurring) && (
-            <div className="text-sm text-semibold">
-              Gepland op {startDate}
-            </div>
+          {(isPlanned) && (
+             <div className="grid gap-2">
+                <Label htmlFor="time">Gepland</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
           )}
           
           {(!isPlanned || isRecurring) && (            <>
