@@ -626,20 +626,23 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const isActionPlanned = (actionId: string, massiveAction: MassiveAction) => {
 
-    // Check if the action is in the calendar events
-    const isInCalendar = calendarEvents.some(event => 
-      event.massiveActions?.some(action => action.id === actionId)
-    );
-    
-    console.log("recurrencePattern :", calendarEvents) 
 
+    const hasStartEndDate = !!massiveAction.startDate && !!massiveAction.endDate;
+    const hasRecurrence = Array.isArray(massiveAction.recurrencePattern) && massiveAction.recurrencePattern.length > 0;
+    let isInCalendar = false;  
+    
+    if (hasStartEndDate && !hasRecurrence) {
+      isInCalendar = true;  
+    }
+    if (!hasStartEndDate && hasRecurrence) {
+      isInCalendar = true;  
+    }
+    if (hasStartEndDate && hasRecurrence) { 
+      isInCalendar = true;  
+    }
     // Check if the action has a recurrence pattern
     const hasRecurrencePattern = (massiveAction.recurrencePattern?.length ?? 0) > 0;
-        
-    console.log('actionId:', actionId);
-    console.log('isInCalendar:', isInCalendar);
-    console.log('hasRecurrencePattern:', hasRecurrencePattern);
-    
+         
     // An action is considered planned if it's in the calendar or has a recurrence pattern
     return isInCalendar || hasRecurrencePattern;
   };
@@ -732,7 +735,6 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <CalendarPopup
             action={action}
             dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
-            isPlanned={isActionPlanned(action.id, action)}
             isOpen={showPopup}
             onClose={() => setShowPopup(false)}
             onUpdate={handleActionUpdate}
@@ -862,7 +864,6 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           <CalendarPopup
             action={selectedAction}
             dateKey={selectedDateKey}
-            isPlanned={isActionPlanned(selectedAction.id, selectedAction)}
             isOpen={isCalendarPopupOpen}
             onClose={() => {
               setIsCalendarPopupOpen(false);
