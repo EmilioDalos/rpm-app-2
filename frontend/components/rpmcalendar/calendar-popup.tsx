@@ -212,7 +212,6 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               </ul>
             </div>
           )}
-          geplaned : {isPlanned}
           {(isPlanned || isRecurring) && (
             <div className="text-sm text-semibold">
               Gepland op {startDate}
