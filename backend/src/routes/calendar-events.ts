@@ -4,7 +4,9 @@ import {
   createCalendarEvent,
   updateCalendarEvent,
   deleteCalendarEvent,
-  getCalendarEventsByDateRange
+  getCalendarEventsByDateRange,
+  addRecurrenceException,
+  deleteRecurrenceException
 } from '../controllers/calendarEventController';
 
 const router = Router();
@@ -22,9 +24,15 @@ router.post('/', createCalendarEvent);
 router.put('/:id', updateCalendarEvent);
 
 // Delete a calendar event
-//router.delete('/:id', deleteCalendarEvent);
+router.delete('/:id', deleteCalendarEvent);
 
 // Get calendar events by date range   
-router.get('/range', getCalendarEventsByDateRange);
+router.get('/date-range', getCalendarEventsByDateRange);
+
+// Add a recurrence exception to an action
+router.post('/:actionId/exceptions', addRecurrenceException);
+
+// Delete a recurrence exception
+router.delete('/:actionId/exceptions/:exceptionId', deleteRecurrenceException);
 
 export default router;

@@ -5,10 +5,19 @@ import sequelize from '../config/db';
 import { Op } from 'sequelize';
 import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
 import RpmMassiveActionRecurrence from '../models/RpmMassiveActionRecurrence';
+import RpmMassiveActionRecurrenceException from '../models/RpmMassiveActionRecurrenceException';
 import { format, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
 
 interface RecurrencePattern {
+  id: string;
   dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  exceptions?: RecurrenceException[];
+}
+
+interface RecurrenceException {
+  exceptionDate: string;
+  reason?: string;
+  actionRecurrenceId: string;
 }
 
 export const getAllCalendarEvents = async (req: Request, res: Response) => {
@@ -106,7 +115,8 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       isDateRange, 
       hour, 
       categoryId,
-      recurrencePattern 
+      recurrencePattern,
+      recurrenceExceptions
     } = req.body;
 
     console.log('Received update request for action:', id);
@@ -181,6 +191,28 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
         }
       }
 
+      // Handle recurrence exceptions updates
+      if (recurrenceExceptions) {
+        // Delete existing recurrence exceptions
+        await RpmMassiveActionRecurrenceException.destroy({
+          where: { actionId: id },
+          transaction
+        });
+
+        // Create new recurrence exceptions
+        if (Array.isArray(recurrenceExceptions) && recurrenceExceptions.length > 0) {
+          await RpmMassiveActionRecurrenceException.bulkCreate(
+            recurrenceExceptions.map((exception: RecurrenceException) => ({
+              actionId: id,
+              actionRecurrenceId: exception.actionRecurrenceId,
+              exceptionDate: new Date(exception.exceptionDate),
+              reason: exception.reason
+            })),
+            { transaction }
+          );
+        }
+      }
+
       await transaction.commit();
       res.json({ message: 'Calendar event updated successfully' });
     } catch (error) {
@@ -221,6 +253,8 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
 
+    console.log(`Fetching events for date range: ${start.toISOString()} to ${end.toISOString()}`);
+
     // Get all events that fall within the date range
     const events = await RpmBlockMassiveAction.findAll({
       where: {
@@ -247,88 +281,189 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
         ]
       },
       include: [
+        // Include category information
+        { 
+          association: 'category',
+          attributes: ['id', 'name', 'type', 'color']
+        },
+        // Include recurrence patterns and their exceptions
         {
           model: RpmMassiveActionRecurrence,
           as: 'recurrencePattern',
-          required: false
+          required: false,
+          include: [
+            {
+              model: RpmMassiveActionRecurrenceException,
+              as: 'exceptions',
+              required: false
+            }
+          ]
         }
-      ]
+      ],
+      logging: console.log
     });
 
-    // Process recurring events
-    const processedEvents = events.flatMap(event => {
-      const eventData = event.toJSON();
-      const resultEvents = [];
+    console.log(`Found ${events.length} base events`);
 
-      // If the event has recurrence patterns, only show on specified days
+    const processedEvents = events.map(event => {
+      const eventData = event.toJSON();
+      // If the event has recurrence patterns, consolidate recurrence dates into one object
       if (eventData.recurrencePattern && eventData.recurrencePattern.length > 0) {
-        console.log(`Processing event with recurrence pattern: ${eventData.id}`);
-        
-        // For each day in the range, check if it matches any of the recurrence patterns
+        const recurrenceDates: string[] = [];
         let currentDate = new Date(start);
         while (currentDate <= end) {
           const dayName = format(currentDate, 'EEEE');
-          const isRecurringDay = eventData.recurrencePattern.some(
-            (pattern: RecurrencePattern) => pattern.dayOfWeek === dayName
+          const dateKey = format(currentDate, 'yyyy-MM-dd');
+          const isException = eventData.recurrencePattern.some(pattern => 
+            pattern.exceptions?.some(
+              (exception: any) => format(new Date(exception.exceptionDate), 'yyyy-MM-dd') === dateKey
+            )
           );
-          
-          // Only include the day if it matches a recurrence pattern
-          if (isRecurringDay) {
-            const dateKey = format(currentDate, 'yyyy-MM-dd');
-            resultEvents.push({
-              ...eventData,
-              id: `${eventData.id}-${dateKey}`,
-              startDate: dateKey,
-              endDate: dateKey,
-              isDateRange: false,
-              recurrencePattern: eventData.recurrencePattern
-            });
+          const isRecurringDay = eventData.recurrencePattern.some(
+            (pattern: any) => pattern.dayOfWeek === dayName
+          );
+          if (!isException && isRecurringDay) {
+            recurrenceDates.push(dateKey);
           }
-          
           currentDate = addDays(currentDate, 1);
         }
-      } 
-      // If no recurrence pattern, show on all days in the range
+        return {
+          ...eventData,
+          recurrenceDates,
+          isRecurring: recurrenceDates.length > 0
+        };
+      }
+      // For date range events without recurrence, consolidate dates into recurrenceDates array
       else if (eventData.isDateRange && eventData.startDate && eventData.endDate) {
-        console.log(`Processing date range event without recurrence: ${eventData.id}`);
-        
+        const recurrenceDates: string[] = [];
         const eventStart = new Date(eventData.startDate);
         const eventEnd = new Date(eventData.endDate);
-        
-        // Set time to midnight for date comparison
         eventStart.setHours(0, 0, 0, 0);
         eventEnd.setHours(23, 59, 59, 999);
-        
-        // Calculate the effective start and end dates (intersection with query range)
         const effectiveStart = eventStart > start ? eventStart : start;
         const effectiveEnd = eventEnd < end ? eventEnd : end;
-        
         let currentDate = new Date(effectiveStart);
         while (currentDate <= effectiveEnd) {
           const dateKey = format(currentDate, 'yyyy-MM-dd');
-          resultEvents.push({
-            ...eventData,
-            id: `${eventData.id}-${dateKey}`,
-            startDate: dateKey,
-            endDate: dateKey,
-            isDateRange: true
-          });
-          
+          recurrenceDates.push(dateKey);
           currentDate = addDays(currentDate, 1);
         }
-      } 
-      // For single-day events, just include them as is
-      else {
-        resultEvents.push(eventData);
+        return {
+          ...eventData,
+          recurrenceDates,
+          isRecurring: false,
+          isDateRange: true
+        };
       }
-
-      return resultEvents;
+      // For single-day events, return as is
+      else {
+        return eventData;
+      }
     });
 
-    console.log(`Found ${processedEvents.length} events for the date range`);
+    console.log(`Found ${processedEvents.length} processed events for the date range`);
+    
+    // Log the first event to see its structure
+    if (processedEvents.length > 0) {
+      console.log(`First event structure: ${JSON.stringify(processedEvents[0], null, 2)}`);
+    }
+    
     res.json(processedEvents);
   } catch (error) {
     console.error('Error fetching calendar events:', error);
     res.status(500).json({ error: 'Failed to fetch calendar events' });
+  }
+};
+
+export const addRecurrenceException = async (req: Request, res: Response) => {
+  try {
+    const { actionId } = req.params;
+    const { exceptionDate, reason, actionRecurrenceId } = req.body;
+
+    // Validate input
+    if (!actionId || !exceptionDate || !actionRecurrenceId) {
+      return res.status(400).json({ error: 'Action ID, exception date, and action recurrence ID are required' });
+    }
+
+    // Check if the action exists
+    const action = await RpmBlockMassiveAction.findByPk(actionId);
+    if (!action) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
+
+    // Check if the recurrence pattern exists
+    const recurrencePattern = await RpmMassiveActionRecurrence.findOne({
+      where: { 
+        id: actionRecurrenceId,
+        actionId 
+      }
+    });
+
+    if (!recurrencePattern) {
+      return res.status(404).json({ error: 'Recurrence pattern not found' });
+    }
+
+    // Check if the exception already exists
+    const existingException = await RpmMassiveActionRecurrenceException.findOne({
+      where: {
+        actionId,
+        actionRecurrenceId,
+        exceptionDate: new Date(exceptionDate)
+      }
+    });
+
+    if (existingException) {
+      return res.status(400).json({ error: 'Exception for this date already exists' });
+    }
+
+    // Create the exception
+    const exception = await RpmMassiveActionRecurrenceException.create({
+      actionId,
+      actionRecurrenceId,
+      exceptionDate: new Date(exceptionDate),
+      reason: reason || 'Cancelled by user'
+    });
+
+    res.status(201).json(exception);
+  } catch (error) {
+    console.error('Error adding recurrence exception:', error);
+    res.status(500).json({ error: 'Failed to add recurrence exception' });
+  }
+};
+
+export const deleteRecurrenceException = async (req: Request, res: Response) => {
+  try {
+    const { actionId, exceptionId } = req.params;
+
+    // Validate input
+    if (!actionId || !exceptionId) {
+      return res.status(400).json({ error: 'Action ID and exception ID are required' });
+    }
+
+    // Check if the action exists
+    const action = await RpmBlockMassiveAction.findByPk(actionId);
+    if (!action) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
+
+    // Check if the exception exists
+    const exception = await RpmMassiveActionRecurrenceException.findOne({
+      where: {
+        id: exceptionId,
+        actionId
+      }
+    });
+
+    if (!exception) {
+      return res.status(404).json({ error: 'Exception not found' });
+    }
+
+    // Delete the exception
+    await exception.destroy();
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting recurrence exception:', error);
+    res.status(500).json({ error: 'Failed to delete recurrence exception' });
   }
 };

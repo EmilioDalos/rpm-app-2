@@ -31,3 +31,5 @@ verify_field_in_response() {
     exit 1
   fi
 }
+
+API_URL="http://localhost:3001" # of welke base URL je API ook gebruikt

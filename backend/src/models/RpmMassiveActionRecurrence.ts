@@ -1,6 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
 import RpmBlockMassiveAction from './RpmBlockMassiveAction';
+import RpmMassiveActionRecurrenceException from './RpmMassiveActionRecurrenceException';
 
 interface RpmMassiveActionRecurrenceAttributes {
   id: string;
@@ -8,6 +9,7 @@ interface RpmMassiveActionRecurrenceAttributes {
   dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
   createdAt: Date;
   updatedAt: Date;
+  exceptions?: RpmMassiveActionRecurrenceException[];
 }
 
 interface RpmMassiveActionRecurrenceCreationAttributes extends Omit<RpmMassiveActionRecurrenceAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
@@ -18,6 +20,7 @@ class RpmMassiveActionRecurrence extends Model<RpmMassiveActionRecurrenceAttribu
   public dayOfWeek!: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public exceptions?: RpmMassiveActionRecurrenceException[];
 }
 
 RpmMassiveActionRecurrence.init({

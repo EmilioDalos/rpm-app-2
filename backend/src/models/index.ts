@@ -8,6 +8,7 @@ import CategoryThreeToThrive from './CategoryThreeToThrive';
 import CategoryResult from './CategoryResult';
 import CategoryActionPlan from './CategoryActionPlan';
 import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
+import RpmMassiveActionRecurrenceException from './RpmMassiveActionRecurrenceException';
 
 // Define associations
 const setupAssociations = () => {
@@ -113,6 +114,28 @@ RpmMassiveActionRecurrence.belongsTo(RpmBlockMassiveAction, {
   as: 'action'
 });
 
+RpmBlockMassiveAction.hasMany(RpmMassiveActionRecurrenceException, { 
+  foreignKey: 'actionId', 
+  as: 'recurrenceExceptions',
+  onDelete: 'CASCADE'
+});
+
+RpmMassiveActionRecurrenceException.belongsTo(RpmBlockMassiveAction, { 
+  foreignKey: 'actionId',
+  as: 'action'
+});
+
+RpmMassiveActionRecurrence.hasMany(RpmMassiveActionRecurrenceException, {
+  foreignKey: 'actionRecurrenceId',
+  as: 'exceptions',
+  onDelete: 'CASCADE'
+});
+
+RpmMassiveActionRecurrenceException.belongsTo(RpmMassiveActionRecurrence, {
+  foreignKey: 'actionRecurrenceId',
+  as: 'recurrence'
+});
+
   
   console.log('Associations set up successfully');
 };
@@ -139,6 +162,7 @@ export {
   CategoryResult,
   CategoryActionPlan,
   RpmMassiveActionRecurrence,
+  RpmMassiveActionRecurrenceException,
   setupAssociations,
   testDatabaseConnection
 };
