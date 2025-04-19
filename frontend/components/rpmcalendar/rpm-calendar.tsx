@@ -62,6 +62,65 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const fetchCategories = async () => {
     try {
       console.log('Fetching categories from API...');
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
+      
+      // Check if API URL is defined
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        console.error('API URL is not defined. Please check your environment variables.');
+        // Set some default categories as fallback
+        setCategories([
+          { 
+            id: '1', 
+            name: 'Work', 
+            type: 'professional', 
+            description: 'Work related tasks',
+            vision: '',
+            purpose: '',
+            roles: [],
+            threeToThrive: [],
+            resources: '',
+            results: [],
+            actionPlans: [],
+            imageBlob: '',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          { 
+            id: '2', 
+            name: 'Personal', 
+            type: 'personal', 
+            description: 'Personal tasks',
+            vision: '',
+            purpose: '',
+            roles: [],
+            threeToThrive: [],
+            resources: '',
+            results: [],
+            actionPlans: [],
+            imageBlob: '',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          { 
+            id: '3', 
+            name: 'Health', 
+            type: 'personal', 
+            description: 'Health related tasks',
+            vision: '',
+            purpose: '',
+            roles: [],
+            threeToThrive: [],
+            resources: '',
+            results: [],
+            actionPlans: [],
+            imageBlob: '',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        ]);
+        return;
+      }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
       console.log('Categories API response status:', response.status);
       
@@ -72,16 +131,125 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       setCategories(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Set some default categories as fallback
+      setCategories([
+        { 
+          id: '1', 
+          name: 'Work', 
+          type: 'professional', 
+          description: 'Work related tasks',
+          vision: '',
+          purpose: '',
+          roles: [],
+          threeToThrive: [],
+          resources: '',
+          results: [],
+          actionPlans: [],
+          imageBlob: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        { 
+          id: '2', 
+          name: 'Personal', 
+          type: 'personal', 
+          description: 'Personal tasks',
+          vision: '',
+          purpose: '',
+          roles: [],
+          threeToThrive: [],
+          resources: '',
+          results: [],
+          actionPlans: [],
+          imageBlob: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        { 
+          id: '3', 
+          name: 'Health', 
+          type: 'personal', 
+          description: 'Health related tasks',
+          vision: '',
+          purpose: '',
+          roles: [],
+          threeToThrive: [],
+          resources: '',
+          results: [],
+          actionPlans: [],
+          imageBlob: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ]);
     }
   };
 
   const fetchRpmBlocks = async () => {
     try {
+      console.log('Fetching RPM blocks from API...');
+      
+      // Check if API URL is defined
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        console.error('API URL is not defined. Please check your environment variables.');
+        // Set some default RPM blocks as fallback
+        setRpmBlocks([
+          {
+            id: '1',
+            result: 'Complete project documentation',
+            purposes: ['Improve project clarity', 'Enable better onboarding'],
+            massiveActions: [],
+            categoryId: '1',
+            type: 'professional',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: '2',
+            result: 'Weekly exercise routine',
+            purposes: ['Improve health', 'Increase energy levels'],
+            massiveActions: [],
+            categoryId: '3',
+            type: 'personal',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        ]);
+        return;
+      }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setRpmBlocks(data);
     } catch (error) {
       console.error('Error fetching RPM blocks:', error);
+      // Set some default RPM blocks as fallback
+      setRpmBlocks([
+        {
+          id: '1',
+          result: 'Complete project documentation',
+          purposes: ['Improve project clarity', 'Enable better onboarding'],
+          massiveActions: [],
+          categoryId: '1',
+          type: 'professional',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          id: '2',
+          result: 'Weekly exercise routine',
+          purposes: ['Improve health', 'Increase energy levels'],
+          massiveActions: [],
+          categoryId: '3',
+          type: 'personal',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ]);
     }
   };
 
@@ -110,8 +278,16 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         endDate: endDate.toISOString()
       });
 
+      // Check if API URL is defined
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        console.error('API URL is not defined. Please check your environment variables.');
+        // Set empty calendar events as fallback
+        setCalendarEvents([]);
+        return;
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/date-range?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
       );
       
       if (!response.ok) {
@@ -126,23 +302,60 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const groupedEvents = data.reduce((acc: { [key: string]: CalendarEvent }, action: MassiveAction) => {
         if (!action.startDate) return acc;
         
-        const dateKey = format(new Date(action.startDate), "yyyy-MM-dd");
-        
-        if (acc[dateKey]) {
-          // If we already have events for this date, merge the massiveActions
-          acc[dateKey].massiveActions = [
-            ...acc[dateKey].massiveActions,
-            action
-          ];
+        // Handle date range events
+        if (action.isDateRange && action.startDate && action.endDate) {
+          const startDate = new Date(action.startDate);
+          const endDate = new Date(action.endDate);
+          
+          // Set hours to ensure we capture the full days
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          
+          // Iterate through each day in the range
+          let currentDate = new Date(startDate);
+          while (currentDate <= endDate) {
+            const dateKey = format(currentDate, "yyyy-MM-dd");
+            
+            if (acc[dateKey]) {
+              // If we already have events for this date, merge the massiveActions
+              acc[dateKey].massiveActions = [
+                ...acc[dateKey].massiveActions,
+                action
+              ];
+            } else {
+              // Otherwise, add the event to the accumulator
+              acc[dateKey] = {
+                id: dateKey,
+                date: dateKey,
+                massiveActions: [action],
+                createdAt: action.createdAt,
+                updatedAt: action.updatedAt
+              };
+            }
+            
+            // Move to the next day
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         } else {
-          // Otherwise, add the event to the accumulator
-          acc[dateKey] = {
-            id: dateKey,
-            date: dateKey,
-            massiveActions: [action],
-            createdAt: action.createdAt,
-            updatedAt: action.updatedAt
-          };
+          // Handle single-day events
+          const dateKey = format(new Date(action.startDate), "yyyy-MM-dd");
+          
+          if (acc[dateKey]) {
+            // If we already have events for this date, merge the massiveActions
+            acc[dateKey].massiveActions = [
+              ...acc[dateKey].massiveActions,
+              action
+            ];
+          } else {
+            // Otherwise, add the event to the accumulator
+            acc[dateKey] = {
+              id: dateKey,
+              date: dateKey,
+              massiveActions: [action],
+              createdAt: action.createdAt,
+              updatedAt: action.updatedAt
+            };
+          }
         }
         
         return acc;
@@ -155,6 +368,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       setCalendarEvents(finalEvents);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
+      // Set empty calendar events as fallback
+      setCalendarEvents([]);
     }
   };
 
@@ -245,12 +460,12 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
     const category = categories.find(c => c.id === item.categoryId);
     
-    // Zoek het RPM block waar deze actie bij hoort
+    // Find the RPM block this action belongs to
     const parentBlock = rpmBlocks.find(block => 
       block.massiveActions && block.massiveActions.some(action => action.id === item.id)
     );
     
-    // Haal het rpmBlockId op
+    // Get the rpmBlockId
     const rpmBlockId = parentBlock?.id || item.id;
     
     const newAction: MassiveAction = {
@@ -272,50 +487,83 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
     setCalendarEvents((prevEvents) => {
       const updatedEvents = [...prevEvents];
-      const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
-
-      if (existingEventIndex >= 0) {
-        // Zorg ervoor dat massiveActions bestaat en een array is
-        if (!updatedEvents[existingEventIndex].massiveActions) {
-          updatedEvents[existingEventIndex].massiveActions = [];
-        }
       
-        if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
-          updatedEvents[existingEventIndex].massiveActions.push(newAction);
-          updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
+      // If this is a date range event, add it to each day in the range
+      if (newAction.isDateRange && newAction.selectedDays?.length > 0) {
+        const startDate = new Date(dateKey);
+        const endDate = new Date(newAction.selectedDays[newAction.selectedDays.length - 1]);
+        
+        // Iterate through each day in the range
+        for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+          const currentDateKey = currentDate.toISOString().split('T')[0];
+          const existingEventIndex = updatedEvents.findIndex((event) => event.date === currentDateKey);
+
+          if (existingEventIndex >= 0) {
+            if (!updatedEvents[existingEventIndex].massiveActions) {
+              updatedEvents[existingEventIndex].massiveActions = [];
+            }
+          
+            if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
+              updatedEvents[existingEventIndex].massiveActions.push(newAction);
+              updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
+            }
+          } else {
+            updatedEvents.push({
+              id: `${currentDateKey}-${newAction.id}`,
+              date: currentDateKey,
+              massiveActions: [newAction],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          }
         }
       } else {
-        updatedEvents.push({
-          id: `${dateKey}-${newAction.id}`,
-          date: dateKey,
-          massiveActions: [newAction], // Zorg ervoor dat massiveActions wordt geïnitialiseerd als een array
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        // Handle single day event as before
+        const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
+
+        if (existingEventIndex >= 0) {
+          if (!updatedEvents[existingEventIndex].massiveActions) {
+            updatedEvents[existingEventIndex].massiveActions = [];
+          }
+        
+          if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
+            updatedEvents[existingEventIndex].massiveActions.push(newAction);
+            updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
+          }
+        } else {
+          updatedEvents.push({
+            id: `${dateKey}-${newAction.id}`,
+            date: dateKey,
+            massiveActions: [newAction],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
       }
       return updatedEvents;
     });
 
     try {
+      // If the event exists, update it
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${newAction.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: newAction,
+          text: newAction.text || 'New action',
+          description: newAction.leverage || '',
+          startDate: new Date(dateKey).toISOString(),
+          endDate: newAction.isDateRange && newAction.selectedDays?.length > 0 
+            ? new Date(newAction.selectedDays[newAction.selectedDays.length - 1]).toISOString()
+            : new Date(dateKey).toISOString(),
+          categoryId: newAction.categoryId,
+          rpmBlockId: rpmBlockId
+        }),
+      });
       
-        // Als de event bestaat, update deze
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${newAction.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: newAction,
-            text: newAction.text || 'Nieuwe actie',
-            description: newAction.leverage || '',
-            startDate: new Date(dateKey).toISOString(),
-            endDate: new Date(dateKey).toISOString(),
-            categoryId: newAction.categoryId,
-            rpmBlockId: rpmBlockId // Gebruik de rpmBlockId variabele
-          }),
-        });
-        
-        // Refresh calendar events after successful drop
-        await fetchCalendarEvents();
-      
+      // Refresh calendar events after successful drop
+      await fetchCalendarEvents();
+    
     } catch (error) {
       console.error('Error saving/updating action:', error);
     }
