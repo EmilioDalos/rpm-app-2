@@ -6,7 +6,8 @@ import {
   deleteCalendarEvent,
   getCalendarEventsByDateRange,
   addRecurrenceException,
-  deleteRecurrenceException
+  deleteRecurrenceException,
+  deleteCalendarEventByDate
 } from '../controllers/calendarEventController';
 
 const router = Router();
@@ -25,6 +26,9 @@ router.put('/:id', updateCalendarEvent);
 
 // Delete a calendar event
 router.delete('/:id', deleteCalendarEvent);
+
+// Delete a calendar event by id and date
+router.delete('/:id/:date', deleteCalendarEventByDate);
 
 // Get calendar events by date range   
 router.get('/date-range', getCalendarEventsByDateRange);

@@ -47,16 +47,8 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
-  const [startDate, setStartDate] = useState(
-    action.startDate 
-      ? format(new Date(action.startDate), 'MM-dd-yyyy') 
-      : format(new Date(dateKey), 'MM-dd-yyyy')
-  )
-  const [endDate, setEndDate] = useState(
-    action.endDate 
-      ? format(new Date(action.endDate), 'MM-dd-yyyy') 
-      : format(new Date(dateKey), 'MM-dd-yyyy')
-  )
+  const [startDate, setStartDate] = useState<string>(action.startDate ? format(new Date(action.startDate), 'yyyy-MM-dd') : '');
+  const [endDate, setEndDate] = useState<string>(action.endDate ? format(new Date(action.endDate), 'yyyy-MM-dd') : '');
   const [title, setTitle] = useState(action.text)
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(
     (action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek)
@@ -95,6 +87,14 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0)
     setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring)
   }, [action, dateKey])
+
+  // Add a new useEffect to automatically set endDate when startDate changes
+  useEffect(() => {
+    if (startDate && !isDateRange) {
+      // Set endDate to the same as startDate by default
+      setEndDate(startDate);
+    }
+  }, [startDate, isDateRange]);
 
   const addNote = useCallback(() => {
     if (newNote.trim()) {
@@ -278,15 +278,6 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <Label htmlFor="end-date">Einddatum</Label>
-                    <Input
-                      id="end-date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
                     />
                   </div>
                 </div>

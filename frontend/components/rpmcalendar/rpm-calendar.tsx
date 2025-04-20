@@ -295,26 +295,120 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       }
       
       const data = await response.json();
-      console.log(`Received ${data.length} calendar events from API:`, data);
+      console.log(`Received calendar events from API:`, data);
       
-      // The backend now handles the recurrence patterns correctly,
-      // so we just need to group the events by date
-      const groupedEvents = data.reduce((acc: { [key: string]: CalendarEvent }, action: MassiveAction) => {
-        if (!action.startDate) return acc;
+      // Handle the new response format
+      if (data.days && Array.isArray(data.days)) {
+        // Convert the new format to our CalendarEvent format
+        const convertedEvents: CalendarEvent[] = data.days.map((day: any) => {
+          // Collect all events from all hour slots
+          const allEvents: MassiveAction[] = [];
+          
+          // Add all-day events
+          if (day.allDay && Array.isArray(day.allDay)) {
+            day.allDay.forEach((event: any) => {
+              allEvents.push({
+                id: event.id,
+                text: event.title,
+                leverage: '',
+                durationAmount: 0,
+                durationUnit: 'min',
+                priority: 1,
+                key: '📅',
+                notes: [],
+                isDateRange: false,
+                selectedDays: [],
+                color: event.categoryId ? categories.find(c => c.id === event.categoryId)?.color || '#e0e0e0' : '#e0e0e0',
+                categoryId: event.categoryId,
+                hour: 0, // All-day events have hour 0
+                startDate: day.date,
+                endDate: day.date,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+            });
+          }
+          
+          // Add events from hour slots
+          if (day.hourslots && Array.isArray(day.hourslots)) {
+            day.hourslots.forEach((slot: any) => {
+              if (slot.events && Array.isArray(slot.events)) {
+                slot.events.forEach((event: any) => {
+                  // Parse start time to get hour
+                  const startTime = event.start ? event.start.split(':') : ['0', '0'];
+                  const hour = parseInt(startTime[0]) + (parseInt(startTime[1]) / 60);
+                  
+                  allEvents.push({
+                    id: event.id,
+                    text: event.title,
+                    leverage: '',
+                    durationAmount: 0,
+                    durationUnit: 'min',
+                    priority: 1,
+                    key: '📅',
+                    notes: [],
+                    isDateRange: false,
+                    selectedDays: [],
+                    color: event.categoryId ? categories.find(c => c.id === event.categoryId)?.color || '#e0e0e0' : '#e0e0e0',
+                    categoryId: event.categoryId,
+                    hour: hour,
+                    startDate: day.date,
+                    endDate: day.date,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  });
+                });
+              }
+            });
+          }
+          
+          // Create a CalendarEvent for this day
+          return {
+            id: day.date,
+            date: day.date,
+            massiveActions: allEvents,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        });
         
-        // Handle date range events
-        if (action.isDateRange && action.startDate && action.endDate) {
-          const startDate = new Date(action.startDate);
-          const endDate = new Date(action.endDate);
+        console.log(`Converted ${convertedEvents.length} days with events:`, convertedEvents);
+        setCalendarEvents(convertedEvents);
+      } else {
+        // Fallback to the old format if the new format is not available
+        console.warn('Received data does not match the expected format. Using fallback processing.');
+        
+        // The backend now handles the recurrence patterns correctly,
+        // so we just need to group the events by date
+        const groupedEvents = data.reduce((acc: { [key: string]: CalendarEvent }, action: MassiveAction) => {
+          if (!action.startDate) return acc;
           
-          // Set hours to ensure we capture the full days
-          startDate.setHours(0, 0, 0, 0);
-          endDate.setHours(23, 59, 59, 999);
-          
-          // Iterate through each day in the range
-          let currentDate = new Date(startDate);
-          while (currentDate <= endDate) {
-            const dateKey = format(currentDate, "yyyy-MM-dd");
+          // Handle date range events
+          if (action.isDateRange && action.selectedDays && action.selectedDays.length > 0) {
+            // Only add the event to the specifically selected days
+            action.selectedDays.forEach(selectedDay => {
+              const dateKey = selectedDay;
+              
+              if (acc[dateKey]) {
+                // If we already have events for this date, merge the massiveActions
+                acc[dateKey].massiveActions = [
+                  ...acc[dateKey].massiveActions,
+                  action
+                ];
+              } else {
+                // Otherwise, add the event to the accumulator
+                acc[dateKey] = {
+                  id: dateKey,
+                  date: dateKey,
+                  massiveActions: [action],
+                  createdAt: action.createdAt,
+                  updatedAt: action.updatedAt
+                };
+              }
+            });
+          } else {
+            // Handle single-day events
+            const dateKey = format(new Date(action.startDate), "yyyy-MM-dd");
             
             if (acc[dateKey]) {
               // If we already have events for this date, merge the massiveActions
@@ -332,40 +426,17 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                 updatedAt: action.updatedAt
               };
             }
-            
-            // Move to the next day
-            currentDate.setDate(currentDate.getDate() + 1);
           }
-        } else {
-          // Handle single-day events
-          const dateKey = format(new Date(action.startDate), "yyyy-MM-dd");
           
-          if (acc[dateKey]) {
-            // If we already have events for this date, merge the massiveActions
-            acc[dateKey].massiveActions = [
-              ...acc[dateKey].massiveActions,
-              action
-            ];
-          } else {
-            // Otherwise, add the event to the accumulator
-            acc[dateKey] = {
-              id: dateKey,
-              date: dateKey,
-              massiveActions: [action],
-              createdAt: action.createdAt,
-              updatedAt: action.updatedAt
-            };
-          }
-        }
+          return acc;
+        }, {});
         
-        return acc;
-      }, {});
-      
-      // Convert the grouped events back to an array
-      const finalEvents = Object.values(groupedEvents) as CalendarEvent[];
-      console.log(`Processed ${finalEvents.length} unique dates with events:`, finalEvents);
-      
-      setCalendarEvents(finalEvents);
+        // Convert the grouped events back to an array
+        const finalEvents = Object.values(groupedEvents) as CalendarEvent[];
+        console.log(`Processed ${finalEvents.length} unique dates with events:`, finalEvents);
+        
+        setCalendarEvents(finalEvents);
+      }
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       // Set empty calendar events as fallback
@@ -488,14 +559,11 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     setCalendarEvents((prevEvents) => {
       const updatedEvents = [...prevEvents];
       
-      // If this is a date range event, add it to each day in the range
+      // If this is a date range event, add it only to the selected days
       if (newAction.isDateRange && newAction.selectedDays?.length > 0) {
-        const startDate = new Date(dateKey);
-        const endDate = new Date(newAction.selectedDays[newAction.selectedDays.length - 1]);
-        
-        // Iterate through each day in the range
-        for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
-          const currentDateKey = currentDate.toISOString().split('T')[0];
+        // Iterate through each selected day
+        newAction.selectedDays.forEach(selectedDate => {
+          const currentDateKey = new Date(selectedDate).toISOString().split('T')[0];
           const existingEventIndex = updatedEvents.findIndex((event) => event.date === currentDateKey);
 
           if (existingEventIndex >= 0) {
@@ -516,7 +584,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
               updatedAt: new Date().toISOString()
             });
           }
-        }
+        });
       } else {
         // Handle single day event as before
         const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
@@ -596,30 +664,16 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         return;
       }
 
-      // Only clear dates if there's no recurrence pattern
-      const updateData = actionToRemove?.recurrencePattern?.length 
-        ? { hour: null }
-        : { 
-            startDate: null,
-            endDate: null,
-            isDateRange: false,
-            hour: null,
-            text: actionToRemove?.text // Preserve the title
-          };
-
-      console.log('Sending update data to backend:', updateData);
-
-      // Update the action in the database using the actual UUID
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
+      // Use the DELETE endpoint to remove the event from the calendar
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}/${dateKey}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error response from server:', errorData);
-        throw new Error(`Failed to update action: ${response.status}`);
+        throw new Error(`Failed to remove action: ${response.status}`);
       }
       
       // Refresh the RPM blocks to get the latest data

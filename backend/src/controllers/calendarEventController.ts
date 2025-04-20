@@ -242,136 +242,179 @@ export const deleteCalendarEvent = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * DELETE /calendar-events/:id?date=YYYY-MM-DD
+ * If the event has a recurrence pattern on that date, add an exception.
+ * Otherwise, nullify startDate and endDate on the event.
+ */
+export const deleteCalendarEventByDate = async (req: Request, res: Response) => {
+  try {
+    const { id, date } = req.params;
+   // const { date } = req.query as { date?: string };
+    if (!date) {
+      return res.status(400).json({ error: 'Date query parameter is required' });
+    }
+
+    // Fetch action with its recurrence patterns
+    const action = await RpmBlockMassiveAction.findByPk(id, {
+      include: [{ model: RpmMassiveActionRecurrence, as: 'recurrencePattern', required: false }]
+    });
+    if (!action) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
+
+    const targetDate = new Date(date);
+    const dayName = format(targetDate, 'EEEE');
+    const pattern = action.recurrencePattern?.find(p => p.dayOfWeek === dayName);
+
+    if (pattern) {
+      // Create an exception for this recurrence on the specified date
+      const [exception, created] = await RpmMassiveActionRecurrenceException.findOrCreate({
+        where: {
+          actionId: id,
+          actionRecurrenceId: pattern.id,
+          exceptionDate: targetDate
+        },
+        defaults: {
+          reason: 'Cancelled by user'
+        },
+        logging: console.log
+      });
+      return res.status(created ? 201 : 200).json(exception);
+    }
+
+    // No recurrence pattern on that date: nullify date range on the event
+    await RpmBlockMassiveAction.update(
+      { startDate: null, endDate: null },
+      { where: { id } }
+    );
+    const updated = await RpmBlockMassiveAction.findByPk(id);
+    return res.status(200).json(sanitizeSequelizeModel(updated));
+  } catch (error) {
+    console.error('Error deleting calendar event by date:', error);
+    return res.status(500).json({ error: 'Failed to delete calendar event by date' });
+  }
+};
+
 export const getCalendarEventsByDateRange = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start date and end date are required' });
     }
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
-
     console.log(`Fetching events for date range: ${start.toISOString()} to ${end.toISOString()}`);
 
-    // Get all events that fall within the date range
+    // Fetch base events that start, end, or span the range, including category and recurrence data
     const events = await RpmBlockMassiveAction.findAll({
       where: {
         [Op.or]: [
-          // Events that start within the range
-          {
-            startDate: {
-              [Op.between]: [start, end]
-            }
-          },
-          // Events that end within the range
-          {
-            endDate: {
-              [Op.between]: [start, end]
-            }
-          },
-          // Events that span across the range
-          {
-            [Op.and]: [
+          { startDate: { [Op.between]: [start, end] } },
+          { endDate:   { [Op.between]: [start, end] } },
+          { [Op.and]: [
               { startDate: { [Op.lte]: start } },
-              { endDate: { [Op.gte]: end } }
+              { endDate:   { [Op.gte]: end   } }
             ]
           }
         ]
       },
       include: [
-        // Include category information
+        { association: 'category', attributes: ['id', 'name', 'type', 'color'] },
         { 
-          association: 'category',
-          attributes: ['id', 'name', 'type', 'color']
-        },
-        // Include recurrence patterns and their exceptions
-        {
-          model: RpmMassiveActionRecurrence,
-          as: 'recurrencePattern',
-          required: false,
+          model: RpmMassiveActionRecurrence, 
+          as: 'recurrencePattern', 
+          required: false, 
           include: [
-            {
-              model: RpmMassiveActionRecurrenceException,
-              as: 'exceptions',
-              required: false
-            }
+            { model: RpmMassiveActionRecurrenceException, as: 'exceptions', required: false }
           ]
         }
       ],
-      logging: console.log
     });
 
     console.log(`Found ${events.length} base events`);
 
+    // Process each event into flat structure with recurrenceDates
     const processedEvents = events.map(event => {
-      const eventData = event.toJSON();
-      // If the event has recurrence patterns, consolidate recurrence dates into one object
-      if (eventData.recurrencePattern && eventData.recurrencePattern.length > 0) {
-        const recurrenceDates: string[] = [];
-        let currentDate = new Date(start);
-        while (currentDate <= end) {
-          const dayName = format(currentDate, 'EEEE');
-          const dateKey = format(currentDate, 'yyyy-MM-dd');
-          const isException = eventData.recurrencePattern.some(pattern => 
-            pattern.exceptions?.some(
-              (exception: any) => format(new Date(exception.exceptionDate), 'yyyy-MM-dd') === dateKey
-            )
+      const ev = event.toJSON() as any;
+
+      // Recurring events: build recurrenceDates based on pattern & exceptions
+      if (ev.recurrencePattern && ev.recurrencePattern.length > 0) {
+        const dates: string[] = [];
+        let cursor = new Date(start);
+        while (cursor <= end) {
+          const iso = format(cursor, 'yyyy-MM-dd');
+          const dayName = format(cursor, 'EEEE');
+          const hasPattern = ev.recurrencePattern.some((p: any) => p.dayOfWeek === dayName);
+          const isExcept = ev.recurrencePattern.some((p: any) =>
+            p.exceptions?.some((ex: any) => format(new Date(ex.exceptionDate), 'yyyy-MM-dd') === iso)
           );
-          const isRecurringDay = eventData.recurrencePattern.some(
-            (pattern: any) => pattern.dayOfWeek === dayName
-          );
-          if (!isException && isRecurringDay) {
-            recurrenceDates.push(dateKey);
+          if (hasPattern && !isExcept) {
+            dates.push(iso);
           }
-          currentDate = addDays(currentDate, 1);
+          cursor = addDays(cursor, 1);
         }
-        return {
-          ...eventData,
-          recurrenceDates,
-          isRecurring: recurrenceDates.length > 0
-        };
+        return { ...ev, recurrenceDates: dates, isRecurring: dates.length > 0 };
       }
-      // For date range events without recurrence, consolidate dates into recurrenceDates array
-      else if (eventData.isDateRange && eventData.startDate && eventData.endDate) {
-        const recurrenceDates: string[] = [];
-        const eventStart = new Date(eventData.startDate);
-        const eventEnd = new Date(eventData.endDate);
-        eventStart.setHours(0, 0, 0, 0);
-        eventEnd.setHours(23, 59, 59, 999);
-        const effectiveStart = eventStart > start ? eventStart : start;
-        const effectiveEnd = eventEnd < end ? eventEnd : end;
-        let currentDate = new Date(effectiveStart);
-        while (currentDate <= effectiveEnd) {
-          const dateKey = format(currentDate, 'yyyy-MM-dd');
-          recurrenceDates.push(dateKey);
-          currentDate = addDays(currentDate, 1);
+      // Non-recurring date-range events: fill every date in range
+      if ((!ev.recurrencePattern || ev.recurrencePattern.length === 0) && ev.startDate && ev.endDate) {
+        const dates: string[] = [];
+        const from = new Date(ev.startDate) > start ? new Date(ev.startDate) : start;
+        const to   = new Date(ev.endDate)   < end   ? new Date(ev.endDate)   : end;
+        let cursor = startOfDay(from);
+        const endOfRange = endOfDay(to);
+        while (cursor <= endOfRange) {
+          dates.push(format(cursor, 'yyyy-MM-dd'));
+          cursor = addDays(cursor, 1);
         }
-        return {
-          ...eventData,
-          recurrenceDates,
-          isRecurring: false,
-          isDateRange: true
-        };
+        return { ...ev, recurrenceDates: dates, isRecurring: false };
       }
-      // For single-day events, return as is
-      else {
-        return eventData;
-      }
+      // Single-day events
+      return ev;
     });
 
-    console.log(`Found ${processedEvents.length} processed events for the date range`);
-    
-    // Log the first event to see its structure
-    if (processedEvents.length > 0) {
-      console.log(`First event structure: ${JSON.stringify(processedEvents[0], null, 2)}`);
+    console.log(`Processed ${processedEvents.length} events`);
+
+    // Build week structure for frontend
+    const weekStart = format(start, 'yyyy-MM-dd');
+    const days = [];
+    for (let cursor = new Date(start); cursor <= end; cursor = addDays(cursor, 1)) {
+      const dateKey = format(cursor, 'yyyy-MM-dd');
+      const label = format(cursor, 'EEE');
+      const eventsOnDate = processedEvents.filter((ev: any) =>
+        Array.isArray(ev.recurrenceDates) && ev.recurrenceDates.includes(dateKey)
+      );
+
+      // allDay events (no hour)
+      const allDay = eventsOnDate
+        .filter((ev: any) => ev.hour == null)
+        .map((ev: any) => ({ id: ev.id, title: ev.text, categoryId: ev.categoryId }));
+
+      // hourly slots
+      const hourslots = [];
+      for (let h = 0; h < 24; h++) {
+        const slotEvents = eventsOnDate
+          .filter((ev: any) => ev.hour != null && Number(ev.hour) === h)
+          .map((ev: any) => {
+            const start = `${String(h).padStart(2, '0')}:00`;
+            const end = (ev.durationUnit || '').startsWith('hour')
+              ? `${String(h + ev.durationAmount).padStart(2, '0')}:00`
+              : '';
+            return { id: ev.id, title: ev.text, start, end, categoryId: ev.categoryId };
+          });
+        if (slotEvents.length > 0) {
+          hourslots.push({ hour: h, events: slotEvents });
+        }
+      }
+
+      days.push({ date: dateKey, label, allDay, hourslots });
     }
-    
-    res.json(processedEvents);
+
+    return res.json({ weekStart, days });
   } catch (error) {
     console.error('Error fetching calendar events:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
+    return res.status(500).json({ error: 'Failed to fetch calendar events' });
   }
 };
 
