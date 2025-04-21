@@ -98,7 +98,7 @@ VALUES
   ('33333333-8888-8888-8888-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Client Call', '#FF6633', '#FFFFFF', 'Client communication', 1, 'hour', 3, 'Meeting', '2025-03-20', '2025-03-20', FALSE, 15, NULL, 'Monthly client status call', 'Remote', '22222222-2222-2222-2222-222222222222');
   
 -- ⚙️ rpm_block_massive_action_note
-INSERT INTO "rpm_block_massive_action_note" (id, massive_action_id, text, type)
+INSERT INTO "rpm_block_massive_action_note" (id, action_id, text, type)
 VALUES 
   ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-dddd-dddd-dddd-333333333333', 'Sent first batch of surveys', 'Update'),
   ('55555555-aaaa-aaaa-aaaa-555555555555', '33333333-dddd-dddd-dddd-333333333333', 'Completed 3K run', 'Progress'),

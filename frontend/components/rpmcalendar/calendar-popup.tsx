@@ -96,31 +96,84 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     }
   }, [startDate, isDateRange]);
 
-  const addNote = useCallback(() => {
+  const addNote = useCallback(async () => {
     if (newNote.trim()) {
-      const newNoteObj: Note = {
-        id: Date.now().toString(),
-        text: newNote.trim(),
-        createdAt: new Date().toISOString(),
-      }
-      setNotes(prevNotes => [...prevNotes, newNoteObj])
-      setNewNote('')
-      if (tiptapRef.current && tiptapRef.current.editor) {
-        tiptapRef.current.editor.commands.setContent('')
+      try {
+        // Call the API to add a note
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}/notes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: newNote.trim(),
+            type: 'note'
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add note');
+        }
+
+        const newNoteObj = await response.json();
+        
+        // Update local state
+        setNotes(prevNotes => [...prevNotes, newNoteObj]);
+        setNewNote('');
+        
+        // Clear the editor
+        if (tiptapRef.current && tiptapRef.current.editor) {
+          tiptapRef.current.editor.commands.setContent('');
+        }
+      } catch (error) {
+        console.error('Error adding note:', error);
       }
     }
-  }, [newNote])
+  }, [newNote, action.id]);
 
-  const updateNote = useCallback((id: string, newText: string) => {
-    setNotes(prevNotes => prevNotes.map(note =>
-      note.id === id ? { ...note, text: newText } : note
-    ))
-    setEditingNoteId(null)
-  }, [])
+  const updateNote = useCallback(async (id: string, newText: string) => {
+    try {
+      // Call the API to update the note
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/notes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: newText,
+          type: 'note'
+        }),
+      });
 
-  const deleteNote = useCallback((id: string) => {
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== id))
-  }, [])
+      if (!response.ok) {
+        throw new Error('Failed to update note');
+      }
+
+      const updatedNote = await response.json();
+      
+      // Update local state
+      setNotes(prevNotes => prevNotes.map(note =>
+        note.id === id ? updatedNote : note
+      ));
+      setEditingNoteId(null);
+    } catch (error) {
+      console.error('Error updating note:', error);
+    }
+  }, []);
+
+  const deleteNote = useCallback(async (id: string) => {
+    try {
+      // Call the API to delete the note
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/notes/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete note');
+      }
+      
+      // Update local state
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
+  }, []);
 
   const handleDayChange = (day: DayOfWeek) => {
     setSelectedDays(prev =>
@@ -323,6 +376,18 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
           </div>
          
           <div>
+            <Tiptap
+              key={notes.length}
+              ref={tiptapRef}
+              content={''}
+              onUpdate={setNewNote}
+              placeholder="Voeg een nieuwe notitie toe..."
+            />
+            <Button onClick={addNote} className="mt-2">
+              Notitie toevoegen
+            </Button>
+          </div>
+          <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">
               {notes.map((note) => (
@@ -368,18 +433,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               ))}
             </ScrollArea>
           </div>
-          <div>
-            <Tiptap
-              key={notes.length}
-              ref={tiptapRef}
-              content={''}
-              onUpdate={setNewNote}
-              placeholder="Voeg een nieuwe notitie toe..."
-            />
-            <Button onClick={addNote} className="mt-2">
-              Notitie toevoegen
-            </Button>
-          </div>
+         
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleUpdate}>Opslaan</Button>

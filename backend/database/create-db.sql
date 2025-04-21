@@ -125,10 +125,11 @@ CREATE TABLE IF NOT EXISTS "rpm_massive_action_recurrence_exception" (
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
   id UUID PRIMARY KEY,
-  massive_action_id UUID REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE,
+  action_id UUID REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE,
   text TEXT,
   type VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note_metric" (

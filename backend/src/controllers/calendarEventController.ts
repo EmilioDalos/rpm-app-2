@@ -7,6 +7,7 @@ import { sanitizeSequelizeModel } from '../utils/sanitizeSequelizeModel';
 import RpmMassiveActionRecurrence from '../models/RpmMassiveActionRecurrence';
 import RpmMassiveActionRecurrenceException from '../models/RpmMassiveActionRecurrenceException';
 import { format, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import RpmBlockMassiveActionNote from '../models/RpmBlockMassiveActionNote';
 
 interface RecurrencePattern {
   id: string;
@@ -105,120 +106,104 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
 };
 
 export const updateCalendarEvent = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { 
+    text, 
+    startDate, 
+    endDate, 
+    rpmBlockId,
+    notes,
+    recurrencePattern,
+    recurrenceExceptions 
+  } = req.body;
+
   try {
-    const { id } = req.params;
-    const { 
-      text, 
-      description, 
-      startDate, 
-      endDate, 
-      isDateRange, 
-      hour, 
-      categoryId,
-      recurrencePattern,
-      recurrenceExceptions
-    } = req.body;
+    const action = await RpmBlockMassiveAction.findByPk(id);
+    if (!action) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
 
-    console.log('Received update request for action:', id);
-    console.log('Request body:', req.body);
-    console.log('startDate type:', typeof startDate, 'value:', startDate);
-    console.log('endDate type:', typeof endDate, 'value:', endDate);
+    // Update action
+    await action.update({
+      text,
+      rpmBlockId,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null
+    });
 
-    // Start a transaction
-    const transaction = await sequelize.transaction();
-
-    try {
-      // Update the massive action
-      const updateData: any = {
-        text: text || 'Nieuwe actie',
-        description: description || '',
-        isDateRange: isDateRange || false,
-        categoryId: categoryId || undefined
-      };
-      
-      // Handle startDate - explicitly set to null if null is provided
-      if (startDate === null) {
-        updateData.startDate = null;
-      } else if (startDate) {
-        updateData.startDate = new Date(startDate);
-      }
-      
-      // Handle endDate - explicitly set to null if null is provided
-      if (endDate === null) {
-        updateData.endDate = null;
-      } else if (endDate) {
-        updateData.endDate = new Date(endDate);
-      }
-      
-      // Handle hour - explicitly set to null if null is provided
-      if (hour === null) {
-        updateData.hour = null;
-      } else if (hour !== undefined) {
-        updateData.hour = hour;
-      }
-      
-      console.log('Update data being sent to database:', updateData);
-      
-      const [updatedCount] = await RpmBlockMassiveAction.update(updateData, {
-        where: { id },
-        transaction
+    // Handle notes
+    if (notes && Array.isArray(notes)) {
+      // Delete existing notes
+      await RpmBlockMassiveActionNote.destroy({
+        where: { actionId: id }
       });
 
-      console.log('Update result:', updatedCount);
-
-      if (updatedCount === 0) {
-        await transaction.rollback();
-        return res.status(404).json({ error: 'Calendar event not found' });
-      }
-
-      // Handle recurrence pattern updates
-      if (recurrencePattern) {
-        // Delete existing recurrence patterns
-        await RpmMassiveActionRecurrence.destroy({
-          where: { actionId: id },
-          transaction
-        });
-
-        // Create new recurrence patterns
-        if (Array.isArray(recurrencePattern) && recurrencePattern.length > 0) {
-          await RpmMassiveActionRecurrence.bulkCreate(
-            recurrencePattern.map((pattern: RecurrencePattern) => ({
-              actionId: id,
-              dayOfWeek: pattern.dayOfWeek
-            })),
-            { transaction }
-          );
-        }
-      }
-
-      // Handle recurrence exceptions updates
-      if (recurrenceExceptions) {
-        // Delete existing recurrence exceptions
-        await RpmMassiveActionRecurrenceException.destroy({
-          where: { actionId: id },
-          transaction
-        });
-
-        // Create new recurrence exceptions
-        if (Array.isArray(recurrenceExceptions) && recurrenceExceptions.length > 0) {
-          await RpmMassiveActionRecurrenceException.bulkCreate(
-            recurrenceExceptions.map((exception: RecurrenceException) => ({
-              actionId: id,
-              actionRecurrenceId: exception.actionRecurrenceId,
-              exceptionDate: new Date(exception.exceptionDate),
-              reason: exception.reason
-            })),
-            { transaction }
-          );
-        }
-      }
-
-      await transaction.commit();
-      res.json({ message: 'Calendar event updated successfully' });
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
+      // Create new notes
+      await Promise.all(notes.map(note => 
+        RpmBlockMassiveActionNote.create({
+          actionId: id,
+          text: note.text,
+          type: note.type || 'note'
+        })
+      ));
     }
+
+    // Handle recurrence pattern
+    if (recurrencePattern) {
+      // Delete existing recurrence pattern and exceptions
+      await RpmMassiveActionRecurrenceException.destroy({
+        where: { actionId: id }
+      });
+      await RpmMassiveActionRecurrence.destroy({
+        where: { actionId: id }
+      });
+
+      // Create new recurrence pattern
+      const recurrence = await RpmMassiveActionRecurrence.create({
+        actionId: id,
+        dayOfWeek: recurrencePattern.dayOfWeek,
+        startDate: recurrencePattern.startDate ? new Date(recurrencePattern.startDate) : null,
+        endDate: recurrencePattern.endDate ? new Date(recurrencePattern.endDate) : null
+      });
+
+      // Create exceptions if any
+      if (recurrenceExceptions && Array.isArray(recurrenceExceptions)) {
+        await Promise.all(recurrenceExceptions.map(exception =>
+          RpmMassiveActionRecurrenceException.create({
+            actionId: id,
+            actionRecurrenceId: recurrence.id,
+            exceptionDate: new Date(exception.exceptionDate),
+            reason: exception.reason
+          })
+        ));
+      }
+    }
+
+    // Fetch updated action with all relations
+    const updatedAction = await RpmBlockMassiveAction.findByPk(id, {
+      include: [
+        {
+          model: RpmMassiveActionRecurrence,
+          as: 'recurrencePattern',
+          include: [
+            {
+              model: RpmMassiveActionRecurrenceException,
+              as: 'exceptions'
+            }
+          ]
+        },
+        {
+          model: RpmMassiveActionRecurrenceException,
+          as: 'recurrenceExceptions'
+        },
+        {
+          model: RpmBlockMassiveActionNote,
+          as: 'notes'
+        }
+      ]
+    });
+
+    res.json(updatedAction);
   } catch (error) {
     console.error('Error updating calendar event:', error);
     res.status(500).json({ error: 'Failed to update calendar event' });
@@ -508,5 +493,75 @@ export const deleteRecurrenceException = async (req: Request, res: Response) => 
   } catch (error) {
     console.error('Error deleting recurrence exception:', error);
     res.status(500).json({ error: 'Failed to delete recurrence exception' });
+  }
+};
+
+
+export const addNote = async (req: Request, res: Response) => {
+  const { actionId } = req.params;
+  const { text, type } = req.body;
+
+  try {
+    // Check if the action exists
+    const action = await RpmBlockMassiveAction.findByPk(actionId);
+    if (!action) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
+
+    // Create the note
+    const note = await RpmBlockMassiveActionNote.create({
+      actionId: actionId, 
+      text,
+      type: type || 'note'
+    });
+
+    res.status(201).json(note);
+  } catch (error) {
+    console.error('Error adding note:', error);
+    res.status(500).json({ error: 'Failed to add note' });
+  }
+};
+
+export const updateNote = async (req: Request, res: Response) => {
+  const { noteId } = req.params;
+  const { text, type } = req.body;
+
+  try {
+    // Find the note
+    const note = await RpmBlockMassiveActionNote.findByPk(noteId);
+    if (!note) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+
+    // Update the note
+    await note.update({
+      text,
+      type: type || note.type
+    });
+
+    res.json(note);
+  } catch (error) {
+    console.error('Error updating note:', error);
+    res.status(500).json({ error: 'Failed to update note' });
+  }
+};
+
+export const deleteNote = async (req: Request, res: Response) => {
+  const { noteId } = req.params;
+
+  try {
+    // Find the note
+    const note = await RpmBlockMassiveActionNote.findByPk(noteId);
+    if (!note) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+
+    // Delete the note
+    await note.destroy();
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    res.status(500).json({ error: 'Failed to delete note' });
   }
 };

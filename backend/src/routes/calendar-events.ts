@@ -7,7 +7,10 @@ import {
   getCalendarEventsByDateRange,
   addRecurrenceException,
   deleteRecurrenceException,
-  deleteCalendarEventByDate
+  deleteCalendarEventByDate,
+  addNote,
+  updateNote,
+  deleteNote
 } from '../controllers/calendarEventController';
 
 const router = Router();
@@ -38,5 +41,10 @@ router.post('/:actionId/exceptions', addRecurrenceException);
 
 // Delete a recurrence exception
 router.delete('/:actionId/exceptions/:exceptionId', deleteRecurrenceException);
+
+// Note management routes
+router.post('/:actionId/notes', addNote);
+router.put('/notes/:noteId', updateNote);
+router.delete('/notes/:noteId', deleteNote);
 
 export default router;

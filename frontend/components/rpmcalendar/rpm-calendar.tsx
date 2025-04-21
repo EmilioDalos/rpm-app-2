@@ -36,6 +36,21 @@ interface RpmCalendarProps {
 
 type ViewMode = "day" | "week" | "month";
 
+interface DbCalendarEvent {
+  id: string;
+  text: string;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+  isDateRange?: boolean;
+  hour?: number;
+  missedDate?: Date;
+  description?: string;
+  location?: string;
+  categoryId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [rpmBlocks, setRpmBlocks] = useState<RpmBlock[]>([]);
@@ -216,7 +231,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       }
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rpmblocks`);
-      
+      console.log('RPM blocks API response status:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -526,111 +541,88 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
-    const category = categories.find(c => c.id === item.categoryId);
-    
-    // Find the RPM block this action belongs to
-    const parentBlock = rpmBlocks.find(block => 
-      block.massiveActions && block.massiveActions.some(action => action.id === item.id)
-    );
-    
-    // Get the rpmBlockId
-    const rpmBlockId = parentBlock?.id || item.id;
-    
-    const newAction: MassiveAction = {
-      ...item,
-      leverage: item.leverage || '',
-      durationAmount: item.durationAmount || 0,
-      durationUnit: item.durationUnit || 'min',
-      priority: item.priority || 1,
-      key: '📅',
-      notes: item.notes || [],
-      isDateRange: item.isDateRange || false,
-      selectedDays: item.selectedDays || [],
-      color: category?.color || '#e0e0e0',
-      categoryId: item.categoryId,
-      hour: item.hour !== undefined ? item.hour : 8,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setCalendarEvents((prevEvents) => {
-      const updatedEvents = [...prevEvents];
-      
-      // If this is a date range event, add it only to the selected days
-      if (newAction.isDateRange && newAction.selectedDays?.length > 0) {
-        // Iterate through each selected day
-        newAction.selectedDays.forEach(selectedDate => {
-          const currentDateKey = new Date(selectedDate).toISOString().split('T')[0];
-          const existingEventIndex = updatedEvents.findIndex((event) => event.date === currentDateKey);
-
-          if (existingEventIndex >= 0) {
-            if (!updatedEvents[existingEventIndex].massiveActions) {
-              updatedEvents[existingEventIndex].massiveActions = [];
-            }
-          
-            if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
-              updatedEvents[existingEventIndex].massiveActions.push(newAction);
-              updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
-            }
-          } else {
-            updatedEvents.push({
-              id: `${currentDateKey}-${newAction.id}`,
-              date: currentDateKey,
-              massiveActions: [newAction],
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            });
-          }
-        });
-      } else {
-        // Handle single day event as before
-        const existingEventIndex = updatedEvents.findIndex((event) => event.date === dateKey);
-
-        if (existingEventIndex >= 0) {
-          if (!updatedEvents[existingEventIndex].massiveActions) {
-            updatedEvents[existingEventIndex].massiveActions = [];
-          }
-        
-          if (!updatedEvents[existingEventIndex].massiveActions.some((action) => action.id === newAction.id)) {
-            updatedEvents[existingEventIndex].massiveActions.push(newAction);
-            updatedEvents[existingEventIndex].updatedAt = new Date().toISOString();
-          }
-        } else {
-          updatedEvents.push({
-            id: `${dateKey}-${newAction.id}`,
-            date: dateKey,
-            massiveActions: [newAction],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-      }
-      return updatedEvents;
-    });
-
     try {
-      // If the event exists, update it
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${newAction.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: newAction,
-          text: newAction.text || 'New action',
-          description: newAction.leverage || '',
-          startDate: new Date(dateKey).toISOString(),
-          endDate: newAction.isDateRange && newAction.selectedDays?.length > 0 
-            ? new Date(newAction.selectedDays[newAction.selectedDays.length - 1]).toISOString()
-            : new Date(dateKey).toISOString(),
-          categoryId: newAction.categoryId,
-          rpmBlockId: rpmBlockId
-        }),
-      });
-      
-      // Refresh calendar events after successful drop
-      await fetchCalendarEvents();
-    
+      const date = new Date(dateKey);
+      const existingEvent = calendarEvents.find(event => 
+        event.date === dateKey && event.massiveActions.some(a => a.id === item.id)
+      );
+
+      if (existingEvent) {
+        // Update existing event
+        const updatedEvent = {
+          ...existingEvent,
+          massiveActions: existingEvent.massiveActions.map(a => 
+            a.id === item.id 
+              ? { ...a, startDate: dateKey, endDate: format(addDays(date, item.isDateRange ? 1 : 0), 'yyyy-MM-dd') }
+              : a
+          ),
+          updatedAt: new Date().toISOString()
+        };
+
+        const response = await fetch(`/api/calendar-events/${item.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...item,
+            startDate: dateKey,
+            endDate: format(addDays(date, item.isDateRange ? 1 : 0), 'yyyy-MM-dd')
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to update event');
+
+        setCalendarEvents(prevEvents =>
+          prevEvents.map(event =>
+            event.id === existingEvent.id ? updatedEvent : event
+          )
+        );
+      } else {
+        // Create new event
+        const newEvent: CalendarEvent = {
+          id: `${dateKey}-${item.id}`,
+          date: dateKey,
+          massiveActions: [{
+            ...item,
+            startDate: dateKey,
+            endDate: format(addDays(date, item.isDateRange ? 1 : 0), 'yyyy-MM-dd')
+          }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        const response = await fetch(`/api/calendar-events/${item.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...item,
+            startDate: dateKey,
+            endDate: format(addDays(date, item.isDateRange ? 1 : 0), 'yyyy-MM-dd')
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to create event');
+
+        setCalendarEvents(prevEvents => [...prevEvents, newEvent]);
+      }
+
+      // Update the action in the RPM blocks list
+      const updatedAction = {
+        ...item,
+        startDate: dateKey,
+        endDate: format(addDays(date, item.isDateRange ? 1 : 0), 'yyyy-MM-dd')
+      };
+
+      setRpmBlocks(prevBlocks =>
+        prevBlocks.map(block => ({
+          ...block,
+          massiveActions: block.massiveActions.map(a =>
+            a.id === item.id ? updatedAction : a
+          ),
+        }))
+      );
+
     } catch (error) {
-      console.error('Error saving/updating action:', error);
+      console.error('Error handling drop:', error);
     }
   };
 
@@ -924,8 +916,6 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const isActionPlanned = (actionId: string, massiveAction: MassiveAction) => {
-
-
     const hasStartEndDate = !!massiveAction.startDate && !!massiveAction.endDate;
     const hasRecurrence = Array.isArray(massiveAction.recurrencePattern) && massiveAction.recurrencePattern.length > 0;
     let isInCalendar = false;  

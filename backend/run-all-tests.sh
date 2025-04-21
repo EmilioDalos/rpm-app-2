@@ -17,4 +17,8 @@ echo -e "\n📂 Running Category tests..."
 echo -e "\n📦 Running RPM Blocks tests..."
 ./backend/test-rpm-blocks.sh || echo "❌ RPM Blocks tests failed"
 
+# Run Notes tests
+echo -e "\n📝 Running Notes tests..."
+./backend/test-notes.sh || echo "❌ Notes tests failed"
+
 echo -e "\n✅ All test scripts executed!"

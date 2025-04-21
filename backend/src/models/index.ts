@@ -9,6 +9,7 @@ import CategoryResult from './CategoryResult';
 import CategoryActionPlan from './CategoryActionPlan';
 import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
 import RpmMassiveActionRecurrenceException from './RpmMassiveActionRecurrenceException';
+import RpmBlockMassiveActionNote from './RpmBlockMassiveActionNote';
 
 // Define associations
 const setupAssociations = () => {
@@ -136,6 +137,17 @@ RpmMassiveActionRecurrenceException.belongsTo(RpmMassiveActionRecurrence, {
   as: 'recurrence'
 });
 
+// Add associations for notes
+RpmBlockMassiveAction.hasMany(RpmBlockMassiveActionNote, {
+  foreignKey: 'actionId',
+  as: 'notes',
+  onDelete: 'CASCADE'
+});
+
+RpmBlockMassiveActionNote.belongsTo(RpmBlockMassiveAction, {
+  foreignKey: 'actionId',
+  as: 'action'
+});
   
   console.log('Associations set up successfully');
 };
@@ -163,6 +175,7 @@ export {
   CategoryActionPlan,
   RpmMassiveActionRecurrence,
   RpmMassiveActionRecurrenceException,
+  RpmBlockMassiveActionNote,
   setupAssociations,
   testDatabaseConnection
 };
