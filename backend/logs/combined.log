@@ -11221,3 +11221,15 @@
 {"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:43:12.554Z"}
 {"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-27T22:00:00.000Z&endDate=2025-05-04T21:59:59.999Z","timestamp":"2025-04-21T09:43:17.331Z"}
 {"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:43:20.032Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-21T09:46:01.563Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-21T09:46:01.565Z"}
+{"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:46:01.566Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-21T09:46:40.769Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-21T09:46:40.770Z"}
+{"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:46:40.772Z"}
+{"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:48:32.992Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-21T09:48:32.993Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-21T09:48:32.994Z"}
+{"level":"info","message":"GET /api/categories","timestamp":"2025-04-21T09:48:41.406Z"}
+{"level":"info","message":"GET /api/rpmblocks","timestamp":"2025-04-21T09:48:41.406Z"}
+{"level":"info","message":"GET /api/calendar-events/date-range?startDate=2025-04-20T22:00:00.000Z&endDate=2025-04-27T21:59:59.999Z","timestamp":"2025-04-21T09:48:41.407Z"}

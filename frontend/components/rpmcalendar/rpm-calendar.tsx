@@ -20,13 +20,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDrag } from 'react-dnd';
 import { Badge } from "@/components/ui/badge";
+import CalendarPopup from './calendar-popup';
 
 import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
 
 import MiniCalendar from './mini-calendar';
-
-const ActionPopup = dynamic(() => import('./action-popup'), { ssr: false });
-const CalendarPopup = dynamic(() => import('./calendar-popup'), { ssr: false });
 
 interface Purpose {
   purpose: string;
@@ -48,7 +46,6 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
-  const [isCalendarPopupOpen, setIsCalendarPopupOpen] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -447,7 +444,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const handleActionClick = (action: MassiveAction, dateKey: string) => {
     setSelectedAction(action);
     setSelectedDateKey(dateKey);
-    setIsCalendarPopupOpen(true);
+    setIsPopupOpen(true);
   };
 
   const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
@@ -1149,26 +1146,13 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
           {renderCalendar()}
         </div>
-        {selectedAction && isPopupOpen && (
-          <ActionPopup
-            action={selectedAction}
-            dateKey={selectedDateKey || ""}
-            isOpen={isPopupOpen}
-            onClose={() => {
-              setIsPopupOpen(false);
-              setSelectedAction(null);
-              setSelectedDateKey(null);
-            }}
-            onUpdate={handleActionUpdate}
-          />
-        )}
-        {selectedAction && isCalendarPopupOpen && selectedDateKey && (
+        {selectedAction && isPopupOpen && selectedDateKey && (
           <CalendarPopup
             action={selectedAction}
             dateKey={selectedDateKey}
-            isOpen={isCalendarPopupOpen}
+            isOpen={isPopupOpen}
             onClose={() => {
-              setIsCalendarPopupOpen(false);
+              setIsPopupOpen(false);
               setSelectedAction(null);
               setSelectedDateKey(null);
             }}
