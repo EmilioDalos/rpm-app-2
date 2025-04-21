@@ -56,7 +56,7 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
         },
         {
           association: 'notes',
-          attributes: ['id', 'text', 'type']
+          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
         }
       ]
     });
@@ -153,7 +153,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     }
 
     // Handle recurrence pattern
-    if (recurrencePattern) {
+    if (recurrencePattern && recurrencePattern.dayOfWeek) {
       // Delete existing recurrence pattern and exceptions
       await RpmMassiveActionRecurrenceException.destroy({
         where: { actionId: id }

@@ -46,6 +46,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [newNote, setNewNote] = useState('')
   const [isCompleted, setIsCompleted] = useState(action.key === '✔')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteText, setEditingNoteText] = useState<string>('');
   const [isDateRange, setIsDateRange] = useState(action.isDateRange || false)
   const [startDate, setStartDate] = useState<string>(action.startDate ? format(new Date(action.startDate), 'yyyy-MM-dd') : '');
   const [endDate, setEndDate] = useState<string>(action.endDate ? format(new Date(action.endDate), 'yyyy-MM-dd') : '');
@@ -166,16 +167,22 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       // Call the API to delete the note
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/notes/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete note');
+      // Check if the response is successful (204 No Content or 200 OK)
+      if (response.status !== 204 && response.status !== 200) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete note');
       }
       
       // Update local state
       setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
     } catch (error) {
       console.error('Error deleting note:', error);
+      // You might want to show a toast or notification here
     }
   }, []);
 
@@ -240,9 +247,15 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        throw new Error(`Failed to update calendar event: ${errorData.error || 'Unknown error'}`);
+        const status = response.status;
+        let responseText: string;
+        try {
+          responseText = await response.text();
+        } catch {
+          responseText = '<niet beschikbaar>';
+        }
+        console.error(`Server gaf status ${status}, body:`, responseText);
+        return;
       }
 
       // Call onUpdate with the new dateKey if the date has changed
@@ -274,16 +287,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
             <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>{action.key}</Badge>
             <span className="text-sm">{action.durationAmount} {action.durationUnit} - {action.leverage}</span>
           </div>
-          {action.notes && action.notes.length > 0 && (
-            <div className="mt-2">
-              <h4 className="text-sm font-semibold">Notities:</h4>
-              <ul className="list-disc list-inside">
-                {action.notes.map((note, index) => (
-                  <li key={index} className="text-sm">{note.text}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          
           {(isPlanned) && !isDateRange && (
              <div className="grid gap-2">
                 <Label htmlFor="time">Gepland</Label>
@@ -393,9 +397,9 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
           </div>
           <div>
             <h3 className="mb-2 text-sm font-medium">Notities</h3>
-            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+            <ScrollArea className="h-[200px] w-full rounded-md border bg-gray-100 p-4">
               {notes.map((note) => (
-                <div key={note.id} className="mb-4 last:mb-0 bg-gray-100 p-3 rounded-md">
+                <div key={note.id} className="mb-4 last:mb-0 bg-white p-3 rounded-md">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">
                     {note.createdAt ? format(new Date(note.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl }) : 'Onbekende datum'}                    </span>
@@ -406,7 +410,10 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => setEditingNoteId(note.id)}>
+                        <DropdownMenuItem onClick={() => {
+                          setEditingNoteId(note.id);
+                          setEditingNoteText(note.text);
+                        }}>
                           <Pencil className="mr-2 h-4 w-4" />
                           <span>Bewerken</span>
                         </DropdownMenuItem>
@@ -420,13 +427,18 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                   {editingNoteId === note.id ? (
                     <div className="mt-2">
                       <Tiptap
-                        content={note.text}
-                        onUpdate={(content) => updateNote(note.id, content)}
+                        content={editingNoteText}
+                        onUpdate={setEditingNoteText}
                         placeholder="Bewerk de notitie..."
                       />
                       <div className="mt-2 flex justify-end space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => setEditingNoteId(null)}>Annuleren</Button>
-                        <Button size="sm" onClick={() => setEditingNoteId(null)}>Opslaan</Button>
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setEditingNoteId(null);
+                          setEditingNoteText('');
+                        }}>Annuleren</Button>
+                        <Button size="sm" onClick={() => {
+                          updateNote(note.id, editingNoteText);
+                        }}>Opslaan</Button>
                       </div>
                     </div>
                   ) : (
