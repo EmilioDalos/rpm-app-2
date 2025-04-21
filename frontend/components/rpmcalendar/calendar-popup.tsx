@@ -64,29 +64,33 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     action.startDate != null || action.endDate != null
   )
   useEffect(() => {
-    setNotes(action.notes || [])
-    setIsCompleted(action.key === '✔')
-    setIsDateRange(action.isDateRange || false)
+    // Initialize notes from the action prop
+    setNotes(action.notes || []);
+    setIsCompleted(action.key === '✔');
+    setIsDateRange(action.isDateRange || false);
     setStartDate(
       action.startDate 
         ? format(new Date(action.startDate), 'yyyy-MM-dd') 
         : format(new Date(dateKey), 'yyyy-MM-dd')
-    )
+    );
     setEndDate(
       action.endDate 
         ? format(new Date(action.endDate), 'yyyy-MM-dd') 
         : format(new Date(dateKey), 'yyyy-MM-dd')
-    )
-    setTitle(action.text)
-    setSelectedDays((action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek))
+    );
+    setTitle(action.text);
+    setSelectedDays((action.recurrencePattern || []).map(pattern => pattern.dayOfWeek as DayOfWeek));
     if (action.hour !== undefined) {
       const hour = Math.floor(action.hour);
       const minutes = Math.round((action.hour % 1) * 60);
       setSelectedHour(`${hour}-${minutes}`);
     }
-    setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0)
-    setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring)
-  }, [action, dateKey])
+    setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0);
+    setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring);
+    
+    // Log the notes for debugging
+    console.log('Action notes loaded:', action.notes);
+  }, [action, dateKey]);
 
   // Add a new useEffect to automatically set endDate when startDate changes
   useEffect(() => {
@@ -394,8 +398,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                 <div key={note.id} className="mb-4 last:mb-0 bg-gray-100 p-3 rounded-md">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">
-                      {format(new Date(note.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl })}
-                    </span>
+                    {note.createdAt ? format(new Date(note.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl }) : 'Onbekende datum'}                    </span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">

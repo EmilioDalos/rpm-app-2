@@ -10,7 +10,8 @@ import {
   deleteCalendarEventByDate,
   addNote,
   updateNote,
-  deleteNote
+  deleteNote,
+  getCalendarEventById
 } from '../controllers/calendarEventController';
 
 const router = Router();
@@ -18,8 +19,11 @@ const router = Router();
 // Get all calendar events
 //router.get('/', getAllCalendarEvents);
 
+// Get calendar events by date range   
+router.get('/date-range', getCalendarEventsByDateRange);
+
 // Get a single calendar event by ID
-//router.get('/:id', getCalendarEventById);
+router.get('/:id', getCalendarEventById);
 
 // Create a new calendar event
 router.post('/', createCalendarEvent);
@@ -33,8 +37,6 @@ router.delete('/:id', deleteCalendarEvent);
 // Delete a calendar event by id and date
 router.delete('/:id/:date', deleteCalendarEventByDate);
 
-// Get calendar events by date range   
-router.get('/date-range', getCalendarEventsByDateRange);
 
 // Add a recurrence exception to an action
 router.post('/:actionId/exceptions', addRecurrenceException);

@@ -45,29 +45,33 @@ export const getAllCalendarEvents = async (req: Request, res: Response) => {
   }
 };
 
-// export const getCalendarEventById = async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params;
-//     const event = await RpmBlockMassiveAction.findByPk(id, {
-//       include: [
-//         { 
-//           association: 'category',
-//           attributes: ['id', 'name', 'type', 'color']
-//         }
-//       ]
-//     });
+export const getCalendarEventById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const event = await RpmBlockMassiveAction.findByPk(id, {
+      include: [
+        { 
+          association: 'category',
+          attributes: ['id', 'name', 'type', 'color']
+        },
+        {
+          association: 'notes',
+          attributes: ['id', 'text', 'type']
+        }
+      ]
+    });
 
-//     if (!event) {
-//       return res.status(404).json({ error: 'Calendar event not found' });
-//     }
+    if (!event) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
 
-//     const sanitizedEvent = sanitizeSequelizeModel(event);
-//     res.json(sanitizedEvent);
-//   } catch (error) {
-//     console.error('Error fetching calendar event:', error);
-//     res.status(500).json({ error: 'Failed to fetch calendar event' });
-//   }
-// };
+    const sanitizedEvent = sanitizeSequelizeModel(event);
+    res.json(sanitizedEvent);
+  } catch (error) {
+    console.error('Error fetching calendar event:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar event' });
+  }
+};
 
 export const createCalendarEvent = async (req: Request, res: Response) => {
   const { id } = req.params;

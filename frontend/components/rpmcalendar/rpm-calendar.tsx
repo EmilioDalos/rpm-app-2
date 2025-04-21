@@ -456,10 +456,36 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }
   };
 
-  const handleActionClick = (action: MassiveAction, dateKey: string) => {
-    setSelectedAction(action);
-    setSelectedDateKey(dateKey);
-    setIsPopupOpen(true);
+  const handleActionClick = async (action: MassiveAction, dateKey: string) => {
+    try {
+      // Fetch the complete action data including notes
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
+      console.log('Response:', response);
+      console.log('Action:', action);
+      console.log('Date key:', dateKey);
+      console.log('Action url:', `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch action details');
+      }
+      
+      const actionWithNotes = await response.json();
+      
+      // Update the action with the fetched notes
+      const updatedAction = {
+        ...action,
+        notes: actionWithNotes.notes || []
+      };
+      
+      setSelectedAction(updatedAction);
+      setSelectedDateKey(dateKey);
+      setIsPopupOpen(true);
+    } catch (error) {
+      console.error('Error fetching action details:', error);
+      // Fallback to the original action if fetch fails
+      setSelectedAction(action);
+      setSelectedDateKey(dateKey);
+      setIsPopupOpen(true);
+    }
   };
 
   const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
@@ -477,7 +503,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           endDate: updatedAction.endDate,
           isDateRange: updatedAction.isDateRange,
           hour: updatedAction.hour,
-          categoryId: updatedAction.categoryId
+          categoryId: updatedAction.categoryId,
+          notes: updatedAction.notes || []
         }),
       });
 
@@ -485,6 +512,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         throw new Error('Failed to update calendar event');
       }
 
+      // Get the updated action with notes from the response
+      const updatedActionWithNotes = await response.json();
+      
       // Update local calendar events state
       setCalendarEvents((prevEvents) => {
         const newEvents = [...prevEvents];
@@ -495,7 +525,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           newEvents[eventIndex] = {
             ...newEvents[eventIndex],
             massiveActions: newEvents[eventIndex].massiveActions.map(action =>
-              action.id === updatedAction.id ? updatedAction : action
+              action.id === updatedAction.id ? updatedActionWithNotes : action
             ),
             updatedAt: new Date().toISOString()
           };
@@ -504,7 +534,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           newEvents.push({
             id: `${dateKey}-${updatedAction.id}`,
             date: dateKey,
-            massiveActions: [updatedAction],
+            massiveActions: [updatedActionWithNotes],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
@@ -520,7 +550,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             return {
               ...block,
               massiveActions: block.massiveActions.map(action =>
-                action.id === updatedAction.id ? updatedAction : action
+                action.id === updatedAction.id ? updatedActionWithNotes : action
               ),
               updatedAt: new Date()
             };
