@@ -89,7 +89,7 @@ VALUES
 -- ⚙️ rpm_block_massive_action
 INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date, description, location, category_id)
 VALUES 
-  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-01', '2025-04-03', TRUE, 2, NULL, 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
+  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-15', '2025-05-15', TRUE, 2, NULL, 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
   ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-25', TRUE, 1, NULL, 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111'),
   -- New test cases for calendar events
   ('33333333-ffff-ffff-ffff-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Weekly Team Meeting', '#3366FF', '#FFFFFF', 'Team coordination', 1, 'hour', 1, 'Meeting', '2025-03-01', '2025-12-31', TRUE, 10, NULL, 'Weekly team sync meeting', 'Conference Room A', '22222222-2222-2222-2222-222222222222'),
