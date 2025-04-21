@@ -341,6 +341,15 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
                       onChange={(e) => setStartDate(e.target.value)}
                     />
                   </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="end-date">Einddatum</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
                 </div>
               )}
               {isDateRange && (

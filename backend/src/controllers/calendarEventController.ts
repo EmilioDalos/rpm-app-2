@@ -118,6 +118,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     rpmBlockId,
     notes,
     recurrencePattern,
+    dayOfWeek,
     recurrenceExceptions 
   } = req.body;
 
@@ -153,7 +154,9 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     }
 
     // Handle recurrence pattern
-    if (recurrencePattern && recurrencePattern.dayOfWeek) {
+    if (recurrencePattern && Array.isArray(recurrencePattern)) {
+      // Geldig recurrencePattern opgegeven, sla recurrence logic over
+
       // Delete existing recurrence pattern and exceptions
       await RpmMassiveActionRecurrenceException.destroy({
         where: { actionId: id }
@@ -162,23 +165,29 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
         where: { actionId: id }
       });
 
-      // Create new recurrence pattern
-      const recurrence = await RpmMassiveActionRecurrence.create({
-        actionId: id,
-        dayOfWeek: recurrencePattern.dayOfWeek,
-        startDate: recurrencePattern.startDate ? new Date(recurrencePattern.startDate) : null,
-        endDate: recurrencePattern.endDate ? new Date(recurrencePattern.endDate) : null
-      });
+    // Create new recurrence patterns for each provided pattern
+      const recurrences = [];
+      for (const pattern of recurrencePattern) {
+        if (!pattern.dayOfWeek) continue;
+        const rec = await RpmMassiveActionRecurrence.create({
+          actionId: id,
+          dayOfWeek: pattern.dayOfWeek,
+        
+        });
+        recurrences.push(rec);
+      }
 
-      // Create exceptions if any
+      // Create exceptions if any for each recurrence
       if (recurrenceExceptions && Array.isArray(recurrenceExceptions)) {
-        await Promise.all(recurrenceExceptions.map(exception =>
-          RpmMassiveActionRecurrenceException.create({
-            actionId: id,
-            actionRecurrenceId: recurrence.id,
-            exceptionDate: new Date(exception.exceptionDate),
-            reason: exception.reason
-          })
+        await Promise.all(recurrenceExceptions.flatMap(exception =>
+          recurrences.map(rec =>
+            RpmMassiveActionRecurrenceException.create({
+              actionId: id,
+              actionRecurrenceId: rec.id,
+              exceptionDate: new Date(exception.exceptionDate),
+              reason: exception.reason
+            })
+          )
         ));
       }
     }

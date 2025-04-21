@@ -976,6 +976,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     }));
 
     const [showPopup, setShowPopup] = useState(false);
+    const [popupAction, setPopupAction] = useState<MassiveAction>(action);
 
     const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
       try {
@@ -1022,14 +1023,25 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
     return (
       <>
-        <div 
+    <div 
           ref={drag}
           className={cn(
             "mb-2 p-2 rounded-md shadow-sm cursor-pointer",
             isPlanned ? "bg-green-100" : "bg-gray-100",
             isDragging ? "opacity-50" : ""
           )}
-          onClick={() => setShowPopup(true)}
+          onClick={async () => {
+            try {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
+              if (!response.ok) throw new Error('Failed to fetch action details');
+              const data = await response.json();
+              setPopupAction({ ...action, notes: data.notes || [] });
+            } catch (error) {
+              console.error('Error fetching action details:', error);
+              setPopupAction(action);
+            }
+            setShowPopup(true);
+          }}
         >
           <div className="flex items-center justify-between">
             <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>
@@ -1052,7 +1064,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
         {showPopup && (
           <CalendarPopup
-            action={action}
+            action={popupAction}
             dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
             isOpen={showPopup}
             onClose={() => setShowPopup(false)}
