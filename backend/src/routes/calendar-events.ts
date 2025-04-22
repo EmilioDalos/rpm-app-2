@@ -5,8 +5,6 @@ import {
   updateCalendarEvent,
   deleteCalendarEvent,
   getCalendarEventsByDateRange,
-  addRecurrenceException,
-  deleteRecurrenceException,
   deleteCalendarEventByDate,
   addNote,
   updateNote,
@@ -16,16 +14,21 @@ import {
 
 const router = Router();
 
-// Note management routes (specifiek pad vóór de generieke)
-router.post('/:actionId/notes', addNote);
+// Note management routes
+router.post('/:occurrenceId/notes', addNote);
 router.put('/notes/:noteId', updateNote);
 router.delete('/notes/:noteId', deleteNote);
+
 
 // Get calendar events by date range   
 router.get('/date-range', getCalendarEventsByDateRange);
 
 // Get a single calendar event by ID
 router.get('/:id', getCalendarEventById);
+
+//Get All Calendar Events
+// rpmblocks is used for the calendar events!!!
+//router.get('/', getAllCalendarEvents);
 
 // Create a new calendar event
 router.post('/', createCalendarEvent);
@@ -38,8 +41,5 @@ router.delete('/:id', deleteCalendarEvent);
 
 // Update a calendar event
 router.put('/:id', updateCalendarEvent);
-
-// Add a recurrence exception to an action
-router.post('/:actionId/exceptions', addRecurrenceException);
 
 export default router;

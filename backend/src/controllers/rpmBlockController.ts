@@ -13,7 +13,7 @@ interface MassiveAction {
   durationAmount?: number;
   durationUnit?: string;
   priority?: number;
-  key?: string;
+  actionStatus?: 'new' | 'in_progress' | 'completed' | 'cancelled';
 }
 
 interface Purpose {
@@ -24,29 +24,15 @@ export const getRpmBlocks = async (req: Request, res: Response) => {
   try {
     const blocks = await RpmBlock.findAll({
       include: [
-        { 
-          model: RpmBlockMassiveAction, 
-          as: 'massiveActions',
-          include: [
-            {
-              model: RpmMassiveActionRecurrence,
-              as: 'recurrencePattern'
-            }
-          ]
-        },
-        { model: RpmBlockPurpose, as: 'purposes' },
-        { model: Category, as: 'category' }
+        { model: RpmBlockMassiveAction, as: 'massiveActions' },
+        { model: RpmBlockPurpose,     as: 'purposes'      },
+        { model: Category,             as: 'category'      },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']],
     });
 
-    // Add saved property to each block
-    const blocksWithSaved = blocks.map(block => ({
-      ...block.toJSON(),
-      saved: true
-    }));
-
-    res.json(blocksWithSaved);
+    const sanitized = blocks.map(block => sanitizeSequelizeModel(block));
+    res.json(sanitized);
   } catch (error) {
     console.error('Error fetching RPM blocks:', error);
     res.status(500).json({ error: 'Failed to fetch RPM blocks' });
@@ -109,7 +95,7 @@ export const createRpmBlock = async (req: Request, res: Response) => {
             durationAmount: action.durationAmount || 0,
             durationUnit: action.durationUnit || 'min',
             priority: action.priority || 0,
-            key: action.key || '?',
+            actionStatus: action.actionStatus || 'new',
             rpmBlockId: block.id
           }, { transaction })
         ));
@@ -225,7 +211,7 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
             durationAmount: action.durationAmount || 0,
             durationUnit: action.durationUnit || 'min',
             priority: action.priority || 0,
-            key: action.key || '?',
+            actionStatus: action.actionStatus || 'new',
             rpmBlockId: id
           }, { transaction })
         ));

@@ -9,7 +9,7 @@ interface ActionItemProps {
   isPlanned: boolean
 }
 
-const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) => {
+const ActionItem: React.FC<ActionItemProps> = ({ action, onClick }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'action',
     item: action,
@@ -33,11 +33,18 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick, isPlanned }) =
         <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
       </div>
       <p className="text-sm font-medium mt-1">{action.text}</p>
-      {isPlanned && (
-        <Badge variant="outline" className="mt-1">
-          Gepland
-        </Badge>
-      )}
+      <div className="flex gap-2 mt-1">
+       
+        {action.actionStatus && (
+          <Badge 
+            variant={action.actionStatus === 'completed' ? 'default' : 'secondary'}
+          >
+            {action.actionStatus === 'completed' ? 'Voltooid' : 
+             action.actionStatus === 'in_progress' ? 'In uitvoering' : 
+             action.actionStatus === 'cancelled' ? 'Geannuleerd' : 'Nieuw'}
+          </Badge>
+        )}
+      </div>
       {action.missedDate && (
         <div className="text-xs text-red-500 mt-1">
           Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}

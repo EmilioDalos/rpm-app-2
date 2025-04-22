@@ -64,6 +64,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isPlanned, setIsPlanned] = useState(
     action.startDate != null || action.endDate != null
   )
+  const [actionStatus, setActionStatus] = useState<'new' | 'in_progress' | 'completed' | 'cancelled'>(action.actionStatus || 'new')
   useEffect(() => {
     // Initialize notes from the action prop
     setNotes(action.notes || []);
@@ -88,6 +89,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     }
     setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0);
     setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring);
+    setActionStatus(action.actionStatus || 'new');
     
     // Log the notes for debugging
     console.log('Action notes loaded:', action.notes);
@@ -204,91 +206,69 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     return options;
   };
 
-  const handleUpdate = async () => {
-    const [hourStr, minuteStr] = selectedHour.split('-');
-    const hour = parseInt(hourStr);
-    const minutes = parseInt(minuteStr);
-    const decimalHour = hour + (minutes / 60);
-
-    // Format dates to ensure they're in the correct format for the API
-    const formattedStartDate = startDate ? format(new Date(startDate), 'yyyy-MM-dd') : null;
-    const formattedEndDate = endDate ? format(new Date(endDate), 'yyyy-MM-dd') : null;
-
-    // Determine if the action is planned based on having a start date
-    const isActionPlanned = !!formattedStartDate;
-
+  const handleSave = useCallback(() => {
     const updatedAction: MassiveAction = {
       ...action,
       text: title,
-      key: isActionPlanned ? '📅' : (isCompleted ? '✔' : action.key),
       notes,
+      key: isCompleted ? '✔' : '✘',
       isDateRange,
-      startDate: formattedStartDate || undefined,
-      endDate: formattedEndDate || undefined,
-      selectedDays: isRecurring ? selectedDays : [],
-      hour: decimalHour,
-      updatedAt: new Date().toISOString()
-    }
-
-    try {
-      // Create the recurrence pattern if isDateRange is true and days are selected
-      const recurrencePattern = (isDateRange && selectedDays.length > 0) ? selectedDays.map(day => ({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      hour: selectedHour ? parseFloat(selectedHour.split('-')[0]) + parseFloat(selectedHour.split('-')[1]) / 60 : undefined,
+      recurrencePattern: isRecurring ? selectedDays.map(day => ({
+        id: '',
+        actionId: action.id,
         dayOfWeek: day
-      })) : [];
-      
-      // Update the action with recurrence pattern
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...updatedAction,
-          recurrencePattern
-        }),
-      });
-
-      if (!response.ok) {
-        const status = response.status;
-        let responseText: string;
-        try {
-          responseText = await response.text();
-        } catch {
-          responseText = '<niet beschikbaar>';
-        }
-        console.error(`Server gaf status ${status}, body:`, responseText);
-        return;
-      }
-
-      // Call onUpdate with the new dateKey if the date has changed
-      const newDateKey = formattedStartDate || dateKey;
-      onUpdate(updatedAction, newDateKey);
-      onClose();
-    } catch (error) {
-      console.error('Error updating action:', error);
-    }
-  }
+      })) : undefined,
+      actionStatus
+    };
+    onUpdate(updatedAction, dateKey);
+    onClose();
+  }, [action, title, notes, isCompleted, isDateRange, startDate, endDate, selectedHour, isRecurring, selectedDays, actionStatus, dateKey, onUpdate, onClose]);
 
   const timeOptions = generateTimeOptions();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <VisuallyHidden>
-            <DialogTitle>Actie bewerken</DialogTitle>
-          </VisuallyHidden>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="text-xl font-semibold border-none focus-visible:ring-0 px-0"
-          />
+          <DialogTitle>Actie Bewerken</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Titel</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Voer een titel in"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={actionStatus} 
+              onValueChange={(value: 'new' | 'in_progress' | 'completed' | 'cancelled') => setActionStatus(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecteer status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">Nieuw</SelectItem>
+                <SelectItem value="planned">Gepland</SelectItem>
+                <SelectItem value="in_progress">In uitvoering</SelectItem>
+                <SelectItem value="completed">Voltooid</SelectItem>
+                <SelectItem value="cancelled">Geannuleerd</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-2">
             <Badge variant={action.key === '✔' ? 'default' : 'secondary'}>{action.key}</Badge>
             <span className="text-sm">{action.durationAmount} {action.durationUnit} - {action.leverage}</span>
           </div>
           
-          {(isPlanned) && !isDateRange && (
+          {actionStatus === 'planned' && !isDateRange && (    
              <div className="grid gap-2">
                 <Label htmlFor="time">Gepland</Label>
                 <div className="flex items-center space-x-2">
@@ -460,7 +440,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
          
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleUpdate}>Opslaan</Button>
+          <Button type="submit" onClick={handleSave}>Opslaan</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

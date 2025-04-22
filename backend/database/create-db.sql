@@ -1,3 +1,18 @@
+-- Define action_status enum type
+DO $$ BEGIN
+  CREATE TYPE action_status AS ENUM (
+    'new',
+    'planned',
+    'in_progress',
+    'leveraged',
+    'completed',
+    'cancelled',
+    'not_needed',
+    'moved'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 -- Enable uuid-ossp extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -88,44 +103,35 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   text TEXT NOT NULL,
   color VARCHAR(7),
   text_color VARCHAR(7),
-  leverage TEXT,
-  duration_amount INTEGER,
-  duration_unit VARCHAR(50),
   priority INTEGER,
-  key VARCHAR(50),
+  status action_status NOT NULL DEFAULT 'new',
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
   is_date_range BOOLEAN DEFAULT FALSE,
   hour NUMERIC,
   missed_date TIMESTAMP WITH TIME ZONE,
   description TEXT,
-  location VARCHAR(255),
   category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS "rpm_massive_action_recurrence" (
+CREATE TABLE IF NOT EXISTS "rpm_massive_action_occurrence" (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   action_id UUID REFERENCES rpm_block_massive_action(id) ON DELETE CASCADE,
-  day_of_week VARCHAR(9) CHECK (day_of_week IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS "rpm_massive_action_recurrence_exception" (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  action_id UUID REFERENCES rpm_block_massive_action(id) ON DELETE CASCADE,
-  action_recurrence_id UUID REFERENCES rpm_massive_action_recurrence(id) ON DELETE CASCADE,
-  exception_date DATE NOT NULL,
-  reason TEXT,
+  date TIMESTAMP WITH TIME ZONE,
+  hour NUMERIC,
+  location VARCHAR(255),
+  leverage TEXT,
+  duration_amount INTEGER,
+  duration_unit VARCHAR(50),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
   id UUID PRIMARY KEY,
-  action_id UUID REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE,
+  occurrence_id UUID REFERENCES "rpm_massive_action_occurrence"(id) ON DELETE CASCADE,
   text TEXT,
   type VARCHAR(50),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

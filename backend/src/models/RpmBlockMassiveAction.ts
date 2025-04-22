@@ -2,8 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
 import RpmBlock from './RpmBlock';
 import Category from './Category';
-import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
-import RpmMassiveActionRecurrenceException from './RpmMassiveActionRecurrenceException';
+import RpmMassiveActionOccurrence from './RpmMassiveActionOccurrence';
 
 interface RpmBlockMassiveActionAttributes {
   id: string;
@@ -11,26 +10,21 @@ interface RpmBlockMassiveActionAttributes {
   text: string;
   color?: string;
   textColor?: string;
-  leverage?: string;
-  durationAmount?: number;
-  durationUnit?: string;
   priority?: number;
-  key?: string;
+  actionStatus: 'new' | 'in_progress' | 'completed' | 'cancelled';
   startDate?: Date;
   endDate?: Date;
   isDateRange?: boolean;
   hour?: number;
   missedDate?: Date;
   description?: string;
-  location?: string;
   categoryId?: string;
   createdAt: Date;
   updatedAt: Date;
-  recurrencePattern?: RpmMassiveActionRecurrence[];
-  recurrenceExceptions?: RpmMassiveActionRecurrenceException[];
+  occurrences?: RpmMassiveActionOccurrence[];
 }
 
-interface RpmBlockMassiveActionCreationAttributes extends Omit<RpmBlockMassiveActionAttributes, 'id' | 'createdAt' | 'updatedAt' | 'recurrencePattern' | 'recurrenceExceptions'> {}
+interface RpmBlockMassiveActionCreationAttributes extends Omit<RpmBlockMassiveActionAttributes, 'id' | 'createdAt' | 'updatedAt' | 'occurrences'> {}
 
 class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBlockMassiveActionCreationAttributes> {
   public id!: string;
@@ -38,23 +32,18 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public text!: string;
   public color?: string;
   public textColor?: string;
-  public leverage?: string;
-  public durationAmount?: number;
-  public durationUnit?: string;
   public priority?: number;
-  public key?: string;
+  public actionStatus!: 'new' | 'in_progress' | 'completed' | 'cancelled' | 'not_needed' | 'moved'; 
   public startDate?: Date;
   public endDate?: Date;
   public isDateRange?: boolean;
   public hour?: number;
   public missedDate?: Date;
   public description?: string;
-  public location?: string;
   public categoryId?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-  public recurrencePattern?: RpmMassiveActionRecurrence[];
-  public recurrenceExceptions?: RpmMassiveActionRecurrenceException[];
+  public occurrences?: RpmMassiveActionOccurrence[];
 }
 
 RpmBlockMassiveAction.init({
@@ -85,27 +74,15 @@ RpmBlockMassiveAction.init({
     allowNull: true,
     field: 'text_color'
   },
-  leverage: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-  },
-  durationAmount: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    field: 'duration_amount'
-  },
-  durationUnit: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    field: 'duration_unit'
-  },
   priority: {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  key: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
+  actionStatus: {
+    type: DataTypes.ENUM('new', 'in_progress', 'completed', 'cancelled'),
+    allowNull: false,
+    defaultValue: 'new',
+    field: 'status'
   },
   startDate: {
     type: DataTypes.DATE,
@@ -120,11 +97,11 @@ RpmBlockMassiveAction.init({
   isDateRange: {
     type: DataTypes.BOOLEAN,
     allowNull: true,
-    field: 'is_date_range',
-    defaultValue: false
+    defaultValue: false,
+    field: 'is_date_range'
   },
   hour: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL,
     allowNull: true,
   },
   missedDate: {
@@ -134,16 +111,16 @@ RpmBlockMassiveAction.init({
   },
   description: {
     type: DataTypes.TEXT,
-  },
-  location: {
-    type: DataTypes.STRING(255),
+    allowNull: true,
   },
   categoryId: {
     type: DataTypes.UUID,
+    allowNull: true,
     references: {
       model: Category,
       key: 'id',
     },
+    field: 'category_id'
   },
   createdAt: {
     type: DataTypes.DATE,

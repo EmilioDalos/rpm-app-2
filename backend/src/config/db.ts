@@ -28,4 +28,15 @@ sequelize
     console.error('❌ Unable to connect to the database:', err);
   });
 
+// Function to sync all models with the database
+export const syncDatabase = async (force: boolean = false) => {
+  try {
+    await sequelize.sync({ force });
+    console.log('✅ Database synchronized successfully');
+  } catch (error) {
+    console.error('❌ Error synchronizing database:', error);
+    throw error;
+  }
+};
+
 export default sequelize;

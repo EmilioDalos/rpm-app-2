@@ -1,21 +1,21 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
-import RpmBlockMassiveAction from './RpmBlockMassiveAction';
+import RpmMassiveActionOccurrence from './RpmMassiveActionOccurrence';
 
 interface RpmBlockMassiveActionNoteAttributes {
   id: string;
-  actionId: string;
+  occurrenceId: string;
   text: string;
   type?: 'progress' | 'remark';
   createdAt: Date;
   updatedAt: Date;
 }
 
-interface RpmBlockMassiveActionNoteCreationAttributes extends Omit<RpmBlockMassiveActionNoteAttributes, 'id' | 'massiveActionId' | 'createdAt' | 'updatedAt'> {}
+interface RpmBlockMassiveActionNoteCreationAttributes extends Omit<RpmBlockMassiveActionNoteAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
 class RpmBlockMassiveActionNote extends Model<RpmBlockMassiveActionNoteAttributes, RpmBlockMassiveActionNoteCreationAttributes> {
   public id!: string;
-  public actionId!: string;
+  public occurrenceId!: string;
   public text!: string;
   public type?: 'progress' | 'remark';
   public readonly createdAt!: Date;
@@ -28,14 +28,14 @@ RpmBlockMassiveActionNote.init({
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  actionId: {
+  occurrenceId: {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: RpmBlockMassiveAction,
+      model: RpmMassiveActionOccurrence,
       key: 'id'
     },
-    field: 'action_id'
+    field: 'occurrence_id'
   },
   text: {
     type: DataTypes.TEXT,

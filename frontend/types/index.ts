@@ -81,24 +81,19 @@ export interface RecurrencePattern {
 export interface MassiveAction {
   id: string;
   text: string;
-  leverage?: string;
-  durationAmount: number;
-  durationUnit: string;
-  priority: number;
-  key: string;
-  notes: Note[];
-  isDateRange: boolean;
-  selectedDays: string[];
   color?: string;
   textColor?: string;
-  categoryId?: string;
   hour?: number;
+  leverage?: string | null;
+  durationAmount?: number | null;
+  durationUnit?: string | null;
+  location?: string | null;
+  notes?: Note[];
   startDate?: string;
   endDate?: string;
-  missedDate?: string;
-  createdAt: string;
-  updatedAt: string;
-  recurrencePattern?: RecurrencePattern[];
+  actionStatus?: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Note {

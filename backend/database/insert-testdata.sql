@@ -87,48 +87,46 @@ VALUES
   ('33333333-cccc-cccc-cccc-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Build endurance');
 
 -- ⚙️ rpm_block_massive_action
-INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, leverage, duration_amount, duration_unit, priority, key, start_date, end_date, is_date_range, hour, missed_date, description, location, category_id)
+INSERT INTO "rpm_block_massive_action" (id, rpm_block_id, text, color, text_color, priority, status, start_date, end_date, is_date_range, hour, missed_date, description, category_id)
 VALUES 
-  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 'High visibility', 3, 'days', 1, 'Design', '2025-04-15', '2025-05-15', TRUE, 2, NULL, 'Design and implement landing page', 'Remote', '11111111-1111-1111-1111-111111111111'),
-  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 'User input', 2, 'days', 2, 'Research', '2025-04-04', '2025-04-25', TRUE, 1, NULL, 'Gather user feedback on MVP', 'Remote', '11111111-1111-1111-1111-111111111111'),
+  ('33333333-dddd-dddd-dddd-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Create landing page', '#FF5733', '#FFFFFF', 1, 'planned', '2025-04-15', '2025-05-15', TRUE, 2, NULL, 'Design and implement landing page', '11111111-1111-1111-1111-111111111111'),
+  ('33333333-eeee-eeee-eeee-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Collect feedback from users', '#33FFAA', '#000000', 2, 'planned', '2025-04-04', '2025-04-25', TRUE, 1, NULL, 'Gather user feedback on MVP', '11111111-1111-1111-1111-111111111111'),
   -- New test cases for calendar events
-  ('33333333-ffff-ffff-ffff-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Weekly Team Meeting', '#3366FF', '#FFFFFF', 'Team coordination', 1, 'hour', 1, 'Meeting', '2025-03-01', '2025-12-31', TRUE, 10, NULL, 'Weekly team sync meeting', 'Conference Room A', '22222222-2222-2222-2222-222222222222'),
-  ('33333333-abcd-abcd-abcd-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Morning Workout', '#FF3366', '#FFFFFF', 'Physical health', 1, 'hour', 1, 'Fitness', '2025-03-01', '2025-12-31', TRUE, 7, NULL, 'Daily morning workout routine', 'Gym', '33333333-1111-1111-1111-111111111111'),
-  ('33333333-cdef-cdef-cdef-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Project Review', '#33FF66', '#000000', 'Project progress', 2, 'hours', 2, 'Review', '2025-03-15', '2025-03-15', FALSE, 14, NULL, 'Quarterly project review meeting', 'Conference Room B', '22222222-2222-2222-2222-222222222222'),
-  ('33333333-8888-8888-8888-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Client Call', '#FF6633', '#FFFFFF', 'Client communication', 1, 'hour', 3, 'Meeting', '2025-03-20', '2025-03-20', FALSE, 15, NULL, 'Monthly client status call', 'Remote', '22222222-2222-2222-2222-222222222222');
+  ('33333333-ffff-ffff-ffff-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Weekly Team Meeting', '#3366FF', '#FFFFFF', 1, 'planned', '2025-03-01', '2025-12-31', TRUE, 10, NULL, 'Weekly team sync meeting', '22222222-2222-2222-2222-222222222222'),
+  ('33333333-abcd-abcd-abcd-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Morning Workout', '#FF3366', '#FFFFFF', 1, 'planned', '2025-03-01', '2025-12-31', TRUE, 7, NULL, 'Daily morning workout routine', '33333333-1111-1111-1111-111111111111'),
+  ('33333333-cdef-cdef-cdef-333333333333', '22222222-aaaa-aaaa-aaaa-222222222222', 'Project Review', '#33FF66', '#000000', 2, 'planned', '2025-03-15', '2025-03-15', FALSE, 14, NULL, 'Quarterly project review meeting', '22222222-2222-2222-2222-222222222222'),
+  ('33333333-8888-8888-8888-333333333333', '11111111-aaaa-aaaa-aaaa-111111111111', 'Client Call', '#FF6633', '#FFFFFF', 3, 'planned', '2025-03-20', '2025-03-20', FALSE, 15, NULL, 'Monthly client status call', '22222222-2222-2222-2222-222222222222');
+
+-- ⚙️ rpm_massive_action_occurrence
+INSERT INTO "rpm_massive_action_occurrence" (id, action_id, date, hour, location, leverage, duration_amount, duration_unit, created_at, updated_at)
+VALUES
+  -- Occurrences for "Create landing page"
+  ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-dddd-dddd-dddd-333333333333', '2025-04-15', 9, 'Remote', 'High visibility', 3, 'days', NOW(), NOW()),
+  ('44444444-bbbb-bbbb-bbbb-444444444444', '33333333-dddd-dddd-dddd-333333333333', '2025-04-16', 9, 'Remote', 'High visibility', 3, 'days', NOW(), NOW()),
   
+  -- Occurrences for "Weekly Team Meeting"
+  ('44444444-cccc-cccc-cccc-444444444444', '33333333-ffff-ffff-ffff-333333333333', '2025-03-03', 10, 'Conference Room A', 'Team coordination', 1, 'hour', NOW(), NOW()),
+  ('44444444-dddd-dddd-dddd-444444444444', '33333333-ffff-ffff-ffff-333333333333', '2025-03-10', 10, 'Conference Room A', 'Team coordination', 1, 'hour', NOW(), NOW()),
+  
+  -- Occurrences for "Morning Workout"
+  ('44444444-eeee-eeee-eeee-444444444444', '33333333-abcd-abcd-abcd-333333333333', '2025-03-01', 7, 'Gym', 'Physical health', 1, 'hour', NOW(), NOW()),
+  ('44444444-ffff-ffff-ffff-444444444444', '33333333-abcd-abcd-abcd-333333333333', '2025-03-02', 7, 'Gym', 'Physical health', 1, 'hour', NOW(), NOW()),
+  
+  -- Occurrence for "Project Review"
+  ('44444444-1111-1111-1111-444444444444', '33333333-cdef-cdef-cdef-333333333333', '2025-03-15', 14, 'Conference Room B', 'Project progress', 2, 'hours', NOW(), NOW()),
+  
+  -- Occurrence for "Client Call"
+  ('44444444-9999-9999-9999-444444444444', '33333333-8888-8888-8888-333333333333', '2025-03-20', 15, 'Remote', 'Client communication', 1, 'hour', NOW(), NOW());
+
 -- ⚙️ rpm_block_massive_action_note
-INSERT INTO "rpm_block_massive_action_note" (id, action_id, text, type)
+INSERT INTO "rpm_block_massive_action_note" (id, occurrence_id, text, type)
 VALUES 
-  ('44444444-aaaa-aaaa-aaaa-444444444444', '33333333-dddd-dddd-dddd-333333333333', 'Sent first batch of surveys', 'Update'),
-  ('55555555-aaaa-aaaa-aaaa-555555555555', '33333333-dddd-dddd-dddd-333333333333', 'Completed 3K run', 'Progress'),
-  ('55555555-bbbb-bbbb-bbbb-555555555555', '33333333-dddd-dddd-dddd-333333333333', 'Improved flexibility', 'Update');
+  ('55555555-aaaa-aaaa-aaaa-555555555555', '44444444-9999-9999-9999-444444444444', 'Sent first batch of surveys', 'Update'),
+  ('55555555-bbbb-bbbb-bbbb-555555555555', '44444444-eeee-eeee-eeee-444444444444', 'Completed 3K run', 'Progress'),
+  ('55555555-cccc-cccc-cccc-555555555555', '44444444-eeee-eeee-eeee-444444444444', 'Improved flexibility', 'Update');
 
 -- ⚙️ rpm_block_massive_action_note_metric
 INSERT INTO "rpm_block_massive_action_note_metric" (note_id, name, value, unit, timestamp)
 VALUES 
-  ('44444444-aaaa-aaaa-aaaa-444444444444', 'Homepage Completion', 60, 'percent', NOW()),
-  ('55555555-aaaa-aaaa-aaaa-555555555555', 'Distance Covered', 3, 'kilometers', NOW());
-
--- ⚙️ rpm_massive_action_recurrence
-INSERT INTO "rpm_massive_action_recurrence" (id, action_id, day_of_week, created_at, updated_at)
-VALUES
-  ('66666666-aaaa-aaaa-aaaa-666666666666', '33333333-eeee-eeee-eeee-333333333333', 'Monday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-bbbb-bbbb-bbbb-666666666666', '33333333-dddd-dddd-dddd-333333333333', 'Friday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-cccc-cccc-cccc-666666666666', '33333333-eeee-eeee-eeee-333333333333', 'Wednesday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-dddd-dddd-dddd-666666666666', '33333333-eeee-eeee-eeee-333333333333', 'Friday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  -- New recurrence patterns for test cases
-  ('66666666-eeee-eeee-eeee-666666666666', '33333333-ffff-ffff-ffff-333333333333', 'Monday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-ffff-ffff-ffff-666666666666', '33333333-abcd-abcd-abcd-333333333333', 'Monday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-9999-9999-9999-666666666666', '33333333-abcd-abcd-abcd-333333333333', 'Wednesday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('66666666-cdef-cdef-cdef-666666666666', '33333333-abcd-abcd-abcd-333333333333', 'Friday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
--- ⚙️ rpm_massive_action_recurrence_exception
--- ⚙️ rpm_massive_action_recurrence_exception
-INSERT INTO "rpm_massive_action_recurrence_exception" (id, action_id, action_recurrence_id, exception_date, reason, created_at, updated_at)
-VALUES
-  -- Exception for the Monday recurrence pattern of the "Collect feedback from users" action
-  ('77777777-aaaa-aaaa-aaaa-777777777777', '33333333-eeee-eeee-eeee-333333333333', '66666666-cccc-cccc-cccc-666666666666', '2025-03-14', 'Holiday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  -- Exception for the Friday recurrence pattern of the "Collect feedback from users" action
-  -- Exceptions for the "Weekly Team Meeting" action
-  ('77777777-cccc-cccc-cccc-777777777777', '33333333-ffff-ffff-ffff-333333333333', '66666666-eeee-eeee-eeee-666666666666', '2025-03-10', 'Public holiday', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('77777777-9999-9999-9999-777777777777', '33333333-ffff-ffff-ffff-333333333333', '66666666-eeee-eeee-eeee-666666666666', '2025-04-07', 'Vacation', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  ('55555555-aaaa-aaaa-aaaa-555555555555', 'Homepage Completion', 60, 'percent', NOW()),
+  ('55555555-bbbb-bbbb-bbbb-555555555555', 'Distance Covered', 3, 'kilometers', NOW());

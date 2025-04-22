@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { format, startOfDay, isWithinInterval, isSameDay } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 interface CalendarDayProps {
   day: number;
@@ -65,31 +66,9 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
     }
   };
 
-  const getEventsForDay = (date: Date): MassiveAction[] => {
-    console.log('Processing date:', format(date, 'yyyy-MM-dd'));
-    console.log('Events:', events);
-
-    // Convert input date to local midnight for comparison
-    const localDate = startOfDay(date);
-    
-    return events.flatMap((event: CalendarEvent) => {
-      // For each event, check if the date matches
-      const eventDate = startOfDay(new Date(event.date));
-      
-      console.log('Event date:', {
-        event: format(eventDate, 'yyyy-MM-dd'),
-        current: format(localDate, 'yyyy-MM-dd')
-      });
-
-      if (isSameDay(localDate, eventDate)) {
-        console.log('Found matching event:', event);
-        return event.massiveActions;
-      }
-      return [];
-    });
-  };
-
-  const dayEvents = getEventsForDay(date);
+  // Find the event for this day from the events array
+  const dayEvent = events.find(event => event.date === dateKey);
+  const dayEvents = dayEvent ? dayEvent.massiveActions : [];
 
   const confirmRemoveAction = (actionId: string) => {
     setActionToRemove(actionId);
@@ -99,8 +78,15 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   const handleRemoveAction = () => {
     console.log('Removing handleRemoveAction action:', actionToRemove);
     if (actionToRemove) {
-      onActionRemove(actionToRemove, dateKey);
-      setActionToRemove(actionToRemove);
+      // Instead of removing the action, update its status to 'cancelled'
+      const actionToUpdate = dayEvents.find(action => action.id === actionToRemove);
+      if (actionToUpdate) {
+        const updatedAction = {
+          ...actionToUpdate,
+          actionStatus: 'cancelled' as 'new' | 'in_progress' | 'completed' | 'cancelled'
+        };
+        onActionClick(updatedAction);
+      }
       setIsDialogOpen(false);
     }
   };
@@ -135,7 +121,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
                     color: action.textColor || '#000000'
                   }}
                   onClick={(e) => {
-                    e.stopPropagation(); // Voorkom navigatie naar dagweergave
+                    e.stopPropagation();
                     onActionClick(action);
                   }}
                 >
@@ -143,10 +129,20 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
                   <span className="text-xs opacity-75 absolute bottom-0 right-1">
                     {`${action.hour !== undefined ? (action.hour < 10 ? `0${action.hour}` : action.hour) : '??'}:00`}
                   </span>
+                  {action.actionStatus && (
+                    <Badge 
+                      variant={action.actionStatus === 'completed' ? 'default' : 'secondary'} 
+                      className="absolute top-1 right-6 text-xs"
+                    >
+                      {action.actionStatus === 'completed' ? '✓' : 
+                       action.actionStatus === 'in_progress' ? '⟳' : 
+                       action.actionStatus === 'cancelled' ? '✕' : '•'}
+                    </Badge>
+                  )}
                   <button
                     className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
-                      e.stopPropagation(); // Voorkom navigatie naar dagweergave
+                      e.stopPropagation();
                       confirmRemoveAction(action.id);
                     }}
                   >
@@ -157,12 +153,24 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
               <TooltipContent>
                 <div className="max-w-xs">
                   <p className="font-bold">{action.text}</p>
-                  <p className="text-sm">
-                    {action.durationAmount} {action.durationUnit} - {action.leverage}
-                  </p>
+                  {action.leverage && (
+                    <p className="text-sm">
+                      {action.leverage}
+                    </p>
+                  )}
+                  {action.durationAmount && action.durationUnit && (
+                    <p className="text-sm">
+                      {action.durationAmount} {action.durationUnit}
+                    </p>
+                  )}
                   <p className="text-sm mt-1">
                     Tijd: {action.hour !== undefined ? `${action.hour < 10 ? `0${action.hour}` : action.hour}:00` : 'Niet gespecificeerd'}
                   </p>
+                  {action.location && (
+                    <p className="text-sm mt-1">
+                      Locatie: {action.location}
+                    </p>
+                  )}
                   {action.notes?.map((note: Note, index: number) => (
                     <p key={note.id} className="text-sm mt-1">
                       {index + 1}. {note.text}

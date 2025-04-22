@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { X } from "lucide-react"
 import { format } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 
 interface HourSlotProps {
   dateKey: string
@@ -139,7 +140,20 @@ const HourSlot: React.FC<HourSlotProps> = ({
             className="text-xs p-1 bg-blue-100 rounded mb-1 truncate"
             title={event.massiveActions.map(action => action.text).join(', ')}
           >
-            {event.massiveActions.map(action => action.text).join(', ')}
+            <div className="flex items-center gap-1">
+              <span>{event.massiveActions.map(action => action.text).join(', ')}</span>
+              {event.massiveActions.map(action => action.actionStatus && (
+                <Badge 
+                  key={action.id}
+                  variant={action.actionStatus === 'completed' ? 'default' : 'secondary'}
+                  className="text-[10px] px-1 py-0"
+                >
+                  {action.actionStatus === 'completed' ? '✓' : 
+                   action.actionStatus === 'in_progress' ? '⟳' : 
+                   action.actionStatus === 'cancelled' ? '✕' : '•'}
+                </Badge>
+              ))}
+            </div>
           </div>
         ))}
       </div>

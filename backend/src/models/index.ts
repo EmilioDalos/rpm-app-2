@@ -1,15 +1,14 @@
 import sequelize from '../config/db';
 import RpmBlock from './RpmBlock';
 import RpmBlockMassiveAction from './RpmBlockMassiveAction';
-import RpmBlockPurpose from './RpmBlockPurpose';
+import RpmMassiveActionOccurrence from './RpmMassiveActionOccurrence';
+import RpmBlockMassiveActionNote from './RpmBlockMassiveActionNote';
 import Category from './Category';
 import Role from './Role';
-import CategoryThreeToThrive from './CategoryThreeToThrive';
 import CategoryResult from './CategoryResult';
 import CategoryActionPlan from './CategoryActionPlan';
-import RpmMassiveActionRecurrence from './RpmMassiveActionRecurrence';
-import RpmMassiveActionRecurrenceException from './RpmMassiveActionRecurrenceException';
-import RpmBlockMassiveActionNote from './RpmBlockMassiveActionNote';
+import CategoryThreeToThrive from './CategoryThreeToThrive';
+import RpmBlockPurpose from './RpmBlockPurpose';
 
 // Define associations
 const setupAssociations = () => {
@@ -18,13 +17,13 @@ const setupAssociations = () => {
   // Category - Role associations
   Category.hasMany(Role, {
     foreignKey: 'category_id',
-    as: 'categoryRoles',
+    as: 'roles',
     onDelete: 'CASCADE'
   });
 
   Role.belongsTo(Category, {
     foreignKey: 'category_id',
-    as: 'roleCategory'
+    as: 'category'
   });
 
   // Category associations
@@ -36,14 +35,14 @@ const setupAssociations = () => {
   // Category - CategoryThreeToThrive associations
   Category.hasMany(CategoryThreeToThrive, {
     foreignKey: 'category_id',
-    as: 'CategoryThreeToThriveLists',
+    as: 'threeToThrive',
     onDelete: 'CASCADE'
   });
 
   // Category - CategoryResult associations
   Category.hasMany(CategoryResult, {
     foreignKey: 'category_id',
-    as: 'CategoryResults',
+    as: 'results',
     onDelete: 'CASCADE'
   });
 
@@ -55,7 +54,7 @@ const setupAssociations = () => {
   // Category - CategoryActionPlan associations
   Category.hasMany(CategoryActionPlan, {
     foreignKey: 'category_id',
-    as: 'CategoryActionPlans',
+    as: 'actionPlans',
     onDelete: 'CASCADE'
   });
 
@@ -71,85 +70,62 @@ RpmBlock.belongsTo(Category, {
 });
 
 RpmBlock.hasMany(RpmBlockMassiveAction, {
+  foreignKey: 'rpm_block_id',
   as: 'massiveActions',
-  foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });
 
 RpmBlockMassiveAction.belongsTo(RpmBlock, {
-  foreignKey: 'rpmBlockId',
+  foreignKey: 'rpm_block_id',
   as: 'rpmBlock'
 });
 
 // Add the missing category association for RpmBlockMassiveAction
 RpmBlockMassiveAction.belongsTo(Category, {
-  foreignKey: 'categoryId',
+  foreignKey: 'category_id',
   as: 'category'
 });
 
 Category.hasMany(RpmBlockMassiveAction, {
-  foreignKey: 'categoryId',
+  foreignKey: 'category_id',
   as: 'massiveActions'
 });
 
 // RpmBlockPurpose associaties
 RpmBlock.hasMany(RpmBlockPurpose, {
+  foreignKey: 'rpm_block_id',
   as: 'purposes',
-  foreignKey: 'rpmBlockId',
   onDelete: 'CASCADE'
 });
 
 RpmBlockPurpose.belongsTo(RpmBlock, {
-  foreignKey: 'rpmBlockId',
+  foreignKey: 'rpm_block_id',
   as: 'rpmBlock'
 });
 
-RpmBlockMassiveAction.hasMany(RpmMassiveActionRecurrence, { 
-  foreignKey: 'actionId', 
-  as: 'recurrencePattern',
+RpmBlockMassiveAction.hasMany(RpmMassiveActionOccurrence, { 
+  foreignKey: 'action_id', 
+  as: 'occurrences',
   onDelete: 'CASCADE'
 });
 
-RpmMassiveActionRecurrence.belongsTo(RpmBlockMassiveAction, { 
-  foreignKey: 'actionId',
+RpmMassiveActionOccurrence.belongsTo(RpmBlockMassiveAction, { 
+  foreignKey: 'action_id',
   as: 'action'
 });
 
-RpmBlockMassiveAction.hasMany(RpmMassiveActionRecurrenceException, { 
-  foreignKey: 'actionId', 
-  as: 'recurrenceExceptions',
-  onDelete: 'CASCADE'
-});
-
-RpmMassiveActionRecurrenceException.belongsTo(RpmBlockMassiveAction, { 
-  foreignKey: 'actionId',
-  as: 'action'
-});
-
-RpmMassiveActionRecurrence.hasMany(RpmMassiveActionRecurrenceException, {
-  foreignKey: 'actionRecurrenceId',
-  as: 'exceptions',
-  onDelete: 'CASCADE'
-});
-
-RpmMassiveActionRecurrenceException.belongsTo(RpmMassiveActionRecurrence, {
-  foreignKey: 'actionRecurrenceId',
-  as: 'recurrence'
-});
-
-// Add associations for notes
-RpmBlockMassiveAction.hasMany(RpmBlockMassiveActionNote, {
-  foreignKey: 'actionId',
+RpmMassiveActionOccurrence.hasMany(RpmBlockMassiveActionNote, {
+  foreignKey: 'occurrence_id',
   as: 'notes',
   onDelete: 'CASCADE'
 });
 
-RpmBlockMassiveActionNote.belongsTo(RpmBlockMassiveAction, {
-  foreignKey: 'actionId',
-  as: 'action'
+RpmBlockMassiveActionNote.belongsTo(RpmMassiveActionOccurrence, {
+  foreignKey: 'occurrence_id',
+  as: 'occurrence'
 });
-  
-  console.log('Associations set up successfully');
+
+console.log('Associations set up successfully');
 };
 
 // Optioneel: alleen connectie testen (zonder sync)
@@ -167,15 +143,14 @@ const testDatabaseConnection = async () => {
 export {
   RpmBlock,
   RpmBlockMassiveAction,
-  RpmBlockPurpose,
+  RpmMassiveActionOccurrence,
+  RpmBlockMassiveActionNote,
   Category,
   Role,
-  CategoryThreeToThrive,
   CategoryResult,
   CategoryActionPlan,
-  RpmMassiveActionRecurrence,
-  RpmMassiveActionRecurrenceException,
-  RpmBlockMassiveActionNote,
+  CategoryThreeToThrive,
+  RpmBlockPurpose,
   setupAssociations,
   testDatabaseConnection
 };
