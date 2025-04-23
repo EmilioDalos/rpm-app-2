@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MassiveAction, CalendarEvent, DayOfWeek, Note } from '@/types';
+import { MassiveAction, CalendarEvent, CalendarEventDay, DayOfWeek, Note } from '@/types';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,11 +14,11 @@ interface CalendarDayProps {
   day: number;
   month: number;
   year: number;
-  events: CalendarEvent[];
+  events: CalendarEventDay[];
   dateKey: string;
   isCurrentDay: boolean;
   isCurrentMonth?: boolean;
-  onActionClick: (action: MassiveAction) => void;
+  onActionClick: (action: CalendarEvent) => void;
   onDrop: (item: MassiveAction, dateKey: string) => void;
   onActionRemove: (actionId: string, dateKey: string) => void;
   viewMode?: 'day' | 'week' | 'month';
@@ -68,7 +68,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
 
   // Find the event for this day from the events array
   const dayEvent = events.find(event => event.date === dateKey);
-  const dayEvents = dayEvent ? dayEvent.massiveActions : [];
+  const dayEvents = dayEvent ? dayEvent.events : [];
 
   const confirmRemoveAction = (actionId: string) => {
     setActionToRemove(actionId);
@@ -76,18 +76,18 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   };
 
   const handleRemoveAction = () => {
-    console.log('Removing handleRemoveAction action:', actionToRemove);
     if (actionToRemove) {
-      // Instead of removing the action, update its status to 'cancelled'
-      const actionToUpdate = dayEvents.find(action => action.id === actionToRemove);
-      if (actionToUpdate) {
-        const updatedAction = {
-          ...actionToUpdate,
-          actionStatus: 'cancelled' as 'new' | 'in_progress' | 'completed' | 'cancelled'
-        };
-        onActionClick(updatedAction);
+      // Find the action to be removed
+      const actionToBeRemoved = dayEvents.find((action: CalendarEvent) => action.id === actionToRemove);
+      if (actionToBeRemoved) {
+        console.log(`Removing action from calendar: actionId=${actionToRemove}, dateKey=${dateKey}`);
+        // Call onActionRemove with the action ID and date key
+        onActionRemove(actionToRemove, dateKey);
+      } else {
+        console.error(`Action with ID ${actionToRemove} not found in dayEvents`);
       }
       setIsDialogOpen(false);
+      setActionToRemove(null);
     }
   };
 
@@ -111,7 +111,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       </div>
       <ScrollArea className="h-24">
         <TooltipProvider>
-          {dayEvents.map((action: MassiveAction) => (
+          {dayEvents.map((action: CalendarEvent) => (
             <Tooltip key={action.id}>
               <TooltipTrigger asChild>
                 <div
@@ -129,14 +129,16 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
                   <span className="text-xs opacity-75 absolute bottom-0 right-1">
                     {`${action.hour !== undefined ? (action.hour < 10 ? `0${action.hour}` : action.hour) : '??'}:00`}
                   </span>
-                  {action.actionStatus && (
-                    <Badge 
-                      variant={action.actionStatus === 'completed' ? 'default' : 'secondary'} 
-                      className="absolute top-1 right-6 text-xs"
-                    >
-                      {action.actionStatus === 'completed' ? '✓' : 
-                       action.actionStatus === 'in_progress' ? '⟳' : 
-                       action.actionStatus === 'cancelled' ? '✕' : '•'}
+                  {action.status && (
+                    <Badge variant="outline" className="ml-2">
+                      {action.status === 'completed' && '✓'}
+                      {action.status === 'in_progress' && '⟳'}
+                      {action.status === 'cancelled' && '✕'}
+                      {action.status === 'new' && '•'}
+                      {action.status === 'planned' && '📅'}
+                      {action.status === 'leveraged' && '⚡'}
+                      {action.status === 'not_needed' && '❌'}
+                      {action.status === 'moved' && '↗️'}
                     </Badge>
                   )}
                   <button

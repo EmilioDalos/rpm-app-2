@@ -114,6 +114,18 @@ RpmMassiveActionOccurrence.belongsTo(RpmBlockMassiveAction, {
   as: 'action'
 });
 
+// Add direct notes association for RpmBlockMassiveAction
+RpmBlockMassiveAction.hasMany(RpmBlockMassiveActionNote, {
+  foreignKey: 'action_id',
+  as: 'notes',
+  onDelete: 'CASCADE'
+});
+
+RpmBlockMassiveActionNote.belongsTo(RpmBlockMassiveAction, {
+  foreignKey: 'action_id',
+  as: 'action'
+});
+
 RpmMassiveActionOccurrence.hasMany(RpmBlockMassiveActionNote, {
   foreignKey: 'occurrence_id',
   as: 'notes',

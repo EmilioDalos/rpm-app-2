@@ -35,7 +35,7 @@ class Category extends Model<CategoryAttributes, CategoryCreationAttributes> {
   public updatedAt!: Date;
 
   // Define associations
-  public readonly roles?: Role[];
+  public roles?: Role[];
   public readonly CategoryThreeToThrives?: CategoryThreeToThrive[];
   public readonly CategoryResults?: CategoryResult[];
   public readonly CategoryActionPlans?: CategoryActionPlan[];

@@ -67,7 +67,6 @@ export const createRole = async (req: Request, res: Response) => {
     }
 
     const newRole: RoleType = {
-      id: uuidv4(),
       ...roleData,
       createdAt: new Date(),
       updatedAt: new Date(),

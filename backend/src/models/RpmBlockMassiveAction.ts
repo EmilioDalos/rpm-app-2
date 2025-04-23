@@ -11,7 +11,7 @@ interface RpmBlockMassiveActionAttributes {
   color?: string;
   textColor?: string;
   priority?: number;
-  actionStatus: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'new' | 'planned' | 'in_progress' | 'leveraged' | 'completed' | 'cancelled' | 'not_needed' | 'moved';
   startDate?: Date;
   endDate?: Date;
   isDateRange?: boolean;
@@ -33,7 +33,7 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public color?: string;
   public textColor?: string;
   public priority?: number;
-  public actionStatus!: 'new' | 'in_progress' | 'completed' | 'cancelled' | 'not_needed' | 'moved'; 
+  public status!: 'new' | 'planned' | 'in_progress' | 'leveraged' | 'completed' | 'cancelled' | 'not_needed' | 'moved';
   public startDate?: Date;
   public endDate?: Date;
   public isDateRange?: boolean;
@@ -78,11 +78,10 @@ RpmBlockMassiveAction.init({
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  actionStatus: {
-    type: DataTypes.ENUM('new', 'in_progress', 'completed', 'cancelled'),
+  status: {
+    type: DataTypes.ENUM('new', 'planned', 'in_progress', 'leveraged', 'completed', 'cancelled', 'not_needed', 'moved'),
     allowNull: false,
     defaultValue: 'new',
-    field: 'status'
   },
   startDate: {
     type: DataTypes.DATE,
@@ -142,6 +141,7 @@ RpmBlockMassiveAction.init({
   underscored: true,
 });
 
-// We'll set up associations in the index.ts file instead to avoid circular dependencies
+RpmBlockMassiveAction.belongsTo(RpmBlock, { foreignKey: 'rpmBlockId' });
+RpmBlockMassiveAction.belongsTo(Category, { foreignKey: 'categoryId' });
 
 export default RpmBlockMassiveAction;

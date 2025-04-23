@@ -3,13 +3,13 @@ import { useDrag } from 'react-dnd'
 import { Badge } from "@/components/ui/badge"
 import { MassiveAction } from '@/types'
 
-interface ActionItemProps {
+interface EventItemProps {
   action: MassiveAction
   onClick: () => void
   isPlanned: boolean
 }
 
-const ActionItem: React.FC<ActionItemProps> = ({ action, onClick }) => {
+const EventItem: React.FC<EventItemProps> = ({ action, onClick }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'action',
     item: action,
@@ -35,13 +35,16 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick }) => {
       <p className="text-sm font-medium mt-1">{action.text}</p>
       <div className="flex gap-2 mt-1">
        
-        {action.actionStatus && (
-          <Badge 
-            variant={action.actionStatus === 'completed' ? 'default' : 'secondary'}
-          >
-            {action.actionStatus === 'completed' ? 'Voltooid' : 
-             action.actionStatus === 'in_progress' ? 'In uitvoering' : 
-             action.actionStatus === 'cancelled' ? 'Geannuleerd' : 'Nieuw'}
+        {action.status && (
+          <Badge variant="outline" className="ml-2">
+            {action.status === 'completed' && 'Voltooid'}
+            {action.status === 'in_progress' && 'In uitvoering'}
+            {action.status === 'cancelled' && 'Geannuleerd'}
+            {action.status === 'new' && 'Nieuw'}
+            {action.status === 'planned' && 'Gepland'}
+            {action.status === 'leveraged' && 'Geleverd'}
+            {action.status === 'not_needed' && 'Niet nodig'}
+            {action.status === 'moved' && 'Verplaatst'}
           </Badge>
         )}
       </div>
@@ -54,5 +57,4 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, onClick }) => {
   )
 }
 
-export default ActionItem
-
+export default EventItem 

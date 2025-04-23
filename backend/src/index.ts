@@ -7,6 +7,7 @@ import categoryRoutes from './routes/categories';
 import roleRoutes from './routes/roles';
 import rpmBlockRoutes from './routes/rpmblocks';
 import calendarRoutes from './routes/calendar-events';
+import massiveActionRoutes from './routes/massive-actions';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/rpmblocks', rpmBlockRoutes);
 app.use('/api/calendar-events', calendarRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/massive-actions', massiveActionRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

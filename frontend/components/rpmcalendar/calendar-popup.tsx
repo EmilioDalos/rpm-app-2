@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MassiveAction, Note, DayOfWeek } from '@/types'
+import { MassiveAction, CalendarEvent, Note, DayOfWeek } from '@/types'
 import { Checkbox } from "@/components/ui/checkbox"
 import { MoreHorizontal, Pencil, X } from 'lucide-react'
 import { format } from 'date-fns'
@@ -23,11 +23,11 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 const Tiptap = dynamic(() => import('./tiptap-editor'), { ssr: false });
 
 interface CalendarPopupProps {
-  action: MassiveAction
+  action: CalendarEvent
   dateKey: string
   isOpen: boolean
   onClose: () => void
-  onUpdate: (updatedAction: MassiveAction, dateKey: string) => void
+  onUpdate: (updatedAction: CalendarEvent, dateKey: string) => void
 }
 
 const DAYS_OF_WEEK: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -64,7 +64,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   const [isPlanned, setIsPlanned] = useState(
     action.startDate != null || action.endDate != null
   )
-  const [actionStatus, setActionStatus] = useState<'new' | 'in_progress' | 'completed' | 'cancelled'>(action.actionStatus || 'new')
+  const [status, setStatus] = useState<'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved'>(action.status || 'new')
   useEffect(() => {
     // Initialize notes from the action prop
     setNotes(action.notes || []);
@@ -89,7 +89,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
     }
     setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0);
     setIsPlanned((!!action.startDate || !!action.endDate) && !isRecurring);
-    setActionStatus(action.actionStatus || 'new');
+    setStatus(action.status || 'new');
     
     // Log the notes for debugging
     console.log('Action notes loaded:', action.notes);
@@ -207,7 +207,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
   };
 
   const handleSave = useCallback(() => {
-    const updatedAction: MassiveAction = {
+    const updatedAction: CalendarEvent = {
       ...action,
       text: title,
       notes,
@@ -221,11 +221,11 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
         actionId: action.id,
         dayOfWeek: day
       })) : undefined,
-      actionStatus
+      status
     };
     onUpdate(updatedAction, dateKey);
     onClose();
-  }, [action, title, notes, isCompleted, isDateRange, startDate, endDate, selectedHour, isRecurring, selectedDays, actionStatus, dateKey, onUpdate, onClose]);
+  }, [action, title, notes, isCompleted, isDateRange, startDate, endDate, selectedHour, isRecurring, selectedDays, status, dateKey, onUpdate, onClose]);
 
   const timeOptions = generateTimeOptions();
 
@@ -245,21 +245,24 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
               placeholder="Voer een titel in"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              value={actionStatus} 
-              onValueChange={(value: 'new' | 'in_progress' | 'completed' | 'cancelled') => setActionStatus(value)}
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select
+              value={status}
+              onValueChange={(value: 'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved') => setStatus(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecteer status" />
+                <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new">Nieuw</SelectItem>
-                <SelectItem value="planned">Gepland</SelectItem>
                 <SelectItem value="in_progress">In uitvoering</SelectItem>
                 <SelectItem value="completed">Voltooid</SelectItem>
                 <SelectItem value="cancelled">Geannuleerd</SelectItem>
+                <SelectItem value="planned">Gepland</SelectItem>
+                <SelectItem value="leveraged">Geleverd</SelectItem>
+                <SelectItem value="not_needed">Niet nodig</SelectItem>
+                <SelectItem value="moved">Verplaatst</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -268,7 +271,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
             <span className="text-sm">{action.durationAmount} {action.durationUnit} - {action.leverage}</span>
           </div>
           
-          {actionStatus === 'planned' && !isDateRange && (    
+          {action.status === 'planned' && !isDateRange && (    
              <div className="grid gap-2">
                 <Label htmlFor="time">Gepland</Label>
                 <div className="flex items-center space-x-2">

@@ -9,7 +9,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import CalendarDay from './calendar-day';
 import HourSlot from './hour-slot';
-import ActionItem from './action-item';
 import CategoryBar from './category-bar';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { format, addDays, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
@@ -22,7 +21,7 @@ import { useDrag } from 'react-dnd';
 import { Badge } from "@/components/ui/badge";
 import CalendarPopup from './calendar-popup';
 
-import { Category, RpmBlock, MassiveAction, CalendarEvent, Note } from '@/types';
+import { Category, RpmBlock, MassiveAction, CalendarEvent, CalendarEventDay, Note } from '@/types';
 
 import MiniCalendar from './mini-calendar';
 
@@ -54,10 +53,10 @@ interface DbCalendarEvent {
 const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [rpmBlocks, setRpmBlocks] = useState<RpmBlock[]>([]);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEventDay[]>([]);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
-  const [selectedAction, setSelectedAction] = useState<MassiveAction | null>(null);
+  const [selectedAction, setSelectedAction] = useState<CalendarEvent | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
@@ -94,7 +93,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       setCategories([
         { 
           id: '1', 
-          name: 'Work', 
+          name: 'NEEDS to be defined Professional', 
           type: 'professional', 
           description: 'Work related tasks',
           vision: '',
@@ -110,25 +109,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         },
         { 
           id: '2', 
-          name: 'Personal', 
+          name: 'NEEDS to be defined Personal', 
           type: 'personal', 
           description: 'Personal tasks',
-          vision: '',
-          purpose: '',
-          roles: [],
-          threeToThrive: [],
-          resources: '',
-          results: [],
-          actionPlans: [],
-          imageBlob: '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        { 
-          id: '3', 
-          name: 'Health', 
-          type: 'personal', 
-          description: 'Health related tasks',
           vision: '',
           purpose: '',
           roles: [],
@@ -234,31 +217,59 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const data = await response.json();
       console.log(`Received calendar events from API:`, data);
       
-      // Convert the API response format to our CalendarEvent format
-      const convertedEvents: CalendarEvent[] = data.map((day: any) => ({
-        id: day.date,
+      // Convert API days into CalendarEventDay format
+      const convertedEventsByDay: CalendarEventDay[] = data.map((day: any) => ({
         date: day.date,
-        massiveActions: day.massiveActions.map((action: any) => ({
-          ...action,
-          hour: action.hour ? parseInt(action.hour) : undefined,
+        events: day.events.map((evt: any) => ({
+          date: evt.date,
+          id: evt.id,
+          text: evt.text,
+          durationAmount: evt.durationAmount ?? 0,
+          durationUnit: evt.durationUnit ?? 'minutes',
+          priority: evt.priority ?? 0,
+          color: evt.color ?? '',
+          textColor: evt.textColor ?? '',
           startDate: day.date,
           endDate: day.date,
+          status: evt.status ?? 'planned',
+          leverage: evt.leverage,
+          location: evt.location,
+          notes: evt.notes ?? [],
+          key: evt.key,
+          hour: evt.hour != null ? parseInt(evt.hour, 10) : undefined,
+          isDateRange: evt.isDateRange,
+          selectedDays: evt.selectedDays,
+          missedDate: evt.missedDate,
+          categoryId: evt.categoryId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        })),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        }))
       }));
       
-      console.log(`Converted ${convertedEvents.length} days with events:`, convertedEvents);
-      setCalendarEvents(convertedEvents);
+      console.log(`Converted ${convertedEventsByDay.length} days with events:`, convertedEventsByDay);
+      setCalendarEvents(convertedEventsByDay);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       setCalendarEvents([]);
     }
   };
 
-  const handleActionClick = async (action: MassiveAction, dateKey: string) => {
+  // Utility function to convert MassiveAction to CalendarEvent
+  const massiveActionToCalendarEvent = (action: MassiveAction, date: string): CalendarEvent => {
+    return {
+      ...action,
+      date: date,
+    } as CalendarEvent;
+  };
+
+  // Utility function to convert CalendarEvent to MassiveAction (if needed)
+  const calendarEventToMassiveAction = (event: CalendarEvent): MassiveAction => {
+    // Create a new object without the 'date' property
+    const { date, ...massiveActionProps } = event;
+    return massiveActionProps as MassiveAction;
+  };
+
+  const handleActionClick = async (action: CalendarEvent, dateKey: string) => {
     try {
       // Fetch the complete action data including notes
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
@@ -292,82 +303,51 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleActionUpdate = async (updatedAction: MassiveAction, dateKey: string) => {
     try {
-      console.log('Updating action:', updatedAction);
-      
-      // Update the calendar event via API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text: updatedAction.text || 'Nieuwe actie',
-          description: updatedAction.leverage || '',
-          startDate: updatedAction.startDate,
-          endDate: updatedAction.endDate,
-          isDateRange: updatedAction.isDateRange,
-          hour: updatedAction.hour,
-          categoryId: updatedAction.categoryId,
-          notes: updatedAction.notes || [],
-          recurrencePattern: updatedAction.recurrencePattern || []
-        }),
+      // Update the action in the RPM blocks
+      const updatedBlocks = rpmBlocks.map(block => {
+        if (block.massiveActions?.some(a => a.id === updatedAction.id)) {
+          return {
+            ...block,
+            massiveActions: block.massiveActions.map(a =>
+              a.id === updatedAction.id ? updatedAction : a
+            )
+          };
+        }
+        return block;
       });
+      setRpmBlocks(updatedBlocks);
 
-      if (!response.ok) {
-        throw new Error('Failed to update calendar event');
+      // Update the action via the massive-actions API
+      if (updatedAction.startDate) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedAction.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: updatedAction.text || 'Nieuwe actie',
+            description: updatedAction.leverage || '',
+            startDate: updatedAction.startDate,
+            endDate: updatedAction.endDate,
+            isDateRange: updatedAction.isDateRange,
+            hour: updatedAction.hour,
+            categoryId: updatedAction.categoryId,
+            notes: updatedAction.notes || [],
+            status: updatedAction.status,
+            location: updatedAction.location,
+            leverage: updatedAction.leverage,
+            durationAmount: updatedAction.durationAmount,
+            durationUnit: updatedAction.durationUnit,
+            color: updatedAction.color,
+            textColor: updatedAction.textColor,
+            priority: updatedAction.priority
+          }),
+        });
+
+        // Refresh the calendar events
+        await fetchCalendarEvents();
       }
 
-      // Get the updated action with notes from the response
-      const updatedActionWithNotes = await response.json();
-      
-      // Update local calendar events state
-      setCalendarEvents((prevEvents) => {
-        const newEvents = [...prevEvents];
-        const eventIndex = newEvents.findIndex(event => event.date === dateKey);
-        
-        if (eventIndex >= 0) {
-          // Update existing event
-          newEvents[eventIndex] = {
-            ...newEvents[eventIndex],
-            massiveActions: newEvents[eventIndex].massiveActions.map(action =>
-              action.id === updatedAction.id ? updatedActionWithNotes : action
-            ),
-            updatedAt: new Date().toISOString()
-          };
-        } else {
-          // Create new event
-          newEvents.push({
-            id: `${dateKey}-${updatedAction.id}`,
-            date: dateKey,
-            massiveActions: [updatedActionWithNotes],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-        
-        return newEvents;
-      });
-
-      // Update RPM blocks if the action exists there
-      setRpmBlocks((prevBlocks) =>
-        prevBlocks.map((block) => {
-          if (block.massiveActions?.some(action => action.id === updatedAction.id)) {
-            return {
-              ...block,
-              massiveActions: block.massiveActions.map(action =>
-                action.id === updatedAction.id ? updatedActionWithNotes : action
-              ),
-              updatedAt: new Date()
-            };
-          }
-          return block;
-        })
-      );
-
-      // Refresh data
-      await Promise.all([
-        fetchCalendarEvents(),
-        fetchRpmBlocks()
-      ]);
-
+      // Refresh the RPM blocks to get the latest data
+      await fetchRpmBlocks();
     } catch (error) {
       console.error('Error updating action:', error);
     }
@@ -375,40 +355,73 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
     try {
-      console.log('Dropping item:', item);
-      console.log('Date key:', dateKey);
-      
-      // Set the action status to 'new' when dropped
+      // Set the action status to 'planned' when dropped into the calendar
       const updatedItem = {
         ...item,
-        actionStatus: 'new' as 'new' | 'in_progress' | 'completed' | 'cancelled'
+        status: 'planned' as const,
+        startDate: dateKey,
+        endDate: dateKey
       };
+
+      // Convert to CalendarEvent for type safety (with date field)
+      const calendarEvent = massiveActionToCalendarEvent(updatedItem, dateKey);
       
-      // Update the calendar event via API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedItem.id}`, {
+      let updatedActionWithNotes;
+
+      // Update via the massive-actions API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedItem.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: updatedItem.text || 'Nieuwe actie',
           description: updatedItem.leverage || '',
-          startDate: dateKey,
-          endDate: dateKey,
-          isDateRange: false,
+          startDate: updatedItem.startDate,
+          endDate: updatedItem.endDate,
+          isDateRange: updatedItem.isDateRange,
           hour: updatedItem.hour,
           categoryId: updatedItem.categoryId,
           notes: updatedItem.notes || [],
-          recurrencePattern: [],
-          actionStatus: updatedItem.actionStatus
+          status: updatedItem.status,
+          location: updatedItem.location,
+          leverage: updatedItem.leverage,
+          durationAmount: updatedItem.durationAmount,
+          durationUnit: updatedItem.durationUnit,
+          color: updatedItem.color,
+          textColor: updatedItem.textColor,
+          priority: updatedItem.priority
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update calendar event');
+        // Fall back to the calendar-events API if the massive-actions API fails
+        console.log('Falling back to calendar-events API');
+        const fallbackResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: updatedItem.text || 'Nieuwe actie',
+            description: updatedItem.leverage || '',
+            startDate: updatedItem.startDate,
+            endDate: updatedItem.endDate,
+            isDateRange: updatedItem.isDateRange,
+            hour: updatedItem.hour,
+            categoryId: updatedItem.categoryId,
+            notes: updatedItem.notes || [],
+            status: updatedItem.status
+          }),
+        });
+        
+        if (!fallbackResponse.ok) {
+          throw new Error('Failed to update action via both APIs');
+        }
+        
+        updatedActionWithNotes = await fallbackResponse.json();
+        console.log('Action updated via fallback API:', updatedActionWithNotes);
+      } else {
+        updatedActionWithNotes = await response.json();
+        console.log('Action updated via massive-actions API:', updatedActionWithNotes);
       }
 
-      // Get the updated action with notes from the response
-      const updatedActionWithNotes = await response.json();
-      
       // Update local calendar events state
       setCalendarEvents((prevEvents) => {
         const newEvents = [...prevEvents];
@@ -418,19 +431,15 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           // Update existing event
           newEvents[eventIndex] = {
             ...newEvents[eventIndex],
-            massiveActions: newEvents[eventIndex].massiveActions.map(action =>
+            events: newEvents[eventIndex].events.map(action =>
               action.id === updatedItem.id ? updatedActionWithNotes : action
-            ),
-            updatedAt: new Date().toISOString()
+            )
           };
         } else {
           // Create new event
           newEvents.push({
-            id: `${dateKey}-${updatedItem.id}`,
             date: dateKey,
-            massiveActions: [updatedActionWithNotes],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            events: [updatedActionWithNotes]
           });
         }
         
@@ -465,25 +474,12 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
   };
 
   const handleActionRemove = async (actionId: string, dateKey: string) => {
-    // Update the local state to remove the action from the calendar view
-    console.log('Removing action:', actionId, dateKey);
-    setCalendarEvents((prevEvents) =>
-      prevEvents.map((event) => {
-        if (event.date === dateKey) {
-          return {
-            ...event,
-            massiveActions: event.massiveActions.filter((action) => action.id !== actionId),
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return event;
-      })
-    );
-  
     try {
+      console.log(`Removing action: actionId=${actionId}, dateKey=${dateKey}`);
+      
       // Find the action to check if it has a recurrence pattern
       const actionToRemove = calendarEvents
-        .flatMap(event => event.massiveActions)
+        .flatMap(event => event.events)
         .find(action => action.id === actionId);
 
       if (!actionToRemove) {
@@ -492,7 +488,11 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       }
 
       // Use the DELETE endpoint to remove the event from the calendar
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}/${dateKey}`, {
+      // Make sure both actionId and dateKey are properly passed
+      const deleteUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${actionId}/${dateKey}`;
+      console.log(`Sending DELETE request to: ${deleteUrl}`);
+      
+      const response = await fetch(deleteUrl, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -502,6 +502,21 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         console.error('Error response from server:', errorData);
         throw new Error(`Failed to remove action: ${response.status}`);
       }
+      
+      console.log(`Action successfully removed from the server`);
+      
+      // Update the local state to remove the action from the calendar view
+      setCalendarEvents((prevEvents) =>
+        prevEvents.map((event) => {
+          if (event.date === dateKey) {
+            return {
+              ...event,
+              events: event.events.filter((action) => action.id !== actionId)
+            };
+          }
+          return event;
+        })
+      );
       
       // Refresh the RPM blocks to get the latest data
       await fetchRpmBlocks();
@@ -557,6 +572,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const isCurrentDay = isSameDay(currentDay, todayDate);
       const isCurrentMonth = currentDay.getMonth() === currentDate.getMonth();
 
+      // Filter events for this day
       const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
 
       calendarDays.push(
@@ -595,6 +611,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       const isCurrentDay = isSameDay(currentDay, todayDate);
       console.log(`Rendering week calendar for ${currentDate.toISOString()}:`, )  
 
+      // Filter events for this day
       const eventsForDay = calendarEvents.filter((event) => event.date === dateKey);
 
       calendarDays.push(
@@ -624,10 +641,10 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
     const isCurrentDay = isSameDay(currentDate, todayDate);
 
     // Filter events for the current day, including date range events
-    const eventsForDay = calendarEvents.filter((event) => {
-      if (!event.date) return false;
+    const eventsForDay = calendarEvents.filter((eventDay) => {
+      if (!eventDay.date) return false;
 
-      return event.massiveActions.some(action => {
+      return eventDay.events.some(action => {
         if (action.isDateRange && action.startDate && action.endDate) {
           const start = new Date(action.startDate);
           const end = new Date(action.endDate);
@@ -640,7 +657,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           return current >= start && current <= end;
         }
         
-        return event.date === dateKey;
+        return eventDay.date === dateKey;
       });
     });
 
@@ -661,8 +678,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             <div className="absolute w-full h-[15px] border-t border-gray-100" style={{ top: '45px' }} />
             
             {/* Events die in dit uur vallen */}
-            {eventsForDay.map((event) => 
-              event.massiveActions
+            {eventsForDay.map((eventDay) => 
+              eventDay.events
                 .filter(action => {
                   const actionHour = action.hour !== undefined ? Math.floor(action.hour) : 0;
                   return actionHour === hour;
@@ -755,26 +772,67 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const isActionPlanned = (actionId: string, massiveAction: MassiveAction) => {
     const hasStartEndDate = !!massiveAction.startDate && !!massiveAction.endDate;
-    const hasRecurrence = Array.isArray(massiveAction.recurrencePattern) && massiveAction.recurrencePattern.length > 0;
     let isInCalendar = false;  
     
-    if (hasStartEndDate && !hasRecurrence) {
+    if (hasStartEndDate) {
       isInCalendar = true;  
     }
-    if (!hasStartEndDate && hasRecurrence) {
-      isInCalendar = true;  
-    }
-    if (hasStartEndDate && hasRecurrence) { 
+    if (!hasStartEndDate) {
       isInCalendar = true;  
     }
     // Check if the action has a recurrence pattern
-    const hasRecurrencePattern = (massiveAction.recurrencePattern?.length ?? 0) > 0;
          
     // An action is considered planned if it's in the calendar or has a recurrence pattern
-    return isInCalendar || hasRecurrencePattern;
+    return isInCalendar;
   };
 
-  const ActionItem = ({ action, isPlanned, onClick }: { action: any; isPlanned: boolean; onClick: () => void }) => {
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'planned':
+        return 'default';
+      case 'new':
+        return 'secondary';
+      case 'in_progress':
+        return 'destructive';
+      case 'leveraged':
+        return 'destructive';
+      case 'moved':
+        return 'destructive';
+      case 'not_needed':
+        return 'destructive';
+      case 'cancelled':
+        return 'destructive';
+      case 'completed':
+        return 'destructive';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'planned':
+        return 'Gepland';
+      case 'new':
+        return 'Nieuw';
+      case 'in_progress':
+        return 'In uitvoering';
+      case 'leveraged':
+        return 'Geleverd';
+      case 'moved':
+        return 'Verplaatst';
+      case 'not_needed':
+        return 'Niet meer nodig';
+      case 'cancelled':
+        return 'Geannuleerd';
+      case 'completed':
+        return 'Voltooid';
+      default:
+        return status;
+    }
+  };
+
+  const EventItem = ({ action, isPlanned, onClick }: { action: MassiveAction; isPlanned: boolean; onClick: () => void }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
       type: 'action',
       item: action,
@@ -802,9 +860,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         });
         setRpmBlocks(updatedBlocks);
 
-        // Als de actie gepland is, update deze in de kalender via de API
+        // Update the action via the massive-actions API
         if (updatedAction.startDate) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedAction.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -816,15 +874,22 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
               hour: updatedAction.hour,
               categoryId: updatedAction.categoryId,
               notes: updatedAction.notes || [],
-              recurrencePattern: updatedAction.recurrencePattern || []
+              status: updatedAction.status,
+              location: updatedAction.location,
+              leverage: updatedAction.leverage,
+              durationAmount: updatedAction.durationAmount,
+              durationUnit: updatedAction.durationUnit,
+              color: updatedAction.color,
+              textColor: updatedAction.textColor,
+              priority: updatedAction.priority
             }),
           });
 
-          // Ververs de kalendergebeurtenissen
+          // Refresh the calendar events
           await fetchCalendarEvents();
         }
 
-        // Ververs de RPM blocks om de laatste data te krijgen
+        // Refresh the RPM blocks to get the latest data
         await fetchRpmBlocks();
       } catch (error) {
         console.error('Error updating action:', error);
@@ -837,12 +902,20 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           ref={drag}
           className={cn(
             "mb-2 p-2 rounded-md shadow-sm cursor-pointer",
-            action.status === "planned" ? "bg-green-100" : "bg-gray-100",
+            {
+              'bg-green-100': action.status === 'planned',
+              'bg-blue-100': action.status === 'new',
+              'bg-yellow-100': action.status === 'in_progress',
+              'bg-purple-100': action.status === 'leveraged',
+              'bg-gray-100': action.status === 'moved' || action.status === 'not_needed',
+              'bg-red-100': action.status === 'cancelled',
+              'bg-emerald-100': action.status === 'completed',
+            },
             isDragging ? "opacity-50" : ""
           )}
           onClick={async () => {
             try {
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${action.id}`);
               if (!response.ok) throw new Error('Failed to fetch action details');
               const data = await response.json();
               setPopupAction({ ...action, notes: data.notes || [] });
@@ -853,34 +926,41 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             setShowPopup(true);
           }}
         >
-          <div className="flex items-center justify-between">
-            <Badge variant={action.actionStatus  === 'new' ? 'default' : 'secondary'}>
-              {action.actionStatus}
+          <div className="flex items-center justify-between mb-2">
+            <Badge 
+              variant={getBadgeVariant(action.status)}
+              className="capitalize"
+            >
+              {getStatusLabel(action.status)}
             </Badge>
             <span className="text-xs">{action.durationAmount} {action.durationUnit}</span>
           </div>
-          <p className="text-sm font-medium mt-1">{action.text}</p>
-
+          <p className="text-sm font-medium mb-1">{action.text}</p>
           
-          {action.actionStatus === 'planned' && (    
-            <Badge variant="outline" className="mt-1">
-              Gepland
-            </Badge>
+          {action.startDate && (
+            <div className="text-xs text-gray-600 mt-1">
+              {new Date(action.startDate).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })}
+            </div>
           )}
+          
           {action.missedDate && (
             <div className="text-xs text-red-500 mt-1">
-              Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString()}
+              Niet opgepakt op: {new Date(action.missedDate).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })}
             </div>
           )}
         </div>
 
         {showPopup && (
           <CalendarPopup
-            action={popupAction}
+            action={massiveActionToCalendarEvent(popupAction, popupAction.startDate || format(new Date(), "yyyy-MM-dd"))}
             dateKey={action.startDate || format(new Date(), "yyyy-MM-dd")}
             isOpen={showPopup}
             onClose={() => setShowPopup(false)}
-            onUpdate={handleActionUpdate}
+            onUpdate={(updatedCalendarEvent, dateKey) => {
+              // Convert CalendarEvent back to MassiveAction
+              const massiveAction = calendarEventToMassiveAction(updatedCalendarEvent);
+              handleActionUpdate(massiveAction, dateKey);
+            }}
           />
         )}
       </>
@@ -940,12 +1020,18 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
                       <AccordionTrigger>Acties</AccordionTrigger>
                       <AccordionContent>
                         {block.massiveActions?.map((action) => (
-                          <ActionItem
+                          <EventItem
                             key={`${block.id}-${action.id}`}
                             action={action}
                             isPlanned={isActionPlanned(action.id, action)}
                             onClick={() => {
-                              setSelectedAction(action);
+                              // Convert MassiveAction to CalendarEvent before setting
+                              const calendarEvent = massiveActionToCalendarEvent(
+                                action, 
+                                action.startDate || format(new Date(), "yyyy-MM-dd")
+                              );
+                              setSelectedAction(calendarEvent);
+                              setSelectedDateKey(action.startDate || format(new Date(), "yyyy-MM-dd"));
                               setIsPopupOpen(true);
                             }}
                           />
@@ -1000,7 +1086,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
               setSelectedAction(null);
               setSelectedDateKey(null);
             }}
-            onUpdate={handleActionUpdate}
+            onUpdate={(updatedAction: CalendarEvent, dateKey: string) => {
+              handleActionUpdate(calendarEventToMassiveAction(updatedAction), dateKey);
+            }}
           />
         )}
       </div>

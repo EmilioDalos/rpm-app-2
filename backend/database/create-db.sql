@@ -130,10 +130,11 @@ CREATE TABLE IF NOT EXISTS "rpm_massive_action_occurrence" (
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
-  id UUID PRIMARY KEY,
-  occurrence_id UUID REFERENCES "rpm_massive_action_occurrence"(id) ON DELETE CASCADE,
-  text TEXT,
-  type VARCHAR(50),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  occurrence_id UUID REFERENCES rpm_massive_action_occurrence(id) ON DELETE CASCADE,
+  action_id UUID REFERENCES rpm_block_massive_action(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  type VARCHAR(20),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

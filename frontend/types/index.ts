@@ -72,28 +72,29 @@ export interface RpmBlock {
 
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
 
-export interface RecurrencePattern {
-  id: string;
-  actionId: string;
-  dayOfWeek: DayOfWeek;
-}
 
 export interface MassiveAction {
   id: string;
   text: string;
-  color?: string;
-  textColor?: string;
-  hour?: number;
-  leverage?: string | null;
-  durationAmount?: number | null;
-  durationUnit?: string | null;
-  location?: string | null;
+  durationAmount: number;
+  durationUnit: 'minutes' | 'hours' | 'days';
+  priority: number;
+  color: string;
+  textColor: string;
+  startDate: string;
+  endDate: string;
+  status: 'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved';
+  leverage?: number;
+  location?: string;
   notes?: Note[];
-  startDate?: string;
-  endDate?: string;
-  actionStatus?: 'new' | 'in_progress' | 'completed' | 'cancelled';
-  createdAt?: string;
-  updatedAt?: string;
+  key?: string;
+  hour?: number;
+  isDateRange?: boolean;
+  selectedDays?: DayOfWeek[];
+  missedDate?: string;
+  categoryId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Note {
@@ -120,12 +121,42 @@ export interface Note {
 }
 
 export interface CalendarEvent {
-  id: string; // Unieke ID voor de kalendergebeurtenis
-  date: string; // ISO 8601 datum waarop de gebeurtenis plaatsvindt
-  massiveActions: MassiveAction[]; // Lijst van acties die op deze dag plaatsvinden
-  createdAt?: string; // Datum van aanmaak van de gebeurtenis
-  updatedAt?: string; // Laatst bijgewerkt datum
+  date: string; // ISO 8601 date of the event
+  id: string;
+  text: string;
+  durationAmount: number;
+  durationUnit: 'minutes' | 'hours' | 'days';
+  priority: number;
+  color: string;
+  textColor: string;
+  startDate: string;
+  endDate: string;
+  status: 'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved';
+  leverage?: number;
+  location?: string;
+  notes?: Note[];
+  key?: string;
+  hour?: number;
+  isDateRange?: boolean;
+  selectedDays?: DayOfWeek[];
+  recurrencePattern?: Array<{id: string, actionId: string, dayOfWeek: DayOfWeek}>;
+  missedDate?: string;
+  categoryId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
+/**
+ * Represents all calendar events for a specific date.
+ */
+export interface CalendarEventDay {
+  /**
+   * ISO 8601 date string for the day (e.g. '2025-04-15').
+   */
+  date: string;
 
-
+  /**
+   * All CalendarEvent entries that occur on this date.
+   */
+  events: CalendarEvent[];
+}

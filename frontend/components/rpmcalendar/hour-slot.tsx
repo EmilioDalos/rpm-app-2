@@ -142,15 +142,16 @@ const HourSlot: React.FC<HourSlotProps> = ({
           >
             <div className="flex items-center gap-1">
               <span>{event.massiveActions.map(action => action.text).join(', ')}</span>
-              {event.massiveActions.map(action => action.actionStatus && (
-                <Badge 
-                  key={action.id}
-                  variant={action.actionStatus === 'completed' ? 'default' : 'secondary'}
-                  className="text-[10px] px-1 py-0"
-                >
-                  {action.actionStatus === 'completed' ? '✓' : 
-                   action.actionStatus === 'in_progress' ? '⟳' : 
-                   action.actionStatus === 'cancelled' ? '✕' : '•'}
+              {event.massiveActions.map(action => action.status && (
+                <Badge variant="outline" className="ml-2">
+                  {action.status === 'completed' && '✓'}
+                  {action.status === 'in_progress' && '⟳'}
+                  {action.status === 'cancelled' && '✕'}
+                  {action.status === 'new' && '•'}
+                  {action.status === 'planned' && '📅'}
+                  {action.status === 'leveraged' && '⚡'}
+                  {action.status === 'not_needed' && '❌'}
+                  {action.status === 'moved' && '↗️'}
                 </Badge>
               ))}
             </div>

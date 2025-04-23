@@ -25,17 +25,8 @@ interface Note {
   type?: 'progress' | 'remark';
 }
 
-interface RecurrencePattern {
-  id: string;
-  dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-  exceptions?: RecurrenceException[];
-}
 
-interface RecurrenceException {
-  exceptionDate: string;
-  reason?: string;
-  actionRecurrenceId: string;
-}
+
 
 // export const getAllCalendarEvents = async (req: Request, res: Response) => {
 //   try {
@@ -60,29 +51,149 @@ interface RecurrenceException {
 //     res.status(500).json({ error: 'Failed to fetch calendar events' });
 //   }
 // };
+export const getCalendarEventsByDateRange = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    const start = new Date(startDate as string);
+    const end = new Date(endDate as string);
+
+    // Find all occurrences within the date range
+    const occurrences = await RpmMassiveActionOccurrence.findAll({
+      where: {
+        date: {
+          [Op.between]: [start, end]
+        }
+      },
+      include: [
+        {
+          model: RpmBlockMassiveAction,
+          as: 'action',
+          include: [
+            {
+              association: 'category',
+              attributes: ['id', 'name', 'type', 'color']
+            }
+          ]
+        // },
+        // {
+        //   model: RpmBlockMassiveActionNote,
+        //   as: 'notes',
+        //   attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+        }
+      ],
+      order: [['date', 'ASC'], ['hour', 'ASC']]
+    });
+
+    // Group occurrences by date
+    const eventsByDate: Record<string, any> = {};
+    
+    occurrences.forEach(occurrence => {
+      const dateKey = format(new Date(occurrence.date), 'yyyy-MM-dd');
+      
+      if (!eventsByDate[dateKey]) {
+        eventsByDate[dateKey] = {
+          date: dateKey,
+          events: [] as any[]
+        };
+      }
+      
+      // Create an event object from the occurrence
+      const event = {
+        id: occurrence.id,
+        actionId: occurrence.actionId,
+        text: occurrence.action?.text,
+        color: occurrence.action?.color,
+        textColor: occurrence.action?.textColor,
+        hour: occurrence.hour,
+        leverage: occurrence.leverage,
+        durationAmount: occurrence.durationAmount,
+        durationUnit: occurrence.durationUnit,
+        location: occurrence.location,
+        status: occurrence.action?.status || 'new',
+        categoryId: occurrence.action?.categoryId,
+        isDateRange: occurrence.action?.isDateRange || false,
+        
+      };
+      
+      eventsByDate[dateKey].events.push({
+        date: dateKey,
+        ...event
+      });
+    });
+    
+    // Convert to array and sort by date
+    const events = Object.values(eventsByDate).sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching calendar events by date range:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar events by date range' });
+  }
+};
+
+
+
 
 export const getCalendarEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const event = await RpmBlockMassiveAction.findByPk(id, {
+
+    // Fetch the action
+    const action = await RpmBlockMassiveAction.findByPk(id, {
       include: [
-        { 
-          association: 'category',
-          attributes: ['id', 'name', 'type', 'color']
-        },
-        {
-          association: 'notes',
-          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
-        }
+        { association: 'category', attributes: ['id', 'name', 'type', 'color'] },
+        { association: 'notes',    attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt'] }
       ]
     });
-
-    if (!event) {
+    if (!action) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
 
-    const sanitizedEvent = sanitizeSequelizeModel(event);
-    res.json(sanitizedEvent);
+    // Build a single event object
+    const evtDate = action.startDate
+      ? format(new Date(action.startDate), 'yyyy-MM-dd')
+      : format(new Date(), 'yyyy-MM-dd');
+
+    const eventObj = {
+      id: action.id,
+      actionId: action.id,
+      date: evtDate,
+      text: action.text,
+      color: action.color,
+      textColor: action.textColor,
+      hour: action.hour,
+      leverage: action.leverage,
+      durationAmount: action.durationAmount,
+      durationUnit: action.durationUnit,
+      location: action.location,
+      status: action.status || 'new',
+      categoryId: action.categoryId,
+      isDateRange: action.isDateRange,
+      notes: action.notes?.map(n => ({
+        id: n.id,
+        text: n.text,
+        type: n.type
+      })) ?? [],
+      startDate: action.startDate?.toISOString() ?? evtDate,
+      endDate:   action.endDate  ?.toISOString() ?? evtDate,
+      createdAt: action.createdAt.toISOString(),
+      updatedAt: action.updatedAt.toISOString()
+    };
+
+    // Wrap in CalendarEventDay
+    const response = {
+      date: evtDate,
+      events: [eventObj]
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching calendar event:', error);
     res.status(500).json({ error: 'Failed to fetch calendar event' });
@@ -276,30 +387,32 @@ export const deleteCalendarEvent = async (req: Request, res: Response) => {
  */
 export const deleteCalendarEventByDate = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { date } = req.body;
+    const { id, date } = req.params;
 
     if (!date) {
       return res.status(400).json({ error: 'Date is required' });
     }
 
-    // Find the action
-    const action = await RpmBlockMassiveAction.findByPk(id);
-    if (!action) {
-      return res.status(404).json({ error: 'Calendar event not found' });
-    }
+    console.log(`Deleting occurrence for action ${id} on date ${date}`);
 
-    // Find the occurrence for this date
+    // Parse the date and create a range that spans the entire day in UTC
+    const inputDate = new Date(date);
+
+    // Find any occurrence for this date range
     const occurrence = await RpmMassiveActionOccurrence.findOne({
       where: {
-        actionId: id,
-        date: date
-      }
+        id: id,
+        date: inputDate
+      },
+      logging: (sql) => console.log('Sequelize SQL:', sql)
     });
 
     if (!occurrence) {
+      console.log(`No occurrence found for action ${id} on date ${date}`);
       return res.status(404).json({ error: 'Occurrence not found for this date' });
     }
+
+    console.log(`Found occurrence with ID ${occurrence.id}, deleting...`);
 
     // Delete the occurrence (this will cascade delete notes)
     await occurrence.destroy();
@@ -311,85 +424,85 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
   }
 };
 
-export const getCalendarEventsByDateRange = async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate } = req.query;
+// export const getCalendarEventsByDateRange = async (req: Request, res: Response) => {
+//   try {
+//     const { startDate, endDate } = req.query;
     
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'Start date and end date are required' });
-    }
+//     if (!startDate || !endDate) {
+//       return res.status(400).json({ error: 'Start date and end date are required' });
+//     }
 
-    const start = new Date(startDate as string);
-    const end = new Date(endDate as string);
+//     const start = new Date(startDate as string);
+//     const end = new Date(endDate as string);
 
-    // Find all occurrences within the date range
-    const occurrences = await RpmMassiveActionOccurrence.findAll({
-      where: {
-        date: {
-          [Op.between]: [start, end]
-        }
-      },
-      include: [
-        {
-          model: RpmBlockMassiveAction,
-          as: 'action',
-          include: [
-            {
-              association: 'category',
-              attributes: ['id', 'name', 'type', 'color']
-            }
-          ]
-        },
-        {
-          model: RpmBlockMassiveActionNote,
-          as: 'notes',
-          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
-        }
-      ],
-      order: [['date', 'ASC'], ['hour', 'ASC']]
-    });
+//     // Find all occurrences within the date range
+//     const occurrences = await RpmMassiveActionOccurrence.findAll({
+//       where: {
+//         date: {
+//           [Op.between]: [start, end]
+//         }
+//       },
+//       include: [
+//         {
+//           model: RpmBlockMassiveAction,
+//           as: 'action',
+//           include: [
+//             {
+//               association: 'category',
+//               attributes: ['id', 'name', 'type', 'color']
+//             }
+//           ]
+//         // },
+//         // {
+//         //   model: RpmBlockMassiveActionNote,
+//         //   as: 'notes',
+//         //   attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+//         }
+//       ],
+//       order: [['date', 'ASC'], ['hour', 'ASC']]
+//     });
 
-    // Group occurrences by date
-    const eventsByDate: Record<string, any> = {};
+//     // Group occurrences by date
+//     const eventsByDate: Record<string, any> = {};
     
-    occurrences.forEach(occurrence => {
-      const dateKey = format(new Date(occurrence.date), 'yyyy-MM-dd');
+//     occurrences.forEach(occurrence => {
+//       const dateKey = format(new Date(occurrence.date), 'yyyy-MM-dd');
       
-      if (!eventsByDate[dateKey]) {
-        eventsByDate[dateKey] = {
-          date: dateKey,
-          massiveActions: []
-        };
-      }
+//       if (!eventsByDate[dateKey]) {
+//         eventsByDate[dateKey] = {
+//           date: dateKey,
+//           massiveActions: []
+//         };
+//       }
       
-      // Create a massive action object from the occurrence
-      const massiveAction = {
-        id: occurrence.action.id,
-        text: occurrence.action.text,
-        color: occurrence.action.color,
-        textColor: occurrence.action.textColor,
-        hour: occurrence.hour,
-        leverage: occurrence.leverage,
-        durationAmount: occurrence.durationAmount,
-        durationUnit: occurrence.durationUnit,
-        location: occurrence.location,
-        notes: occurrence.notes
-      };
+//       // Create a massive action object from the occurrence
+//       const massiveAction = {
+//         id: occurrence.actionId,
+//         text: occurrence.action?.text,
+//         color: occurrence.action?.color,
+//         textColor: occurrence.action?.textColor,
+//         hour: occurrence.hour,
+//         leverage: occurrence.leverage,
+//         durationAmount: occurrence.durationAmount,
+//         durationUnit: occurrence.durationUnit,
+//         location: occurrence.location,
+   
+//       };
       
-      eventsByDate[dateKey].massiveActions.push(massiveAction);
-    });
+//       eventsByDate[dateKey].massiveActions.push(massiveAction);
+//     });
     
-    // Convert to array and sort by date
-    const events = Object.values(eventsByDate).sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+//     // Convert to array and sort by date
+//     const events = Object.values(eventsByDate).sort((a, b) => 
+//       new Date(a.date).getTime() - new Date(b.date).getTime()
+//     );
     
-    res.json(events);
-  } catch (error) {
-    console.error('Error fetching calendar events by date range:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events by date range' });
-  }
-};
+//     res.json(events);
+//   } catch (error) {
+//     console.error('Error fetching calendar events by date range:', error);
+//     res.status(500).json({ error: 'Failed to fetch calendar events by date range' });
+//   }
+// };
 
 export const addNote = async (req: Request, res: Response) => {
   try {

@@ -10,13 +10,14 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Running database migration...${NC}"
 
-# Run the migration SQL file
-PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f migrations/20240421_update_calendar_events.sql
+# Run the migration
+echo "Running migration to add action_id to notes..."
+psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f migrations/add_action_id_to_notes.sql
 
 if [ $? -eq 0 ]; then
-  echo -e "${GREEN}Migration completed successfully!${NC}"
+  echo "Migration completed successfully"
 else
-  echo -e "${RED}Migration failed!${NC}"
+  echo "Migration failed"
   exit 1
 fi
 

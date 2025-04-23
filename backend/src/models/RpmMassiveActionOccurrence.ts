@@ -30,7 +30,9 @@ class RpmMassiveActionOccurrence extends Model<RpmMassiveActionOccurrenceAttribu
   public durationUnit?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  // Define associations
   public notes?: RpmBlockMassiveActionNote[];
+  public readonly action?: RpmBlockMassiveAction;
 }
 
 RpmMassiveActionOccurrence.init({
