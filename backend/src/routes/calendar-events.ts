@@ -15,7 +15,7 @@ import {
 const router = Router();
 
 // Note management routes
-router.post('/:occurrenceId/notes', addNote);
+router.post('/:id/notes', addNote);
 router.put('/notes/:noteId', updateNote);
 router.delete('/notes/:noteId', deleteNote);
 

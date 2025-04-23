@@ -123,6 +123,7 @@ export interface Note {
 export interface CalendarEvent {
   date: string; // ISO 8601 date of the event
   id: string;
+  actionId?: string; // ID of the parent MassiveAction (needed when id refers to an occurrence)
   text: string;
   durationAmount: number;
   durationUnit: 'minutes' | 'hours' | 'days';
@@ -140,6 +141,7 @@ export interface CalendarEvent {
   isDateRange?: boolean;
   selectedDays?: DayOfWeek[];
   recurrencePattern?: Array<{id: string, actionId: string, dayOfWeek: DayOfWeek}>;
+  recurrDays?: DayOfWeek[];
   missedDate?: string;
   categoryId?: string;
   createdAt: string;

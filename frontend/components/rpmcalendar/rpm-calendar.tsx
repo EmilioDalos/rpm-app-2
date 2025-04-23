@@ -271,29 +271,91 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleActionClick = async (action: CalendarEvent, dateKey: string) => {
     try {
-      // Fetch the complete action data including notes
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
-      console.log('Response:', response);
-      console.log('Action:', action);
-      console.log('Date key:', dateKey);
-      console.log('Action url:', `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${action.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch action details');
+      // Use actionId if available, otherwise fallback to id (which might be the occurrence id)
+      const idToFetch = action.actionId || action.id;
+      
+      console.log('Fetching details for calendar event:', {
+        actionId: action.actionId,
+        id: action.id,
+        idToFetch,
+        startDate: action.startDate,
+        endDate: action.endDate,
+        dateKey
+      });
+      
+      // First try the calendar-events API
+      let apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${idToFetch}`;
+      console.log('Trying calendar-events API URL:', apiUrl);
+      
+      let response = await fetch(apiUrl);
+      console.log('calendar-events response status:', response.status);
+      
+      // If that fails and we have an actionId, try the massive-actions API
+      if (!response.ok && action.actionId) {
+        apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${action.actionId}`;
+        console.log('Trying massive-actions API URL:', apiUrl);
+        response = await fetch(apiUrl);
+        console.log('massive-actions response status:', response.status);
       }
       
-      const actionWithNotes = await response.json();
+      // If both failed, try with the direct id on massive-actions
+      if (!response.ok) {
+        apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${action.id}`;
+        console.log('Trying massive-actions with direct ID:', apiUrl);
+        response = await fetch(apiUrl);
+        console.log('massive-actions direct ID response status:', response.status);
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Failed to fetch action details: ${response.status} ${errorText}`);
+      }
+      
+      const actionData = await response.json();
+      console.log('Action data from API:', actionData);
+      
+      // Handle different response formats
+      let actionNotes = [];
+      
+      // Handle calendar-events response format
+      if (actionData.events && Array.isArray(actionData.events) && actionData.events.length > 0) {
+        actionNotes = actionData.events[0].notes || [];
+      } 
+      // Handle massive-actions response format - multiple possible structures
+      else if (actionData.notes) {
+        actionNotes = actionData.notes || [];
+      } 
+      else if (actionData.events?.[0]?.notes) {
+        actionNotes = actionData.events[0].notes || [];
+      }
+      // Handle direct action object
+      else if (Array.isArray(actionData)) {
+        actionNotes = [];
+      }
+      
+      console.log('Extracted notes:', actionNotes);
       
       // Update the action with the fetched notes
       const updatedAction = {
         ...action,
-        notes: actionWithNotes.notes || []
+        notes: actionNotes
       };
       
       setSelectedAction(updatedAction);
       setSelectedDateKey(dateKey);
       setIsPopupOpen(true);
     } catch (error) {
-      console.error('Error fetching action details:', error);
+      console.error('Error in handleActionClick:', error);
+      // Log action details for debugging
+      console.error('Action that caused error:', {
+        id: action.id,
+        actionId: action.actionId,
+        text: action.text,
+        startDate: action.startDate,
+        endDate: action.endDate
+      });
+      
       // Fallback to the original action if fetch fails
       setSelectedAction(action);
       setSelectedDateKey(dateKey);
@@ -355,10 +417,10 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
     try {
-      // Set the action status to 'planned' when dropped into the calendar
+      // Set the action status to 'new' when dropped into the calendar
       const updatedItem = {
         ...item,
-        status: 'planned' as const,
+        status: 'new' as const,
         startDate: dateKey,
         endDate: dateKey
       };

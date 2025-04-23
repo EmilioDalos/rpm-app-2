@@ -144,17 +144,64 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
 export const getCalendarEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    console.log(`[getCalendarEventById] Request received for ID: ${id}`);
 
-    // Fetch the action
-    const action = await RpmBlockMassiveAction.findByPk(id, {
+    // First try to fetch the action directly
+    console.log(`[getCalendarEventById] Fetching action with ID: ${id}`);
+    let action = await RpmBlockMassiveAction.findByPk(id, {
       include: [
         { association: 'category', attributes: ['id', 'name', 'type', 'color'] },
-        { association: 'notes',    attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt'] }
+        { 
+          association: 'notes',    
+          attributes: [
+            'id', 
+            'text', 
+            'type', 
+            ['created_at', 'createdAt'], 
+            ['updated_at', 'updatedAt']
+          ] 
+        }
       ]
     });
+    
+    // If action not found, check if this is an occurrence ID
     if (!action) {
+      console.log(`[getCalendarEventById] Action not found, checking if it's an occurrence ID: ${id}`);
+      const occurrence = await RpmMassiveActionOccurrence.findByPk(id, {
+        include: [
+          { 
+            model: RpmBlockMassiveAction,
+            as: 'action',
+            include: [
+              { association: 'category', attributes: ['id', 'name', 'type', 'color'] },
+              { 
+                association: 'notes',    
+                attributes: [
+                  'id', 
+                  'text', 
+                  'type', 
+                  ['created_at', 'createdAt'], 
+                  ['updated_at', 'updatedAt']
+                ] 
+              }
+            ]
+          }
+        ]
+      });
+      
+      if (occurrence && occurrence.action) {
+        console.log(`[getCalendarEventById] Found occurrence, using parent action: ${occurrence.actionId}`);
+        action = occurrence.action;
+      }
+    }
+    
+    if (!action) {
+      console.error(`[getCalendarEventById] Calendar event not found for ID: ${id}`);
       return res.status(404).json({ error: 'Calendar event not found' });
     }
+    
+    console.log(`[getCalendarEventById] Action found: ${action.id}`);
 
     // Build a single event object
     const evtDate = action.startDate
@@ -193,10 +240,11 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
       events: [eventObj]
     };
 
+    console.log(`[getCalendarEventById] Returning data for ID ${id}, date: ${evtDate}`);
     res.json(response);
   } catch (error) {
-    console.error('Error fetching calendar event:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar event' });
+    console.error(`[getCalendarEventById] Error fetching calendar event:`, error);
+    res.status(500).json({ error: 'Failed to fetch calendar event', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -319,8 +367,8 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
           // Create new notes
           for (const note of notes) {
             await RpmBlockMassiveActionNote.create({
-              id: uuidv4(),
               occurrenceId: existingOccurrence.id,
+              actionId: id,
               text: note.text,
               type: note.type
             });
@@ -343,8 +391,8 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
         if (notes && Array.isArray(notes)) {
           for (const note of notes) {
             await RpmBlockMassiveActionNote.create({
-              id: uuidv4(),
               occurrenceId: occurrence.id,
+              actionId: id,
               text: note.text,
               type: note.type
             });
@@ -401,7 +449,7 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
     // Find any occurrence for this date range
     const occurrence = await RpmMassiveActionOccurrence.findOne({
       where: {
-        id: id,
+        actionId: id,
         date: inputDate
       },
       logging: (sql) => console.log('Sequelize SQL:', sql)
@@ -506,27 +554,79 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
 
 export const addNote = async (req: Request, res: Response) => {
   try {
-    const { occurrenceId } = req.params;
+    const { id } = req.params;
     const { text, type } = req.body;
 
-    // Check if the occurrence exists
-    const occurrence = await RpmMassiveActionOccurrence.findByPk(occurrenceId);
-    if (!occurrence) {
-      return res.status(404).json({ error: 'Occurrence not found' });
-    }
-
-    // Create the note
-    const note = await RpmBlockMassiveActionNote.create({
-      id: uuidv4(),
-      occurrenceId,
-      text,
-      type
+    console.log(`[addNote] Adding note to event with id: ${id}`);
+    
+    // First try to find an occurrence with this id
+    const occurrence = await RpmMassiveActionOccurrence.findByPk(id, {
+      include: [{
+        model: RpmBlockMassiveAction,
+        as: 'action'
+      }]
     });
+    
+    // If we found an occurrence, add note to it
+    if (occurrence) {
+      console.log(`[addNote] Found occurrence, adding note to it and parent action: ${occurrence.actionId}`);
+      const note = await RpmBlockMassiveActionNote.create({
+        text,
+        type,
+        actionId: occurrence.actionId,
+        occurrenceId: occurrence.id
+      });
 
-    res.status(201).json(note);
+      return res.status(201).json({ note });
+    }
+    
+    // If not an occurrence, try to find the action directly
+    const action = await RpmBlockMassiveAction.findByPk(id);
+    
+    if (action) {
+      console.log(`[addNote] Found action directly, looking for an occurrence to attach note to`);
+      
+      // Find the latest occurrence for this action, if any
+      const latestOccurrence = await RpmMassiveActionOccurrence.findOne({
+        where: { actionId: action.id },
+        order: [['date', 'DESC']]
+      });
+      
+      if (latestOccurrence) {
+        console.log(`[addNote] Found latest occurrence ${latestOccurrence.id} for action ${action.id}`);
+        const note = await RpmBlockMassiveActionNote.create({
+          text,
+          type,
+          actionId: action.id,
+          occurrenceId: latestOccurrence.id
+        });
+        
+        return res.status(201).json({ note });
+      } else {
+        console.log(`[addNote] No occurrences found for action ${action.id}, creating one`);
+        // Create a new occurrence for today if none exists
+        const newOccurrence = await RpmMassiveActionOccurrence.create({
+          id: uuidv4(),
+          actionId: action.id,
+          date: new Date()
+        });
+        
+        const note = await RpmBlockMassiveActionNote.create({
+          text,
+          type,
+          actionId: action.id,
+          occurrenceId: newOccurrence.id
+        });
+        
+        return res.status(201).json({ note });
+      }
+    }
+    
+    console.log(`[addNote] No action or occurrence found with id: ${id}`);
+    return res.status(404).json({ error: 'Calendar event not found' });
   } catch (error) {
-    console.error('Error adding note:', error);
-    res.status(500).json({ error: 'Failed to add note' });
+    console.error(`[addNote] Error adding note:`, error);
+    return res.status(500).json({ error: 'Failed to add note' });
   }
 };
 

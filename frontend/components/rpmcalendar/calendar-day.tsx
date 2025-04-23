@@ -80,9 +80,16 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       // Find the action to be removed
       const actionToBeRemoved = dayEvents.find((action: CalendarEvent) => action.id === actionToRemove);
       if (actionToBeRemoved) {
-        console.log(`Removing action from calendar: actionId=${actionToRemove}, dateKey=${dateKey}`);
-        // Call onActionRemove with the action ID and date key
-        onActionRemove(actionToRemove, dateKey);
+        console.log(`Setting action status to 'cancelled': actionId=${actionToRemove}, dateKey=${dateKey}`);
+        
+        // Create an updated action with status set to 'cancelled'
+        const updatedAction = {
+          ...actionToBeRemoved,
+          status: 'cancelled' as 'cancelled'
+        };
+        
+        // Call onActionClick with the updated action to update it rather than remove it
+        onActionClick(updatedAction);
       } else {
         console.error(`Action with ID ${actionToRemove} not found in dayEvents`);
       }

@@ -1,21 +1,31 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/db';
 import RpmMassiveActionOccurrence from './RpmMassiveActionOccurrence';
 
+// Define attributes interface with createdAt and updatedAt as optional
 interface RpmBlockMassiveActionNoteAttributes {
   id: string;
   occurrenceId: string;
+  actionId: string;
   text: string;
   type?: 'progress' | 'remark';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-interface RpmBlockMassiveActionNoteCreationAttributes extends Omit<RpmBlockMassiveActionNoteAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+// Define creation attributes by making certain fields optional
+type RpmBlockMassiveActionNoteCreationAttributes = Optional<
+  RpmBlockMassiveActionNoteAttributes, 
+  'id' | 'createdAt' | 'updatedAt'
+>;
 
-class RpmBlockMassiveActionNote extends Model<RpmBlockMassiveActionNoteAttributes, RpmBlockMassiveActionNoteCreationAttributes> {
+class RpmBlockMassiveActionNote extends Model<
+  RpmBlockMassiveActionNoteAttributes, 
+  RpmBlockMassiveActionNoteCreationAttributes
+> {
   public id!: string;
   public occurrenceId!: string;
+  public actionId!: string;
   public text!: string;
   public type?: 'progress' | 'remark';
   public readonly createdAt!: Date;
@@ -37,6 +47,11 @@ RpmBlockMassiveActionNote.init({
     },
     field: 'occurrence_id'
   },
+  actionId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'action_id'
+  },
   text: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -44,17 +59,8 @@ RpmBlockMassiveActionNote.init({
   type: {
     type: DataTypes.STRING(20),
     allowNull: true,
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'created_at'
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'updated_at'
   }
+  // No explicit timestamp fields - handled by Sequelize
 }, {
   sequelize,
   modelName: 'RpmBlockMassiveActionNote',
