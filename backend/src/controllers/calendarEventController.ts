@@ -249,8 +249,8 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
         text: n.text,
         type: n.type
       })) ?? [],
-      startDate: action.startDate?.toISOString() ?? evtDate,
-      endDate:   action.endDate  ?.toISOString() ?? evtDate,
+      startDate: action.startDate ? action.startDate.toISOString() : null,
+      endDate:   action.endDate ? action.endDate.toISOString() : null,
       createdAt: action.createdAt.toISOString(),
       updatedAt: action.updatedAt.toISOString()
     };
@@ -300,7 +300,7 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
       status
     });
 
-    // If this is a single event (not a date range), create an occurrence
+    // If this is a single event (not a date range), create a single occurrence
     if (!isDateRange && startDate) {
       await RpmMassiveActionOccurrence.create({
         actionId: action.id,
@@ -311,6 +311,27 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
         durationAmount,
         durationUnit
       });
+    } 
+    // If this is a date range, create occurrences for each day in the range
+    else if (isDateRange && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate all dates in the range
+      const dates = getDateRange(start, end);
+      
+      // Create an occurrence for each date
+      for (const date of dates) {
+        await RpmMassiveActionOccurrence.create({
+          actionId: action.id,
+          date,
+          hour,
+          location,
+          leverage,
+          durationAmount,
+          durationUnit
+        });
+      }
     }
 
     res.status(201).json(action);
@@ -514,7 +535,7 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'Both id and date are required' });
     }
 
-    console.log(`Deleting occurrence for action ${id} on date ${date}`);
+    console.log(`Deleting occurrence for ID ${id} on date ${date}`);
 
     // Parse the date string, ensuring it's treated as UTC
     const [year, month, day] = date.split('-').map(Number);
@@ -528,66 +549,83 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
     const inputDate = new Date(Date.UTC(year, month - 1, day));
     console.log('Parsed date:', inputDate.toISOString());
     
-    // You could also set the time to the beginning of the day
-    inputDate.setUTCHours(0, 0, 0, 0);
+    // Set the time to the beginning of the day
+    const startOfDay = new Date(Date.UTC(year, month - 1, day));
+    startOfDay.setUTCHours(0, 0, 0, 0);
     
-    console.log('Searching for occurrence with:', {
-      actionId: id,
-      date: inputDate.toISOString()
+    const endOfDay = new Date(Date.UTC(year, month - 1, day));
+    endOfDay.setUTCHours(23, 59, 59, 999);
+    
+    console.log('Searching for occurrence with date between:', {
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString()
     });
 
-    // Find any occurrence for this date
-    const occurrence = await RpmMassiveActionOccurrence.findOne({
-      where: {
-        id: id,
-        date: inputDate
-      },
-      logging: (sql) => console.log('Sequelize SQL:', sql)
-    });
-
+    // Try to find the occurrence by its ID
+    let occurrence = await RpmMassiveActionOccurrence.findByPk(id);
+    
+    // If not found by ID, maybe the ID is actually an actionId, try to find an occurrence for this actionId on this date
     if (!occurrence) {
-      console.log(`No occurrence found for action ${id} on date ${date}`);
-      // Try a more flexible date query if exact match fails
-      console.log('Trying to find occurrences for the day regardless of time...');
-      
-      const startOfDay = new Date(Date.UTC(year, month - 1, day));
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(Date.UTC(year, month - 1, day));
-      endOfDay.setUTCHours(23, 59, 59, 999);
-      
-      const occurrenceWithinDay = await RpmMassiveActionOccurrence.findOne({
+      console.log(`No occurrence found with ID ${id}, checking if it's an actionId...`);
+      occurrence = await RpmMassiveActionOccurrence.findOne({
         where: {
           actionId: id,
           date: {
             [Op.between]: [startOfDay, endOfDay]
           }
-        },
-        logging: (sql) => console.log('Flexible date search SQL:', sql)
+        }
       });
-      
-      if (!occurrenceWithinDay) {
-        console.log(`No occurrence found within day range for action ${id} on date ${date}`);
-        return res.status(404).json({ 
-          error: 'Occurrence not found for this date',
-          details: {
-            requestedDate: date,
-            parsedDate: inputDate.toISOString(),
-            dayRange: [startOfDay.toISOString(), endOfDay.toISOString()]
-          }
-        });
-      }
-      
-      // We found an occurrence within the day range
-      console.log(`Found occurrence with ID ${occurrenceWithinDay.id} within day range, deleting...`);
-      await occurrenceWithinDay.destroy();
-      return res.status(204).send();
     }
-
-    console.log(`Found occurrence with ID ${occurrence.id}, deleting...`);
-
+      
+    if (!occurrence) {
+      console.log(`No occurrence found for action or occurrence ID ${id} on date ${date}`);
+      return res.status(404).json({ 
+        error: 'Occurrence not found for this date',
+        details: {
+          requestedDate: date,
+          parsedDate: inputDate.toISOString(),
+          dayRange: [startOfDay.toISOString(), endOfDay.toISOString()]
+        }
+      });
+    }
+    
+    // We found an occurrence, now get the parent action
+    console.log(`Found occurrence with ID ${occurrence.id} for date ${date}, checking parent action...`);
+    const actionId = occurrence.actionId;
+    const parentAction = await RpmBlockMassiveAction.findByPk(actionId);
+    
+    if (!parentAction) {
+      console.error(`Parent action ${actionId} not found!`);
+      return res.status(404).json({ error: 'Parent action not found' });
+    }
+    
     // Delete the occurrence (this will cascade delete notes)
     await occurrence.destroy();
+    console.log(`Deleted occurrence ${occurrence.id} for date ${date}`);
+    
+    // If the event is not a date range, reset the dates and status on the parent action
+    if (!parentAction.isDateRange) {
+      console.log(`Resetting dates and status on parent action ${parentAction.id} because it's not a date range`);
+      
+      // Using direct SQL query to set dates to NULL
+      await sequelize.query(
+        `UPDATE rpm_block_massive_action 
+         SET start_date = NULL, end_date = NULL, status = 'new', updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        {
+          replacements: [parentAction.id],
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
+      
+      // Also update the model instance to be in sync
+      parentAction.startDate = undefined;
+      parentAction.endDate = undefined;
+      parentAction.status = 'new';
+      await parentAction.save({ silent: true });
+      
+      console.log(`Reset dates and status for action ${parentAction.id}`);
+    }
 
     res.status(204).send();
   } catch (error) {
