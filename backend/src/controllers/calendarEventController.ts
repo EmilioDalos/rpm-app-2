@@ -62,6 +62,8 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
 
+    console.log(`Fetching calendar events from ${start.toISOString()} to ${end.toISOString()}`);
+
     // Find all occurrences within the date range
     const occurrences = await RpmMassiveActionOccurrence.findAll({
       where: {
@@ -79,21 +81,36 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
               attributes: ['id', 'name', 'type', 'color']
             }
           ]
-        // },
-        // {
-        //   model: RpmBlockMassiveActionNote,
-        //   as: 'notes',
-        //   attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
         }
       ],
       order: [['date', 'ASC'], ['hour', 'ASC']]
     });
 
+    console.log(`Found ${occurrences.length} occurrences total`);
+
     // Group occurrences by date
     const eventsByDate: Record<string, any> = {};
     
+    // Track which action IDs we've already seen for each date to prevent duplicates
+    const processedActionsByDate: Record<string, Set<string>> = {};
+    
     occurrences.forEach(occurrence => {
       const dateKey = format(new Date(occurrence.date), 'yyyy-MM-dd');
+      const actionId = occurrence.actionId;
+      
+      // Initialize tracking set for this date if it doesn't exist
+      if (!processedActionsByDate[dateKey]) {
+        processedActionsByDate[dateKey] = new Set<string>();
+      }
+      
+      // Skip if we've already processed this action for this date
+      if (processedActionsByDate[dateKey].has(actionId)) {
+        console.log(`Skipping duplicate actionId ${actionId} for date ${dateKey}`);
+        return;
+      }
+      
+      // Mark this action as processed for this date
+      processedActionsByDate[dateKey].add(actionId);
       
       if (!eventsByDate[dateKey]) {
         eventsByDate[dateKey] = {
@@ -117,7 +134,6 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
         status: occurrence.action?.status || 'new',
         categoryId: occurrence.action?.categoryId,
         isDateRange: occurrence.action?.isDateRange || false,
-        
       };
       
       eventsByDate[dateKey].events.push({
@@ -130,6 +146,11 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
     const events = Object.values(eventsByDate).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
+    
+    // Log how many unique events we're returning per date
+    events.forEach(day => {
+      console.log(`${day.date}: ${day.events.length} unique events`);
+    });
     
     res.json(events);
   } catch (error) {
@@ -158,8 +179,8 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
             'id', 
             'text', 
             'type', 
-            ['created_at', 'createdAt'], 
-            ['updated_at', 'updatedAt']
+            ['created_at', 'created_at'], 
+            ['updated_at', 'updated_at'] 
           ] 
         }
       ]
@@ -181,8 +202,8 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
                   'id', 
                   'text', 
                   'type', 
-                  ['created_at', 'createdAt'], 
-                  ['updated_at', 'updatedAt']
+                  ['created_at', 'created_at'], 
+                  ['updated_at', 'updated_at']
                 ] 
               }
             ]
@@ -315,8 +336,11 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       leverage,
       durationAmount,
       durationUnit,
-      notes
+      notes,
+      status
     } = req.body;
+
+    console.log(`Updating calendar event with id=${id}, status=${status}`);
 
     // Find the action
     const action = await RpmBlockMassiveAction.findByPk(id);
@@ -324,7 +348,7 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
 
-    // Update the action
+    // Update the action with the status parameter
     await action.update({
       text,
       description,
@@ -332,8 +356,12 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       endDate,
       isDateRange,
       hour,
-      categoryId
+      categoryId,
+      status
     });
+
+    // Log the updated action status
+    console.log(`Calendar event ${id} status updated to: ${action.status}`);
 
     // If this is a single event (not a date range), update or create an occurrence
     if (!isDateRange && startDate) {
@@ -401,7 +429,21 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       }
     }
 
-    res.json(action);
+    // Fetch the updated action with all associations
+    const updatedAction = await RpmBlockMassiveAction.findByPk(id, {
+      include: [
+        { 
+          association: 'category',
+          attributes: ['id', 'name', 'type', 'color']
+        },
+        {
+          association: 'notes',
+          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
+        }
+      ]
+    });
+
+    res.json(sanitizeSequelizeModel(updatedAction));
   } catch (error) {
     console.error('Error updating calendar event:', error);
     res.status(500).json({ error: 'Failed to update calendar event' });
@@ -437,19 +479,37 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
   try {
     const { id, date } = req.params;
 
-    if (!date) {
-      return res.status(400).json({ error: 'Date is required' });
+    if (!id || !date) {
+      console.error('Missing parameters:', { id, date });
+      return res.status(400).json({ error: 'Both id and date are required' });
     }
 
     console.log(`Deleting occurrence for action ${id} on date ${date}`);
 
-    // Parse the date and create a range that spans the entire day in UTC
-    const inputDate = new Date(date);
+    // Parse the date string, ensuring it's treated as UTC
+    const [year, month, day] = date.split('-').map(Number);
+    
+    if (!year || !month || !day) {
+      console.error('Invalid date format:', date);
+      return res.status(400).json({ error: 'Invalid date format. Expected YYYY-MM-DD' });
+    }
+    
+    // Create a date object (month is 0-indexed)
+    const inputDate = new Date(Date.UTC(year, month - 1, day));
+    console.log('Parsed date:', inputDate.toISOString());
+    
+    // You could also set the time to the beginning of the day
+    inputDate.setUTCHours(0, 0, 0, 0);
+    
+    console.log('Searching for occurrence with:', {
+      actionId: id,
+      date: inputDate.toISOString()
+    });
 
-    // Find any occurrence for this date range
+    // Find any occurrence for this date
     const occurrence = await RpmMassiveActionOccurrence.findOne({
       where: {
-        actionId: id,
+        id: id,
         date: inputDate
       },
       logging: (sql) => console.log('Sequelize SQL:', sql)
@@ -457,7 +517,41 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
 
     if (!occurrence) {
       console.log(`No occurrence found for action ${id} on date ${date}`);
-      return res.status(404).json({ error: 'Occurrence not found for this date' });
+      // Try a more flexible date query if exact match fails
+      console.log('Trying to find occurrences for the day regardless of time...');
+      
+      const startOfDay = new Date(Date.UTC(year, month - 1, day));
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(Date.UTC(year, month - 1, day));
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      
+      const occurrenceWithinDay = await RpmMassiveActionOccurrence.findOne({
+        where: {
+          actionId: id,
+          date: {
+            [Op.between]: [startOfDay, endOfDay]
+          }
+        },
+        logging: (sql) => console.log('Flexible date search SQL:', sql)
+      });
+      
+      if (!occurrenceWithinDay) {
+        console.log(`No occurrence found within day range for action ${id} on date ${date}`);
+        return res.status(404).json({ 
+          error: 'Occurrence not found for this date',
+          details: {
+            requestedDate: date,
+            parsedDate: inputDate.toISOString(),
+            dayRange: [startOfDay.toISOString(), endOfDay.toISOString()]
+          }
+        });
+      }
+      
+      // We found an occurrence within the day range
+      console.log(`Found occurrence with ID ${occurrenceWithinDay.id} within day range, deleting...`);
+      await occurrenceWithinDay.destroy();
+      return res.status(204).send();
     }
 
     console.log(`Found occurrence with ID ${occurrence.id}, deleting...`);
@@ -468,7 +562,12 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting calendar event by date:', error);
-    res.status(500).json({ error: 'Failed to delete calendar event by date' });
+    // Include error details in response for better debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ 
+      error: 'Failed to delete calendar event by date',
+      message: errorMessage
+    });
   }
 };
 

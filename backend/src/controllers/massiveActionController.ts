@@ -19,7 +19,7 @@ export const getRpmBlockMassiveActions = async (req: Request, res: Response) => 
         },
         {
           association: 'notes',
-          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
         },
         {
           association: 'occurrences',
@@ -52,7 +52,7 @@ export const getRpmBlockMassiveActionById = async (req: Request, res: Response) 
         },
         {
           association: 'notes',
-          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']  
         },
         {
           association: 'occurrences',
@@ -60,7 +60,7 @@ export const getRpmBlockMassiveActionById = async (req: Request, res: Response) 
           include: [
             {
               association: 'notes',
-              attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+              attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
             }
           ]
         }
@@ -104,6 +104,8 @@ export const updateRpmBlockMassiveAction = async (req: Request, res: Response) =
       priority
     } = req.body;
 
+    console.log(`Updating massive action with id=${id}, status=${status}`);
+
     // Find the action
     const action = await RpmBlockMassiveAction.findByPk(id);
     if (!action) {
@@ -124,6 +126,8 @@ export const updateRpmBlockMassiveAction = async (req: Request, res: Response) =
       textColor,
       priority
     });
+
+    console.log(`Massive action ${id} status updated to: ${action.status}`);
 
     // If this is a single event (not a date range), update or create an occurrence
     if (!isDateRange && startDate) {
@@ -200,7 +204,7 @@ export const updateRpmBlockMassiveAction = async (req: Request, res: Response) =
         },
         {
           association: 'notes',
-          attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
         },
         {
           association: 'occurrences',
@@ -208,7 +212,7 @@ export const updateRpmBlockMassiveAction = async (req: Request, res: Response) =
           include: [
             {
               association: 'notes',
-              attributes: ['id', 'text', 'type', 'createdAt', 'updatedAt']
+              attributes: ['id', 'text', 'type', 'created_at', 'updated_at']  
             }
           ]
         }

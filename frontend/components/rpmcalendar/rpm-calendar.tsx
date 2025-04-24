@@ -417,10 +417,10 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
 
   const handleDrop = async (item: MassiveAction, dateKey: string) => {
     try {
-      // Set the action status to 'new' when dropped into the calendar
+      // Set the action status to 'planned' when dropped into the calendar
       const updatedItem = {
         ...item,
-        status: 'new' as const,
+        status: 'planned' as const,
         startDate: dateKey,
         endDate: dateKey
       };
@@ -443,7 +443,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           hour: updatedItem.hour,
           categoryId: updatedItem.categoryId,
           notes: updatedItem.notes || [],
-          status: updatedItem.status,
+          status: updatedItem.status, // Ensure status is 'planned'
           location: updatedItem.location,
           leverage: updatedItem.leverage,
           durationAmount: updatedItem.durationAmount,
@@ -469,7 +469,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             hour: updatedItem.hour,
             categoryId: updatedItem.categoryId,
             notes: updatedItem.notes || [],
-            status: updatedItem.status
+            status: updatedItem.status // Ensure status is 'planned'
           }),
         });
         
@@ -484,6 +484,12 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         console.log('Action updated via massive-actions API:', updatedActionWithNotes);
       }
 
+      // Make sure the updated action has the status correctly set to 'planned'
+      // Some APIs might not return the full object, so ensure the status is still 'planned'
+      if (!updatedActionWithNotes.status) {
+        updatedActionWithNotes.status = 'planned';
+      }
+
       // Update local calendar events state
       setCalendarEvents((prevEvents) => {
         const newEvents = [...prevEvents];
@@ -494,14 +500,16 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
           newEvents[eventIndex] = {
             ...newEvents[eventIndex],
             events: newEvents[eventIndex].events.map(action =>
-              action.id === updatedItem.id ? updatedActionWithNotes : action
+              action.id === updatedItem.id ? 
+                { ...action, ...updatedActionWithNotes, status: 'planned' } : 
+                action
             )
           };
         } else {
           // Create new event
           newEvents.push({
             date: dateKey,
-            events: [updatedActionWithNotes]
+            events: [{ ...updatedActionWithNotes, status: 'planned' }]
           });
         }
         
@@ -515,7 +523,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
             return {
               ...block,
               massiveActions: block.massiveActions.map(action =>
-                action.id === updatedItem.id ? updatedActionWithNotes : action
+                action.id === updatedItem.id ? 
+                  { ...action, ...updatedActionWithNotes, status: 'planned' } : 
+                  action
               ),
               updatedAt: new Date()
             };
@@ -560,9 +570,21 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        // First get the response as text to avoid JSON parsing errors on empty responses
+        const errorText = await response.text();
+        
+        let errorData;
+        try {
+          // Try to parse as JSON if there's content
+          errorData = errorText ? JSON.parse(errorText) : {};
+        } catch (e) {
+          // If parsing fails, use the text as is
+          errorData = { message: errorText || 'Unknown error' };
+        }
+        
         console.error('Error response from server:', errorData);
-        throw new Error(`Failed to remove action: ${response.status}`);
+        console.error('Status code:', response.status);
+        throw new Error(`Failed to remove action: ${response.status} - ${errorText || 'No response details'}`);
       }
       
       console.log(`Action successfully removed from the server`);
@@ -587,6 +609,19 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       await fetchCalendarEvents();
     } catch (error) {
       console.error('Error removing action from calendar:', error);
+      // Continue UI updates even if the API call fails
+      // This ensures the UI stays responsive even if the backend operation fails
+      setCalendarEvents((prevEvents) =>
+        prevEvents.map((event) => {
+          if (event.date === dateKey) {
+            return {
+              ...event,
+              events: event.events.filter((action) => action.id !== actionId)
+            };
+          }
+          return event;
+        })
+      );
     }
   };
 
