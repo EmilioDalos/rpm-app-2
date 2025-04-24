@@ -3,7 +3,7 @@ import {
   //getAllCalendarEvents,
   createCalendarEvent,
   updateCalendarEvent,
-  deleteCalendarEvent,
+  deleteCalendarEventByActionId,
   getCalendarEventsByDateRange,
   deleteCalendarEventByDate,
   addNote,
@@ -36,8 +36,8 @@ router.post('/', createCalendarEvent);
 // Delete a calendar event by id and date
 router.delete('/:id/:date', deleteCalendarEventByDate);
 
-// Delete a calendar event
-router.delete('/:id', deleteCalendarEvent);
+// Delete a calendar event by action id
+router.delete('/:actionId', deleteCalendarEventByActionId);
 
 // Update a calendar event
 router.put('/:id', updateCalendarEvent);

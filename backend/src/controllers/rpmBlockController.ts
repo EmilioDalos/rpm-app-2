@@ -8,12 +8,19 @@ import sequelize from '../config/db';
 import RpmMassiveActionRecurrence from '../models/RpmMassiveActionRecurrence';
 
 interface MassiveAction {
+  id?: string;
   text: string;
-  leverage?: string;
-  durationAmount?: number;
-  durationUnit?: string;
   priority?: number;
-  actionStatus?: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'new' | 'planned' | 'in_progress' | 'leveraged' | 'completed' | 'cancelled' | 'not_needed' | 'moved';
+  actionStatus?: string; // Voor backward compatibility
+  startDate?: Date;
+  endDate?: Date;
+  isDateRange?: boolean;
+  hour?: number;
+  color?: string;
+  textColor?: string;
+  categoryId?: string;
+  missedDate?: Date;
 }
 
 interface Purpose {
@@ -142,10 +149,11 @@ export const createRpmBlock = async (req: Request, res: Response) => {
 export const updateRpmBlock = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { category_id, result, type, order, content } = req.body;
+    const { category_id, result, type, order, content, idsToKeep } = req.body;
 
     console.log('Updating RPM block with ID:', id);
     console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('IDs to keep (if provided):', idsToKeep);
 
     // Start een transactie
     const transaction = await sequelize.transaction();
@@ -195,26 +203,100 @@ export const updateRpmBlock = async (req: Request, res: Response) => {
 
       // Update massive actions
       if (parsedContent.massiveActions && Array.isArray(parsedContent.massiveActions)) {
-        console.log('Deleting existing massive actions for block ID:', id);
-        // Verwijder bestaande massive actions
-        await RpmBlockMassiveAction.destroy({
-          where: { rpmBlockId: id },
-          transaction
-        });
+        // Als idsToKeep is meegegeven, gebruiken we een andere aanpak om de kalendergebeurtenissen te behouden
+        if (idsToKeep && Array.isArray(idsToKeep) && idsToKeep.length > 0) {
+          console.log('Using selective update approach with idsToKeep:', idsToKeep);
+          
+          // Maak een map van action ID's naar hun bijbehorende actie-object
+          const actionsById = parsedContent.massiveActions.reduce((map: Record<string, any>, action: any) => {
+            if (action.id) {
+              map[action.id] = action;
+            }
+            return map;
+          }, {});
+          
+          // Vind alle bestaande acties
+          const existingActions = await RpmBlockMassiveAction.findAll({
+            where: { rpmBlockId: id },
+            transaction
+          });
+          
+          // Houd bij welke actie-ID's we al hebben bijgewerkt
+          const processedIds = new Set<string>();
+          
+          // Werk bestaande acties bij die in idsToKeep staan
+          for (const existingAction of existingActions) {
+            if (idsToKeep.includes(existingAction.id)) {
+              // Deze actie moet behouden blijven, werk deze bij
+              const updatedData = actionsById[existingAction.id];
+              if (updatedData) {
+                console.log(`Updating existing action with ID ${existingAction.id}`);
+                // Gebruik de juiste velden uit het model
+                await existingAction.update({
+                  text: updatedData.text,
+                  priority: updatedData.priority || existingAction.priority,
+                  status: updatedData.status || existingAction.status,
+                  // Behoud deze velden om kalenderrelaties intact te houden
+                  startDate: existingAction.startDate,
+                  endDate: existingAction.endDate,
+                  isDateRange: updatedData.isDateRange !== undefined ? updatedData.isDateRange : existingAction.isDateRange,
+                  hour: updatedData.hour !== undefined ? updatedData.hour : existingAction.hour,
+                  missedDate: existingAction.missedDate,
+                  color: updatedData.color || existingAction.color,
+                  textColor: updatedData.textColor || existingAction.textColor,
+                  categoryId: updatedData.categoryId || existingAction.categoryId
+                }, { transaction });
+                
+                processedIds.add(existingAction.id);
+              }
+            } else {
+              // Deze actie staat niet in idsToKeep, verwijder deze
+              console.log(`Deleting action with ID ${existingAction.id} (not in idsToKeep)`);
+              await existingAction.destroy({ transaction });
+            }
+          }
+          
+          // Voeg nieuwe acties toe die nog niet bestaan
+          for (const action of parsedContent.massiveActions) {
+            if (action.id && !processedIds.has(action.id)) {
+              console.log(`Creating new action with ID ${action.id}`);
+              await RpmBlockMassiveAction.create({
+                id: action.id, // Behoud het ID
+                rpmBlockId: id,
+                text: action.text,
+                priority: action.priority || 0,
+                status: action.status || 'new',
+                startDate: action.startDate,
+                endDate: action.endDate,
+                isDateRange: action.isDateRange,
+                hour: action.hour,
+                color: action.color,
+                textColor: action.textColor,
+                categoryId: action.categoryId
+              }, { transaction });
+            }
+          }
+        } else {
+          // Standaard aanpak: verwijder alle bestaande acties en maak nieuwe aan
+          console.log('Using default approach: deleting all existing actions');
+          
+          // Verwijder bestaande massive actions
+          await RpmBlockMassiveAction.destroy({
+            where: { rpmBlockId: id },
+            transaction
+          });
 
-        console.log('Creating new massive actions:', JSON.stringify(parsedContent.massiveActions, null, 2));
-        // Maak nieuwe massive actions aan
-        await Promise.all(parsedContent.massiveActions.map((action: MassiveAction) => 
-          RpmBlockMassiveAction.create({
-            text: action.text,
-            leverage: action.leverage || '',
-            durationAmount: action.durationAmount || 0,
-            durationUnit: action.durationUnit || 'min',
-            priority: action.priority || 0,
-            actionStatus: action.actionStatus || 'new',
-            rpmBlockId: id
-          }, { transaction })
-        ));
+          console.log('Creating new massive actions:', JSON.stringify(parsedContent.massiveActions, null, 2));
+          // Maak nieuwe massive actions aan
+          await Promise.all(parsedContent.massiveActions.map((action: MassiveAction) => 
+            RpmBlockMassiveAction.create({
+              text: action.text,
+              priority: action.priority || 0,
+              status: action.actionStatus || 'new',
+              rpmBlockId: id
+            }, { transaction })
+          ));
+        }
       }
 
       // Update purposes
