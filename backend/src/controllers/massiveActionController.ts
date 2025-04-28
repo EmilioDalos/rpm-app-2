@@ -79,152 +79,134 @@ export const getRpmBlockMassiveActionById = async (req: Request, res: Response) 
   }
 };
 
-/**
- * Update a massive action and its related data
- */
-export const updateRpmBlockMassiveAction = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const {
-      text,
-      description,
-      startDate,
-      endDate,
-      isDateRange,
-      hour,
-      categoryId,
-      location,
-      leverage,
-      durationAmount,
-      durationUnit,
-      notes,
-      status,
-      color,
-      textColor,
-      priority
-    } = req.body;
+// /**
+//  * Update a massive action and its related data
+//  */
+// export const updateRpmBlockMassiveAction = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+//     const {
+//       text,
+//       description,
+    
+//       startDate,
+//       endDate,
+//       isDateRange,
+//       hour,
+//       categoryId,
+//       location,
+//       leverage,
+//       durationAmount,
+//       durationUnit,
+//       notes,
+//       status,
+//       color,
+//       textColor,
+//       priority
+//     } = req.body;
 
-    console.log(`Updating massive action with id=${id}, status=${status}`);
+//     console.log(`Updating massive action with id=${id}, status=${status}`);
 
-    // Find the action
-    const action = await RpmBlockMassiveAction.findByPk(id);
-    if (!action) {
-      return res.status(404).json({ error: 'Massive action not found' });
-    }
+//     const occurrence = await RpmMassiveActionOccurrence.findByPk(id);
+//     if (!occurrence) {
+//       return res.status(404).json({ error: 'Occurence  not found' });
+//     }
 
-    // Update the action
-    await action.update({
-      text,
-      description,
-      startDate,
-      endDate,
-      isDateRange,
-      hour,
-      categoryId,
-      status,
-      color,
-      textColor,
-      priority
-    });
+//     // Find the action
+//     const action = await RpmBlockMassiveAction.findByPk(occurrence.actionId);
+//     if (!action) {
+//       return res.status(404).json({ error: 'Massive action not found' });
+//     }
 
-    console.log(`Massive action ${id} status updated to: ${action.status}`);
+//     // Update the action
+//     await action.update({
+//       text,
+//       description,
+//       startDate,
+//       endDate,
+//       isDateRange,
+//       hour,
+//       categoryId,
+//       status,
+//       color,
+//       textColor,
+//       priority
+//     });
+//     const actionId = action.id;
+//     console.log(`Massive action ${action.id} status updated to: ${action.status}`);
 
-    // If this is a single event (not a date range), update or create an occurrence
-    if (!isDateRange && startDate) {
-      // Find existing occurrence for this date
-      const existingOccurrence = await RpmMassiveActionOccurrence.findOne({
-        where: {
-          actionId: id,
-          date: startDate
-        }
-      });
+//     // If this is a single event (not a date range), update or create an occurrence
+//     if (!isDateRange && startDate) {
+//       // Find existing occurrence for this date
+     
 
-      if (existingOccurrence) {
-        // Update existing occurrence
-        await existingOccurrence.update({
-          hour,
-          location,
-          leverage,
-          durationAmount,
-          durationUnit
-        });
+//       if (occurrence) {
+//         // Update existing occurrence
+//         await occurrence.update({
+//           date : startDate,
+//           hour,
+//           location,
+//           leverage,
+//           durationAmount,
+//           durationUnit
+//         });
 
-        // Handle notes if provided
-        if (notes && Array.isArray(notes)) {
-          // Delete existing notes
-          await RpmBlockMassiveActionNote.destroy({
-            where: {
-              occurrenceId: existingOccurrence.id
-            }
-          });
+//         // Handle notes if provided
+//         if (notes && Array.isArray(notes)) {
+//           // Delete existing notes
+//           await RpmBlockMassiveActionNote.destroy({
+//             where: {
+//               occurrenceId: occurrence.id
+//             }
+//           });
 
-          // Create new notes
-          for (const note of notes) {
-            await RpmBlockMassiveActionNote.create({
-              id: uuidv4(),
-              occurrenceId: existingOccurrence.id,
-              text: note.text,
-              type: note.type
-            });
-          }
-        }
-      } else {
-        // Create new occurrence
-        const occurrence = await RpmMassiveActionOccurrence.create({
-          id: uuidv4(),
-          actionId: id,
-          date: startDate,
-          hour,
-          location,
-          leverage,
-          durationAmount,
-          durationUnit
-        });
+//           // Create new notes
+//           for (const note of notes) {
+//             await RpmBlockMassiveActionNote.create({
+//               id: uuidv4(),
+//               occurrenceId: occurrence.id,
+//               actionId : occurrence.actionId,
+//               text: note.text,
+//               type: note.type
+//             });
+//           }
+//         }
+//       } else {
+//         // Create new occurrence
+//         const occurrence = await RpmMassiveActionOccurrence.create({
+//           id: uuidv4(),
+//           actionId: id,
+//           date: startDate,
+//           hour,
+//           location,
+//           leverage,
+//           durationAmount,
+//           durationUnit
+//         });
 
-        // Create notes if provided
-        if (notes && Array.isArray(notes)) {
-          for (const note of notes) {
-            await RpmBlockMassiveActionNote.create({
-              id: uuidv4(),
-              occurrenceId: occurrence.id,
-              text: note.text,
-              type: note.type
-            });
-          }
-        }
-      }
-    }
+//         // Create notes if provided
+//         if (notes && Array.isArray(notes)) {
+//           for (const note of notes) {
+//             await RpmBlockMassiveActionNote.create({
+//               id: uuidv4(),
+//               occurrenceId: occurrence.id,
+//               actionId : occurrence.actionId,
+//               text: note.text,
+//               type: note.type
+//             });
+//           }
+//         }
+//       }
+//     }
 
-    // Fetch the updated action with all associations
-    const updatedAction = await RpmBlockMassiveAction.findByPk(id, {
-      include: [
-        { 
-          association: 'category',
-          attributes: ['id', 'name', 'type', 'color']
-        },
-        {
-          association: 'notes',
-          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
-        },
-        {
-          association: 'occurrences',
-          attributes: ['id', 'date', 'hour', 'location', 'leverage', 'durationAmount', 'durationUnit'],
-          include: [
-            {
-              association: 'notes',
-              attributes: ['id', 'text', 'type', 'created_at', 'updated_at']  
-            }
-          ]
-        }
-      ]
-    });
+   
 
-    res.json(sanitizeSequelizeModel(updatedAction));
-  } catch (error) {
-    console.error('Error updating massive action:', error);
-    res.status(500).json({ error: 'Failed to update massive action' });
-  }
-};
+//     res.json(sanitizeSequelizeModel(action));
+//   } catch (error) {
+//     console.error('Error updating massive action:', error);
+//     res.status(500).json({ error: 'Failed to update massive action' });
+//   }
+// };
 
 /**
  * Delete a massive action and all its related data

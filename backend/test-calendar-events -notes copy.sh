@@ -61,6 +61,51 @@ EOF | jq '.'
 echo -e "\nVerifying updated occurrence reflects new date..."
 curl -s -X GET "${API_URL}/api/calendar-events/date-range?startDate=2024-04-16T00:00:00Z&endDate=2024-04-16T23:59:59Z" | jq '.'
 
+##############################################
+# ┌─────────────────────────────────────────────┐
+# │ 1. Event staat op 16 april met ID: EID     │
+# └─────────────────────────────────────────────┘
+#                    │
+#                    ▼
+# ┌─────────────────────────────────────────────┐
+# │ 2. POST /api/calendar-events/{EID}/notes   │
+# │    Payload: { text, type }                 │
+# └─────────────────────────────────────────────┘
+#                    │
+#                    ▼
+# ┌─────────────────────────────────────────────┐
+# │ 3. API maakt Note aan met occurrenceId OID │
+# └─────────────────────────────────────────────┘
+#                    │
+#                    ▼
+# ┌─────────────────────────────────────────────┐
+# │ 4. GET /api/calendar-events/date-range?    │
+# #    startDate=2024-04-16…                   │
+# └─────────────────────────────────────────────┘
+#                    │
+#                    ▼
+# ┌─────────────────────────────────────────────┐
+# │ 5. Vind in response de event met           │
+# │    occurrenceId = OID                      │
+# │    en controleer: notes[0].occurrenceId==OID │
+# └─────────────────────────────────────────────┘
+##############################################
+# Test 5: Adding a note to calendar event
+echo -e "\nTest 5: Adding a note to calendar event"
+NOTE_RESPONSE=$(curl -s -X POST "${API_URL}/api/calendar-events/${EVENT_ID}/notes" \
+  -H "Content-Type: application/json" \
+  -d @- <<EOF
+{
+  "text": "Making good progress on this task",
+  "type": "progress"
+}
+EOF
+)
+echo "$NOTE_RESPONSE" | jq '.'
+
+echo -e "\nVerifying note attached to occurrence..."
+curl -s -X GET "${API_URL}/api/calendar-events/date-range?startDate=2024-04-16T00:00:00Z&endDate=2024-04-16T23:59:59Z" | jq '.'
+
 # Test 4a: Delete a calendar event (representing removing an event)
 #echo -e "\nTest 19: Deleting calendar event"
 #curl -s -X DELETE "${API_URL}/api/calendar-events/${EVENT_ID}/2024-04-16T11:00:00Z"

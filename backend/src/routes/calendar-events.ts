@@ -2,14 +2,15 @@ import { Router } from 'express';
 import {
   //getAllCalendarEvents,
   createCalendarEvent,
-  updateCalendarEvent,
   deleteCalendarEventByActionId,
   getCalendarEventsByDateRange,
   deleteCalendarEventByDate,
   addNote,
   updateNote,
   deleteNote,
-  getCalendarEventById
+  getCalendarEventById,
+  updateCalendarEvent,
+  updateCalendarEventByActionId
 } from '../controllers/calendarEventController';
 
 const router = Router();
@@ -19,6 +20,8 @@ router.post('/:id/notes', addNote);
 router.put('/notes/:noteId', updateNote);
 router.delete('/notes/:noteId', deleteNote);
 
+// Occurrences management
+router.put('/occurrences/:occurrenceId', updateCalendarEvent);
 
 // Get calendar events by date range   
 router.get('/date-range', getCalendarEventsByDateRange);
@@ -40,6 +43,6 @@ router.delete('/:id/:date', deleteCalendarEventByDate);
 router.delete('/:actionId', deleteCalendarEventByActionId);
 
 // Update a calendar event
-router.put('/:id', updateCalendarEvent);
+router.put('/:actionId', updateCalendarEventByActionId);
 
 export default router;

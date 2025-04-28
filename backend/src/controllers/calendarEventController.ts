@@ -95,6 +95,11 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
     const processedActionsByDate: Record<string, Set<string>> = {};
     
     occurrences.forEach(occurrence => {
+      if (!occurrence.action) {
+        console.log(`Skipping occurrence ${occurrence.id} because action is missing`);
+        return;
+      }
+      
       const dateKey = format(new Date(occurrence.date), 'yyyy-MM-dd');
       const actionId = occurrence.actionId;
       
@@ -134,6 +139,8 @@ export const getCalendarEventsByDateRange = async (req: Request, res: Response) 
         status: occurrence.action?.status || 'new',
         categoryId: occurrence.action?.categoryId,
         isDateRange: occurrence.action?.isDateRange || false,
+        startDate: occurrence.action?.startDate ? format(new Date(occurrence.action.startDate), 'yyyy-MM-dd') : dateKey,
+        endDate: occurrence.action?.endDate ? format(new Date(occurrence.action.endDate), 'yyyy-MM-dd') : dateKey
       };
       
       eventsByDate[dateKey].events.push({
@@ -269,36 +276,79 @@ export const getCalendarEventById = async (req: Request, res: Response) => {
   }
 };
 
+// Utility function to generate dates for a recurrence pattern
+function getRecurrenceDates(start: Date, end: Date, pattern: Array<{dayOfWeek: string}>): Date[] {
+  const dates: Date[] = [];
+  let current = new Date(start);
+  
+  while (current <= end) {
+    const dayOfWeek = current.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+    if (pattern.some(p => p.dayOfWeek === dayOfWeek)) {
+      dates.push(new Date(current));
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return dates;
+}
+
 export const createCalendarEvent = async (req: Request, res: Response) => {
   try {
     const {
       rpmBlockId,
+      actionId,
       text,
       description,
       startDate,
       endDate,
       isDateRange,
+      recurrencePattern,
       hour,
       categoryId,
       location,
       leverage,
       durationAmount,
       durationUnit,
-      status = 'new' // Default to 'new' if not provided
+      status = 'new'
     } = req.body;
 
-    // Create the massive action
-    const action = await RpmBlockMassiveAction.create({
-      rpmBlockId,
-      text,
-      description,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      isDateRange,
-      hour,
-      categoryId,
-      status
-    });
+    // Determine whether to update an existing action or create a new one
+    let action;
+    if (actionId) {
+      action = await RpmBlockMassiveAction.findByPk(actionId);
+      if (!action) {
+        return res.status(404).json({ error: 'Calendar event not found' });
+      }
+      // Update existing action
+      await action.update({
+        text,
+        description,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isDateRange,
+        hour,
+        categoryId,
+        status: status || action.status
+      });
+    } else if (rpmBlockId) {
+      // Create a new action
+      action = await RpmBlockMassiveAction.create({
+        rpmBlockId,
+        text,
+        description,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isDateRange,
+        hour,
+        categoryId,
+        status
+      });
+    } else {
+      return res.status(400).json({ error: 'actionId or rpmBlockId is required' });
+    }
+
+    // Delete any existing occurrences for this action
+    await RpmMassiveActionOccurrence.destroy({ where: { actionId: action.id } });
 
     // If this is a single event (not a date range), create a single occurrence
     if (!isDateRange && startDate) {
@@ -312,7 +362,28 @@ export const createCalendarEvent = async (req: Request, res: Response) => {
         durationUnit
       });
     } 
-    // If this is a date range, create occurrences for each day in the range
+    // If this is a date range with recurrence pattern, create occurrences for each matching day
+    else if (isDateRange && startDate && endDate && recurrencePattern) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate dates based on recurrence pattern
+      const dates = getRecurrenceDates(start, end, recurrencePattern);
+      
+      // Create an occurrence for each matching date
+      for (const date of dates) {
+        await RpmMassiveActionOccurrence.create({
+          actionId: action.id,
+          date,
+          hour,
+          location,
+          leverage,
+          durationAmount,
+          durationUnit
+        });
+      }
+    }
+    // If this is a regular date range, create occurrences for each day
     else if (isDateRange && startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -352,15 +423,16 @@ function getDateRange(start: Date, end: Date): Date[] {
   return dates;
 }
 
-export const updateCalendarEvent = async (req: Request, res: Response) => {
+export const updateCalendarEventByActionId = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { actionId } = req.params;
     const {
       text,
       description,
       startDate,
       endDate,
       isDateRange,
+      recurrencePattern,
       hour,
       categoryId,
       location,
@@ -371,10 +443,10 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
       status
     } = req.body;
 
-    console.log(`Updating calendar event with id=${id}, status=${status}`);
+    console.log(`Updating calendar event with id=${actionId}, status=${status}`);
 
     // Find the action
-    const action = await RpmBlockMassiveAction.findByPk(id);
+    const action = await RpmBlockMassiveAction.findByPk(actionId);
     if (!action) {
       return res.status(404).json({ error: 'Calendar event not found' });
     }
@@ -392,96 +464,70 @@ export const updateCalendarEvent = async (req: Request, res: Response) => {
     });
 
     // Log the updated action status
-    console.log(`Calendar event ${id} status updated to: ${action.status}`);
+    console.log(`Calendar event ${actionId} status updated to: ${action.status}`);
 
-    // If this is a single event (not a date range), update or create occurrences for the date range
+    // Delete all existing occurrences for this action
+    await RpmMassiveActionOccurrence.destroy({ where: { actionId } });
+
+    // If this is a single event (not a date range), create a single occurrence
     if (!isDateRange && startDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate || startDate);
-      const updatedDates = getDateRange(start, end).map(d => d.toISOString().slice(0, 10));
-
-      const existingOccurrences = await RpmMassiveActionOccurrence.findAll({
-        where: {
-          actionId: id
-        }
+      console.log(`Creating single occurrence for non-date-range event ${actionId}`);
+      await RpmMassiveActionOccurrence.create({
+        actionId,
+        date: new Date(startDate),
+        hour,
+        location,
+        leverage,
+        durationAmount,
+        durationUnit
       });
-
-      const existingByDate = new Map(
-        existingOccurrences.map(o => [o.date.toISOString().slice(0, 10), o])
-      );
-
-      if (existingOccurrences.length === 1 && updatedDates.length === 1) {
-        const existingDate = existingOccurrences[0].date.toISOString().slice(0, 10);
-        const newDate = updatedDates[0];
-
-        if (existingDate === newDate) {
-          // Same date, just update
-          await existingOccurrences[0].update({
-            hour,
-            location,
-            leverage,
-            durationAmount,
-            durationUnit
-          });
-        } else {
-          // Different date, delete old and create new
-          await existingOccurrences[0].destroy();
-          await RpmMassiveActionOccurrence.create({
-            actionId: id,
-            date: new Date(newDate),
-            hour,
-            location,
-            leverage,
-            durationAmount,
-            durationUnit
-          });
-        }
-      } else {
-        // Full synchronization (date range changed)
-        const toCreate = updatedDates.filter(date => !existingByDate.has(date));
-        const toDelete = Array.from(existingByDate.keys()).filter(date => !updatedDates.includes(date));
-        const toKeep = updatedDates.filter(date => existingByDate.has(date));
-
-        if (toDelete.length > 0) {
-          await RpmMassiveActionOccurrence.destroy({
-            where: {
-              actionId: id,
-              date: {
-                [Op.in]: toDelete.map(d => new Date(d))
-              }
-            }
-          });
-        }
-
-        for (const date of toCreate) {
-          await RpmMassiveActionOccurrence.create({
-            actionId: id,
-            date: new Date(date),
-            hour,
-            location,
-            leverage,
-            durationAmount,
-            durationUnit
-          });
-        }
-
-        for (const date of toKeep) {
-          const occ = existingByDate.get(date);
-          if (occ) {
-            await occ.update({
-              hour,
-              location,
-              leverage,
-              durationAmount,
-              durationUnit
-            });
-          }
-        }
+    } 
+    // If this is a date range with recurrence pattern, create occurrences for each matching day
+    else if (isDateRange && startDate && endDate && recurrencePattern) {
+      console.log(`Creating occurrences for date range with recurrence pattern from ${startDate} to ${endDate}`);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate dates based on recurrence pattern
+      const dates = getRecurrenceDates(start, end, recurrencePattern);
+      
+      // Create an occurrence for each matching date
+      for (const date of dates) {
+        await RpmMassiveActionOccurrence.create({
+          actionId,
+          date,
+          hour,
+          location,
+          leverage,
+          durationAmount,
+          durationUnit
+        });
       }
+      console.log(`Created ${dates.length} occurrences for recurrence pattern`);
+    }
+    // If this is a regular date range, create occurrences for each day
+    else if (isDateRange && startDate && endDate) {
+      console.log(`Creating occurrences for date range from ${startDate} to ${endDate}`);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dates = getDateRange(start, end);
+      
+      for (const date of dates) {
+        await RpmMassiveActionOccurrence.create({
+          actionId,
+          date,
+          hour,
+          location,
+          leverage,
+          durationAmount,
+          durationUnit
+        });
+      }
+      console.log(`Created ${dates.length} occurrences for date range`);
     }
 
     // Fetch the updated action with all associations
-    const updatedAction = await RpmBlockMassiveAction.findByPk(id, {
+    const updatedAction = await RpmBlockMassiveAction.findByPk(actionId, {
       include: [
         { 
           association: 'category',
@@ -523,90 +569,63 @@ export const deleteCalendarEventByActionId = async (req: Request, res: Response)
 
 /**
  * DELETE /calendar-events/:id?date=YYYY-MM-DD
- * If the event has a recurrence pattern on that date, add an exception.
+ * If the event has a occurence pattern on that date, add an exception.
  * Otherwise, nullify startDate and endDate on the event.
  */
 export const deleteCalendarEventByDate = async (req: Request, res: Response) => {
   try {
-    const { id, date } = req.params;
-
-    if (!id || !date) {
-      console.error('Missing parameters:', { id, date });
+    // Parse occurrence ID and date param (supports path or query)
+    const id = req.params.id;
+    const dateParam = (req.params as any).date ?? (req.query.date as string);
+    if (!id || !dateParam) {
+      console.error('Missing parameters:', { id, dateParam });
       return res.status(400).json({ error: 'Both id and date are required' });
     }
 
-    console.log(`Deleting occurrence for ID ${id} on date ${date}`);
+    console.log(`Deleting occurrence for ID ${id} on date ${dateParam}`);
 
     // Parse the date string, ensuring it's treated as UTC
-    const [year, month, day] = date.split('-').map(Number);
-    
+    const [year, month, day] = dateParam.split('-').map(Number);
     if (!year || !month || !day) {
-      console.error('Invalid date format:', date);
+      console.error('Invalid date format:', dateParam);
       return res.status(400).json({ error: 'Invalid date format. Expected YYYY-MM-DD' });
     }
-    
     // Create a date object (month is 0-indexed)
     const inputDate = new Date(Date.UTC(year, month - 1, day));
     console.log('Parsed date:', inputDate.toISOString());
-    
     // Set the time to the beginning of the day
     const startOfDay = new Date(Date.UTC(year, month - 1, day));
     startOfDay.setUTCHours(0, 0, 0, 0);
-    
     const endOfDay = new Date(Date.UTC(year, month - 1, day));
     endOfDay.setUTCHours(23, 59, 59, 999);
-    
     console.log('Searching for occurrence with date between:', {
       startOfDay: startOfDay.toISOString(),
       endOfDay: endOfDay.toISOString()
     });
 
     // Try to find the occurrence by its ID
-    let occurrence = await RpmMassiveActionOccurrence.findByPk(id);
-    
-    // If not found by ID, maybe the ID is actually an actionId, try to find an occurrence for this actionId on this date
+    const occurrence = await RpmMassiveActionOccurrence.findByPk(id);
     if (!occurrence) {
-      console.log(`No occurrence found with ID ${id}, checking if it's an actionId...`);
-      occurrence = await RpmMassiveActionOccurrence.findOne({
-        where: {
-          actionId: id,
-          date: {
-            [Op.between]: [startOfDay, endOfDay]
-          }
-        }
-      });
+      console.log(`No occurrence found with ID ${id}`);
+      return res.status(404).json({ error: 'Occurrence not found for this ID' });
     }
-      
-    if (!occurrence) {
-      console.log(`No occurrence found for action or occurrence ID ${id} on date ${date}`);
-      return res.status(404).json({ 
-        error: 'Occurrence not found for this date',
-        details: {
-          requestedDate: date,
-          parsedDate: inputDate.toISOString(),
-          dayRange: [startOfDay.toISOString(), endOfDay.toISOString()]
-        }
-      });
-    }
-    
+
     // We found an occurrence, now get the parent action
-    console.log(`Found occurrence with ID ${occurrence.id} for date ${date}, checking parent action...`);
+    console.log(`Found occurrence with ID ${occurrence.id} for date ${dateParam}, checking parent action...`);
     const actionId = occurrence.actionId;
     const parentAction = await RpmBlockMassiveAction.findByPk(actionId);
-    
     if (!parentAction) {
       console.error(`Parent action ${actionId} not found!`);
       return res.status(404).json({ error: 'Parent action not found' });
     }
-    
+
     // Delete the occurrence (this will cascade delete notes)
     await occurrence.destroy();
-    console.log(`Deleted occurrence ${occurrence.id} for date ${date}`);
-    
+    console.log(`Deleted occurrence ${occurrence.id} for date ${dateParam}`);
+
     // If the event is not a date range, reset the dates and status on the parent action
     if (!parentAction.isDateRange) {
       console.log(`Resetting dates and status on parent action ${parentAction.id} because it's not a date range`);
-      
       // Using direct SQL query to set dates to NULL
       await sequelize.query(
         `UPDATE rpm_block_massive_action 
@@ -617,13 +636,11 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
           type: sequelize.QueryTypes.UPDATE
         }
       );
-      
       // Also update the model instance to be in sync
       parentAction.startDate = undefined;
       parentAction.endDate = undefined;
       parentAction.status = 'new';
       await parentAction.save({ silent: true });
-      
       console.log(`Reset dates and status for action ${parentAction.id}`);
     }
 
@@ -632,7 +649,7 @@ export const deleteCalendarEventByDate = async (req: Request, res: Response) => 
     console.error('Error deleting calendar event by date:', error);
     // Include error details in response for better debugging
     const errorMessage = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to delete calendar event by date',
       message: errorMessage
     });
@@ -837,5 +854,54 @@ export const deleteNote = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting note:', error);
     res.status(500).json({ error: 'Failed to delete note' });
+  }
+};
+
+export const updateCalendarEvent = async (req: Request, res: Response) => {
+  try {
+    const { occurrenceId } = req.params;
+    const { hour, leverage, durationAmount, durationUnit, location } = req.body;
+
+    console.log(`Updating occurrence ${occurrenceId} time to hour=${hour}`);
+
+    // Find the occurrence
+    const occurrence = await RpmMassiveActionOccurrence.findByPk(occurrenceId);
+    
+    if (!occurrence) {
+      console.error(`Occurrence ${occurrenceId} not found`);
+      return res.status(404).json({ error: 'Occurrence not found' });
+    }
+
+    // Update just the time-related fields
+    const updateData: any = {};
+    if (hour !== undefined) updateData.hour = hour;
+    if (leverage !== undefined) updateData.leverage = leverage;
+    if (durationAmount !== undefined) updateData.durationAmount = durationAmount;
+    if (durationUnit !== undefined) updateData.durationUnit = durationUnit;
+    if (location !== undefined) updateData.location = location;
+
+    await occurrence.update(updateData);
+
+    // Return the updated occurrence
+    const updatedOccurrence = await RpmMassiveActionOccurrence.findByPk(occurrenceId, {
+      include: [{
+        model: RpmBlockMassiveAction,
+        as: 'action',
+        include: [
+          { 
+            association: 'category',
+            attributes: ['id', 'name', 'type', 'color']
+          }
+        ]
+      }]
+    });
+
+    res.json(sanitizeSequelizeModel(updatedOccurrence));
+  } catch (error) {
+    console.error('Error updating occurrence time:', error);
+    res.status(500).json({ 
+      error: 'Failed to update occurrence time',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 };

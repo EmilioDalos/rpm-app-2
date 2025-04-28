@@ -1,0 +1,254 @@
+🧪 Starting Calendar Events API tests...
+
+Test 1: Creating a calendar event
+{
+  "error": "Failed to create calendar event",
+  "details": "notNull Violation: RpmBlockMassiveAction.rpmBlockId cannot be null"
+}
+Created event with ID: null
+
+Test 2: Getting calendar event by ID
+{
+  "error": "Failed to fetch calendar event",
+  "details": "invalid input syntax for type uuid: \"null\""
+}
+
+Finding occurrence ID before tests...
+Found occurrence with ID: 20d60c9f-83c4-449b-9469-c7752bb61932 for date 2024-04-15
+
+Test 3: Getting calendar events by date range
+[
+  {
+    "date": "2024-04-15",
+    "events": [
+      {
+        "date": "2024-04-15",
+        "id": "20d60c9f-83c4-449b-9469-c7752bb61932",
+        "actionId": "33333333-ffff-ffff-ffff-333333333333",
+        "text": "Updated Team Meeting",
+        "color": "#3366FF",
+        "textColor": "#FFFFFF",
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Conference Room A",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2024-04-15",
+        "endDate": "2024-04-15"
+      }
+    ]
+  }
+]
+
+Test 4: Updating calendar event (changing startDate)
+{
+  "error": "Failed to update calendar event",
+  "details": "invalid input syntax for type uuid: \"null\""
+}
+
+Verifying updated occurrence reflects new date...
+[]
+
+Verifying original date (2024-04-15) no longer has an occurrence for this event...
+[
+  {
+    "date": "2024-04-15",
+    "events": [
+      {
+        "date": "2024-04-15",
+        "id": "20d60c9f-83c4-449b-9469-c7752bb61932",
+        "actionId": "33333333-ffff-ffff-ffff-333333333333",
+        "text": "Updated Team Meeting",
+        "color": "#3366FF",
+        "textColor": "#FFFFFF",
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Conference Room A",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2024-04-15",
+        "endDate": "2024-04-15"
+      }
+    ]
+  }
+]
+
+✅ Test passed: Original occurrence (2024-04-15) correctly removed when date changed
+Warning: Could not find new occurrence ID after update. Falling back to original event ID.
+
+Test 5: Adding a note to calendar event
+{
+  "error": "Failed to add note"
+}
+
+Verifying occurrence ID after adding note...
+Warning: Could not find occurrence ID. Using event ID for deletion test.
+
+Test 6: Deleting calendar event by date null
+{"error":"Failed to delete calendar event by date","message":"invalid input syntax for type uuid: \"null\""}
+Verifying occurrence was deleted but event still exists...
+[]
+
+Checking if non-dateRange event's dates were reset and status changed to 'new'...
+{
+  "error": "Failed to fetch calendar event",
+  "details": "invalid input syntax for type uuid: \"null\""
+}
+
+Verification results:
+StartDate is null: true
+EndDate is null: true
+Status is 'new': false
+
+Test A: Creating a non-date-range event for testing date changes
+Created single event with ID: 0cf32b63-6b2f-4972-a2de-93d7e68c6385
+
+Verifying occurrence was created for May 10th...
+[
+  {
+    "date": "2024-05-10",
+    "events": [
+      {
+        "date": "2024-05-10",
+        "id": "0860f2c7-8de0-4366-93f6-b52b0bf62f1a",
+        "actionId": "0cf32b63-6b2f-4972-a2de-93d7e68c6385",
+        "text": "Single Day Event",
+        "color": null,
+        "textColor": null,
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Meeting Room",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2024-05-10",
+        "endDate": "2024-05-10"
+      }
+    ]
+  }
+]
+✅ Found occurrence for May 10th: 0860f2c7-8de0-4366-93f6-b52b0bf62f1a
+
+Updating single event to May 15th...
+{
+  "id": "0cf32b63-6b2f-4972-a2de-93d7e68c6385",
+  "rpmBlockId": "11111111-aaaa-aaaa-aaaa-111111111111",
+  "text": "Single Day Event",
+  "color": null,
+  "textColor": null,
+  "priority": null,
+  "status": "new",
+  "startDate": "2025-05-15T10:00:00.000Z",
+  "endDate": "2025-05-15T11:00:00.000Z",
+  "isDateRange": false,
+  "hour": "10",
+  "missedDate": null,
+  "description": "Single day event for testing",
+  "categoryId": "11111111-1111-1111-1111-111111111111",
+  "createdAt": "2025-04-27T10:58:15.322Z",
+  "updatedAt": "2025-04-27T10:58:15.362Z",
+  "created_at": "2025-04-27T10:58:15.322Z",
+  "updated_at": "2025-04-27T10:58:15.362Z",
+  "rpm_block_id": "11111111-aaaa-aaaa-aaaa-111111111111",
+  "category": {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "name": "Personal Growth",
+    "type": "personal",
+    "color": "#FF5733"
+  },
+  "notes": []
+}
+
+Verifying occurrence was created for May 15th...
+[
+  {
+    "date": "2025-05-15",
+    "events": [
+      {
+        "date": "2025-05-15",
+        "id": "58ad8c61-32ce-44a7-9c47-ed632928af88",
+        "actionId": "6e23e965-7111-4f78-a50c-8288495357fd",
+        "text": "Single Day Event",
+        "color": null,
+        "textColor": null,
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Meeting Room",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2025-05-15",
+        "endDate": "2025-05-15"
+      },
+      {
+        "date": "2025-05-15",
+        "id": "19c7f9cf-46c4-4ca2-9002-9181b648c084",
+        "actionId": "868962ff-265d-4ce4-83ed-919185e66bd2",
+        "text": "Single Day Event",
+        "color": null,
+        "textColor": null,
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Meeting Room",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2025-05-15",
+        "endDate": "2025-05-15"
+      },
+      {
+        "date": "2025-05-15",
+        "id": "2c2fd403-6327-4008-887f-cd4d293587ac",
+        "actionId": "d79a923a-8c0b-4fa7-b4f8-076200bb0128",
+        "text": "Single Day Event",
+        "color": null,
+        "textColor": null,
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Meeting Room",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2025-05-15",
+        "endDate": "2025-05-15"
+      },
+      {
+        "date": "2025-05-15",
+        "id": "827d4536-829b-4997-8e58-f38256252d3a",
+        "actionId": "0cf32b63-6b2f-4972-a2de-93d7e68c6385",
+        "text": "Single Day Event",
+        "color": null,
+        "textColor": null,
+        "hour": "10",
+        "leverage": "High Priority",
+        "durationAmount": 60,
+        "durationUnit": "minutes",
+        "location": "Meeting Room",
+        "status": "new",
+        "categoryId": "11111111-1111-1111-1111-111111111111",
+        "isDateRange": false,
+        "startDate": "2025-05-15",
+        "endDate": "2025-05-15"
+      }
+    ]
+  }
+]
+
+Verifying May 10th occurrence is gone...
+[]
+✅ Found occurrence for new date (May 15th): 827d4536-829b-4997-8e58-f38256252d3a
+✅ Test passed: Original occurrence (May 10th) correctly removed

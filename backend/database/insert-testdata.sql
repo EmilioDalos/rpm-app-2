@@ -119,11 +119,11 @@ VALUES
   ('44444444-9999-9999-9999-444444444444', '33333333-8888-8888-8888-333333333333', '2025-03-20', 15, 'Remote', 'Client communication', 1, 'hour', NOW(), NOW());
 
 -- ⚙️ rpm_block_massive_action_note
-INSERT INTO "rpm_block_massive_action_note" (id, occurrence_id, text, type)
+INSERT INTO "rpm_block_massive_action_note" (id, occurrence_id, action_id, text, type)
 VALUES 
-  ('55555555-aaaa-aaaa-aaaa-555555555555', '44444444-9999-9999-9999-444444444444', 'Sent first batch of surveys', 'Update'),
-  ('55555555-bbbb-bbbb-bbbb-555555555555', '44444444-eeee-eeee-eeee-444444444444', 'Completed 3K run', 'Progress'),
-  ('55555555-cccc-cccc-cccc-555555555555', '44444444-eeee-eeee-eeee-444444444444', 'Improved flexibility', 'Update');
+  ('55555555-aaaa-aaaa-aaaa-555555555555', '44444444-9999-9999-9999-444444444444', '33333333-8888-8888-8888-333333333333', 'Sent first batch of surveys', 'Update'),
+  ('55555555-bbbb-bbbb-bbbb-555555555555', '44444444-eeee-eeee-eeee-444444444444', '33333333-abcd-abcd-abcd-333333333333', 'Completed 3K run', 'Progress'),
+  ('55555555-cccc-cccc-cccc-555555555555', '44444444-eeee-eeee-eeee-444444444444', '33333333-abcd-abcd-abcd-333333333333', 'Improved flexibility', 'Update');
 
 -- ⚙️ rpm_block_massive_action_note_metric
 INSERT INTO "rpm_block_massive_action_note_metric" (note_id, name, value, unit, timestamp)
