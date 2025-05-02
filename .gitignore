@@ -36,3 +36,5 @@ next-env.d.ts
 
 # Negeer node_modules alleen binnen frontend/src/
 frontend/src/node_modules/
+backend/logs/combined.log
+backend/logs/combined.log

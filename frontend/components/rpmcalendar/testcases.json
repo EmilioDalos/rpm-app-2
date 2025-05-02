@@ -1,0 +1,69 @@
+[
+  {
+    "repeat": "none"
+  },
+  {
+    "repeat": "daily",
+    "interval": 1,
+    "endType": "never"
+  },
+  {
+    "repeat": "daily",
+    "interval": 3,
+    "endType": "afterOccurrences",
+    "occurrenceCount": 10
+  },
+  {
+    "repeat": "daily",
+    "interval": 1,
+    "endType": "onDate",
+    "endDate": "2025-12-31"
+  },
+  {
+    "repeat": "weekly",
+    "interval": 1,
+    "weekdays": [
+      "MO"
+    ],
+    "endType": "never"
+  },
+  {
+    "repeat": "weekly",
+    "interval": 2,
+    "weekdays": [
+      "MO",
+      "WE",
+      "FR"
+    ],
+    "endType": "afterOccurrences",
+    "occurrenceCount": 8
+  },
+  {
+    "repeat": "monthly",
+    "interval": 1,
+    "dayOfMonth": 16,
+    "endType": "never"
+  },
+  {
+    "repeat": "monthly",
+    "interval": 2,
+    "dayOfMonth": 5,
+    "endType": "onDate",
+    "endDate": "2026-06-05"
+  },
+  {
+    "repeat": "yearly",
+    "interval": 1,
+    "month": 5,
+    "dayOfMonth": 2,
+    "endType": "never"
+  },
+  {
+    "repeat": "yearly",
+    "interval": 3,
+    "month": 12,
+    "dayOfMonth": 25,
+    "endType": "afterOccurrences",
+    "occurrenceCount": 5
+  }
+]

@@ -60,9 +60,13 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       : '8-0'
   )
   const tiptapRef = useRef<{ editor: Editor | null }>(null)
-  const [isRecurring, setIsRecurring] = useState(action.recurrDays && action.recurrDays.length > 0);
+  const [isRecurring, setIsRecurring] = useState(action.recurrencePattern && action.recurrencePattern.length > 0);
   const [isPlanned, setIsPlanned] = useState(action.status === 'planned');
-  const [recurrDays, setRecurrDays] = useState<DayOfWeek[]>(action?.recurrDays || []);
+  const [recurrencePattern, setRecurrencePattern] = useState<{
+  id: string;
+  actionId: string;
+  dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+}[]>(action?.recurrencePattern || []);
   const [selectedStatus, setSelectedStatus] = useState<'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved'>(
     (action?.status as 'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved') || 'new'
   );
@@ -80,9 +84,10 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       const minutes = Math.round((action.hour % 1) * 60);
       setSelectedHour(`${hour}-${minutes}`);
     }
-    setIsRecurring(action.recurrDays && action.recurrDays.length > 0);
+    setIsRecurring(action.recurrencePattern && action.recurrencePattern.length > 0);
     setIsPlanned(action.status === 'planned');
-    setRecurrDays(action?.recurrDays || []);
+    // Initialize recurrence pattern
+    setRecurrencePattern(action?.recurrencePattern || []);
     setSelectedStatus((action.status as 'new' | 'in_progress' | 'completed' | 'cancelled' | 'planned' | 'leveraged' | 'not_needed' | 'moved') || 'new');
     
     // Log the notes for debugging
@@ -112,7 +117,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
         });
         
         // Call the API to add a note
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${idToUse}/notes`, {
+        const response = await fetch(`/calendar-events/${idToUse}/notes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -132,6 +137,19 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
         
         // The API returns { note } so we need to extract the note object
         const newNoteObj = data.note || data;
+
+        // Update the recurrence pattern in the backend
+        if (isRecurring) {
+          await fetch(`/calendar-events/${idToUse}/recurrence`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recurrencePattern: recurrencePattern,
+              startDate,
+              endDate
+            }),
+          });
+        }
         
         // Update local state
         setNotes(prevNotes => [...prevNotes, newNoteObj]);
@@ -153,7 +171,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       console.log(`Deleting note with ID: ${id}`);
       
       // Call the API to delete the note
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/notes/${id}`, {
+      const response = await fetch(`/calendar-events/notes/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +205,7 @@ const CalendarPopup: React.FC<CalendarPopupProps> = ({ action, dateKey, isOpen, 
       console.log(`Updating note with ID: ${id}`, { newText });
       
       // Call the API to update the note
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/notes/${id}`, {
+      const response = await fetch(`/calendar-events/notes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

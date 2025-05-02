@@ -379,9 +379,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       });
       setRpmBlocks(updatedBlocks);
 
-      // Update the action via the massive-actions API
+      // Update the action via the calendar-events API
       if (updatedAction.startDate) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedAction.id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -430,8 +430,8 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       
       let updatedActionWithNotes;
 
-      // Update via the massive-actions API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedItem.id}`, {
+      // Update via the calendar-events API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedItem.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -455,7 +455,7 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
       });
 
       if (!response.ok) {
-        // Fall back to the calendar-events API if the massive-actions API fails
+        // Fall back to the calendar-events API if the calendar-events API fails
         console.log('Falling back to calendar-events API');
         const fallbackResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedItem.id}`, {
           method: 'PUT',
@@ -957,9 +957,9 @@ const RpmCalendar: FC<RpmCalendarProps> = ({ isDropDisabled }) => {
         });
         setRpmBlocks(updatedBlocks);
 
-        // Update the action via the massive-actions API
+        // Update the action via the calendar-events API
         if (updatedAction.startDate) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/massive-actions/${updatedAction.id}`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/calendar-events/${updatedAction.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

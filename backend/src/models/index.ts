@@ -22,110 +22,107 @@ const setupAssociations = () => {
   });
 
   Role.belongsTo(Category, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'category'
   });
 
   // Category associations
   Category.hasMany(RpmBlock, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'rpmBlocks',
   });
   
   // Category - CategoryThreeToThrive associations
   Category.hasMany(CategoryThreeToThrive, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'threeToThrive',
     onDelete: 'CASCADE'
   });
 
   // Category - CategoryResult associations
   Category.hasMany(CategoryResult, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'results',
     onDelete: 'CASCADE'
   });
 
   CategoryResult.belongsTo(Category, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'category'
   });
 
   // Category - CategoryActionPlan associations
   Category.hasMany(CategoryActionPlan, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'actionPlans',
     onDelete: 'CASCADE'
   });
 
   CategoryActionPlan.belongsTo(Category, {
-    foreignKey: 'category_id',
+    foreignKey: 'categoryId',
     as: 'category'
   });
 
 
 RpmBlock.belongsTo(Category, {
-  foreignKey: 'category_id',
+  foreignKey: 'categoryId',
   as: 'category',
 });
 
 RpmBlock.hasMany(RpmBlockMassiveAction, {
-  foreignKey: 'rpm_block_id',
+  foreignKey: 'rpmBlockId',
   as: 'massiveActions',
   onDelete: 'CASCADE'
 });
 
 RpmBlockMassiveAction.belongsTo(RpmBlock, {
-  foreignKey: 'rpm_block_id',
+  foreignKey: 'rpmBlockId',
   as: 'rpmBlock'
 });
 
-// Add the missing category association for RpmBlockMassiveAction
-RpmBlockMassiveAction.belongsTo(Category, {
-  foreignKey: 'category_id',
-  as: 'category'
-});
-
+// Category - RpmBlockMassiveAction associations
 Category.hasMany(RpmBlockMassiveAction, {
-  foreignKey: 'category_id',
+  foreignKey: 'categoryId',
   as: 'massiveActions'
 });
 
-// RpmBlockPurpose associaties
+RpmBlockMassiveAction.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category'
+});
+
+// RpmBlockPurpose associations
 RpmBlock.hasMany(RpmBlockPurpose, {
-  foreignKey: 'rpm_block_id',
+  foreignKey: 'rpmBlockId',
   as: 'purposes',
   onDelete: 'CASCADE'
 });
 
 RpmBlockPurpose.belongsTo(RpmBlock, {
-  foreignKey: 'rpm_block_id',
+  foreignKey: 'rpmBlockId',
   as: 'rpmBlock'
 });
 
+// RpmBlockMassiveAction - RpmMassiveActionOccurrence associations
 RpmBlockMassiveAction.hasMany(RpmMassiveActionOccurrence, { 
-  foreignKey: 'action_id', 
+  foreignKey: 'actionId', 
   as: 'occurrences',
   onDelete: 'CASCADE'
 });
 
 RpmMassiveActionOccurrence.belongsTo(RpmBlockMassiveAction, { 
-  foreignKey: 'action_id',
+  foreignKey: 'actionId',
   as: 'action'
 });
 
-// Add direct notes association for RpmBlockMassiveAction
+// RpmBlockMassiveAction - RpmBlockMassiveActionNote associations
 RpmBlockMassiveAction.hasMany(RpmBlockMassiveActionNote, {
-  foreignKey: 'action_id',
+  foreignKey: 'actionId',
   as: 'notes',
   onDelete: 'CASCADE'
 });
 
-RpmBlockMassiveActionNote.belongsTo(RpmBlockMassiveAction, {
-  foreignKey: 'action_id',
-  as: 'action'
-});
-
+// RpmMassiveActionOccurrence - RpmBlockMassiveActionNote associations
 RpmMassiveActionOccurrence.hasMany(RpmBlockMassiveActionNote, {
   foreignKey: 'occurrence_id',
   as: 'notes',

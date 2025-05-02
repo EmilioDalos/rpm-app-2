@@ -16,9 +16,12 @@ interface RpmBlockMassiveActionAttributes {
   endDate?: Date;
   isDateRange?: boolean;
   hour?: number;
+  leverage?: string;
   missedDate?: Date;
   description?: string;
   categoryId?: string;
+  recurrencePattern?: string;
+  recurrenceType?: 'day' | 'week' | 'month' | 'year';
   createdAt: Date;
   updatedAt: Date;
   occurrences?: RpmMassiveActionOccurrence[];
@@ -36,11 +39,14 @@ class RpmBlockMassiveAction extends Model<RpmBlockMassiveActionAttributes, RpmBl
   public status!: 'new' | 'planned' | 'in_progress' | 'leveraged' | 'completed' | 'cancelled' | 'not_needed' | 'moved';
   public startDate?: Date;
   public endDate?: Date;
+  public leverage?: string;
   public isDateRange?: boolean;
   public hour?: number;
   public missedDate?: Date;
   public description?: string;
   public categoryId?: string;
+  public recurrencePattern?: string;
+  public recurrenceType?: 'day' | 'week' | 'month' | 'year';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
   public occurrences?: RpmMassiveActionOccurrence[];
@@ -112,6 +118,10 @@ RpmBlockMassiveAction.init({
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  leverage: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   categoryId: {
     type: DataTypes.UUID,
     allowNull: true,
@@ -120,6 +130,14 @@ RpmBlockMassiveAction.init({
       key: 'id',
     },
     field: 'category_id'
+  },
+  recurrencePattern: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  recurrenceType: {
+    type: DataTypes.ENUM('day', 'week', 'month', 'year'),
+    allowNull: true,
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -141,7 +159,7 @@ RpmBlockMassiveAction.init({
   underscored: true,
 });
 
-RpmBlockMassiveAction.belongsTo(RpmBlock, { foreignKey: 'rpmBlockId' });
-RpmBlockMassiveAction.belongsTo(Category, { foreignKey: 'categoryId' });
+// Associations are defined in index.ts
+// This ensures proper model initialization order
 
 export default RpmBlockMassiveAction;

@@ -44,173 +44,133 @@ export const getRpmBlockMassiveActionById = async (req: Request, res: Response) 
   try {
     const { id } = req.params;
     
-    const action = await RpmBlockMassiveAction.findByPk(id, {
+    console.log(`[getRpmBlockMassiveActionById] Request received for ID: ${id}`);
+
+    // First try to fetch the action directly
+    console.log(`[getRpmBlockMassiveActionById] Fetching action with ID: ${id}`);
+    let action = await RpmBlockMassiveAction.findByPk(id, {
       include: [
+        { association: 'category', attributes: ['id', 'name', 'type', 'color'] },
         { 
-          association: 'category',
-          attributes: ['id', 'name', 'type', 'color']
-        },
-        {
           association: 'notes',
-          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']  
-        },
-        {
-          association: 'occurrences',
-          attributes: ['id', 'date', 'hour', 'location', 'leverage', 'durationAmount', 'durationUnit'],
-          include: [
-            {
-              association: 'notes',
-              attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
-            }
-          ]
+          attributes: ['id', 'text', 'type', 'created_at', 'updated_at']
         }
       ]
     });
 
     if (!action) {
+      console.log(`[getRpmBlockMassiveActionById] Action not found: ${id}`);
       return res.status(404).json({ error: 'Massive action not found' });
     }
 
-    const sanitizedAction = sanitizeSequelizeModel(action);
-    res.json(sanitizedAction);
+    // If it's a recurring action, fetch all occurrences
+    if (action.recurrenceType) {
+      console.log(`[getRpmBlockMassiveActionById] Fetching occurrences for recurring action: ${id}`);
+      const occurrences = await RpmMassiveActionOccurrence.findAll({
+        where: { actionId: id },
+        order: [['date', 'ASC']]
+      });
+
+      action = action.set('occurrences', occurrences);
+    }
+
+    // If it's a date range action, fetch all occurrences within the range
+    if (action.isDateRange) {
+      console.log(`[getRpmBlockMassiveActionById] Fetching occurrences for date range action: ${id}`);
+      const occurrences = await RpmMassiveActionOccurrence.findAll({
+        where: { actionId: id },
+        order: [['date', 'ASC']]
+      });
+
+      action = action.set('occurrences', occurrences);
+    }
+
+    // If it's a single occurrence action, fetch the single occurrence
+    if (!action.recurrenceType && !action.isDateRange) {
+      console.log(`[getRpmBlockMassiveActionById] Fetching single occurrence for action: ${id}`);
+      const occurrence = await RpmMassiveActionOccurrence.findOne({
+        where: { actionId: id }
+      });
+
+      if (occurrence) {
+        action = action.set('occurrences', [occurrence]);
+      }
+    }
+
+    // Format the response
+    const actionJson = {
+      ...action.toJSON(),
+      isRecurringDays: !!action.recurrenceType,
+      occurrences: action.occurrences?.map(occurrence => ({
+        ...occurrence.toJSON(),
+        date: occurrence.date.toISOString(),
+        hour: occurrence.hour,
+        durationAmount: occurrence.durationAmount,
+        durationUnit: occurrence.durationUnit,
+        location: occurrence.location
+      })) || []
+    };
+
+    // Wrap in CalendarEventDay
+    const response = {
+      date: action.startDate?.toISOString() || new Date().toISOString(),
+      events: [actionJson]
+    };
+
+    console.log(`[getRpmBlockMassiveActionById] Returning data for ID ${id}, date: ${action.startDate?.toISOString()}`);
+    res.json(response);
   } catch (error) {
-    console.error('Error fetching massive action:', error);
-    res.status(500).json({ error: 'Failed to fetch massive action' });
+    console.error('[getRpmBlockMassiveActionById] Error fetching massive action:', error);
+    res.status(500).json({ error: 'Failed to fetch massive action', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
-// /**
-//  * Update a massive action and its related data
-//  */
-// export const updateRpmBlockMassiveAction = async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params;
-//     const {
-//       text,
-//       description,
-    
-//       startDate,
-//       endDate,
-//       isDateRange,
-//       hour,
-//       categoryId,
-//       location,
-//       leverage,
-//       durationAmount,
-//       durationUnit,
-//       notes,
-//       status,
-//       color,
-//       textColor,
-//       priority
-//     } = req.body;
+export const createMassiveAction = async (req: Request, res: Response) => {
+  try {
+    const {
+      text,
+      color,
+      textColor,
+      status,
+      categoryId,
+      hour,
+      startDate,
+      endDate,
+      isDateRange,
+      leverage,
+      description,
+      recurrenceType,
+      recurrencePattern
+    } = req.body;
 
-//     console.log(`Updating massive action with id=${id}, status=${status}`);
+    if (!text || !categoryId) {
+      return res.status(400).json({ error: 'Text and categoryId are required' });
+    }
 
-//     const occurrence = await RpmMassiveActionOccurrence.findByPk(id);
-//     if (!occurrence) {
-//       return res.status(404).json({ error: 'Occurence  not found' });
-//     }
+    const action = await RpmBlockMassiveAction.create({
+      rpmBlockId: req.body.blockId, // Use blockId from request body
+      text,
+      color,
+      textColor,
+      status,
+      categoryId,
+      hour,
+      startDate,
+      endDate,
+      isDateRange,
+      leverage,
+      description,
+      recurrenceType,
+      recurrencePattern
+    });
 
-//     // Find the action
-//     const action = await RpmBlockMassiveAction.findByPk(occurrence.actionId);
-//     if (!action) {
-//       return res.status(404).json({ error: 'Massive action not found' });
-//     }
+    res.status(201).json(action);
+  } catch (error) {
+    console.error('Error creating massive action:', error);
+    res.status(500).json({ error: 'Failed to create massive action' });
+  }
+};
 
-//     // Update the action
-//     await action.update({
-//       text,
-//       description,
-//       startDate,
-//       endDate,
-//       isDateRange,
-//       hour,
-//       categoryId,
-//       status,
-//       color,
-//       textColor,
-//       priority
-//     });
-//     const actionId = action.id;
-//     console.log(`Massive action ${action.id} status updated to: ${action.status}`);
-
-//     // If this is a single event (not a date range), update or create an occurrence
-//     if (!isDateRange && startDate) {
-//       // Find existing occurrence for this date
-     
-
-//       if (occurrence) {
-//         // Update existing occurrence
-//         await occurrence.update({
-//           date : startDate,
-//           hour,
-//           location,
-//           leverage,
-//           durationAmount,
-//           durationUnit
-//         });
-
-//         // Handle notes if provided
-//         if (notes && Array.isArray(notes)) {
-//           // Delete existing notes
-//           await RpmBlockMassiveActionNote.destroy({
-//             where: {
-//               occurrenceId: occurrence.id
-//             }
-//           });
-
-//           // Create new notes
-//           for (const note of notes) {
-//             await RpmBlockMassiveActionNote.create({
-//               id: uuidv4(),
-//               occurrenceId: occurrence.id,
-//               actionId : occurrence.actionId,
-//               text: note.text,
-//               type: note.type
-//             });
-//           }
-//         }
-//       } else {
-//         // Create new occurrence
-//         const occurrence = await RpmMassiveActionOccurrence.create({
-//           id: uuidv4(),
-//           actionId: id,
-//           date: startDate,
-//           hour,
-//           location,
-//           leverage,
-//           durationAmount,
-//           durationUnit
-//         });
-
-//         // Create notes if provided
-//         if (notes && Array.isArray(notes)) {
-//           for (const note of notes) {
-//             await RpmBlockMassiveActionNote.create({
-//               id: uuidv4(),
-//               occurrenceId: occurrence.id,
-//               actionId : occurrence.actionId,
-//               text: note.text,
-//               type: note.type
-//             });
-//           }
-//         }
-//       }
-//     }
-
-   
-
-//     res.json(sanitizeSequelizeModel(action));
-//   } catch (error) {
-//     console.error('Error updating massive action:', error);
-//     res.status(500).json({ error: 'Failed to update massive action' });
-//   }
-// };
-
-/**
- * Delete a massive action and all its related data
- */
 export const deleteRpmBlockMassiveAction = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

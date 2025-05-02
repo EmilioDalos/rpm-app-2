@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   getRpmBlockMassiveActions,
   getRpmBlockMassiveActionById,
-  //updateRpmBlockMassiveAction,
+  createMassiveAction,
   deleteRpmBlockMassiveAction,
   deleteRpmBlockMassiveActionByDate
 } from '../controllers/massiveActionController';
@@ -15,8 +15,8 @@ router.get('/', getRpmBlockMassiveActions);
 // Get a single massive action by ID
 router.get('/:id', getRpmBlockMassiveActionById);
 
-// Update a massive action
-//router.put('/:id', updateRpmBlockMassiveAction);
+// Create a new massive action
+router.post('/', createMassiveAction);
 
 // Delete a massive action by id and date
 router.delete('/:id/:date', deleteRpmBlockMassiveActionByDate);

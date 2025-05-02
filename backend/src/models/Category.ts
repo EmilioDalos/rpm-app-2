@@ -4,16 +4,17 @@ import Role from './Role';
 import CategoryThreeToThrive from './CategoryThreeToThrive';
 import CategoryResult from './CategoryResult';
 import CategoryActionPlan from './CategoryActionPlan';
+import RpmBlockMassiveAction from './RpmBlockMassiveAction';
 
 interface CategoryAttributes {
   id: string;
   name: string;
-  type: 'personal' | 'professional';
+  type: string;
+  color: string;
   description?: string;
   vision?: string;
   purpose?: string;
   resources?: string;
-  color?: string;
   imageBlob?: Buffer;
   createdAt: Date;
   updatedAt: Date;
@@ -24,15 +25,15 @@ interface CategoryCreationAttributes extends Omit<CategoryAttributes, 'id' | 'cr
 class Category extends Model<CategoryAttributes, CategoryCreationAttributes> {
   public id!: string;
   public name!: string;
-  public type!: 'personal' | 'professional';
+  public type!: string;
+  public color!: string;
   public description?: string;
   public vision?: string;
   public purpose?: string;
   public resources?: string;
-  public color?: string;
   public imageBlob?: Buffer;
-  public createdAt!: Date;
-  public updatedAt!: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   // Define associations
   public roles?: Role[];
@@ -101,5 +102,8 @@ Category.init(
     timestamps: true,
   }
 );
+
+// Associations are defined in index.ts
+// This ensures proper model initialization order
 
 export default Category;

@@ -60,7 +60,6 @@ RpmBlockMassiveActionNote.init({
     type: DataTypes.STRING(20),
     allowNull: true,
   }
-  // No explicit timestamp fields - handled by Sequelize
 }, {
   sequelize,
   modelName: 'RpmBlockMassiveActionNote',
@@ -70,5 +69,8 @@ RpmBlockMassiveActionNote.init({
   updatedAt: 'updated_at',
   underscored: true,
 });
+
+// Associations are defined in index.ts
+// This ensures proper model initialization order
 
 export default RpmBlockMassiveActionNote;

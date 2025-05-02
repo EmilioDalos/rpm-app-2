@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS "category" (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Role Table
 CREATE TABLE IF NOT EXISTS "role" (
   id UUID PRIMARY KEY,
   category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
@@ -43,6 +42,12 @@ CREATE TABLE IF NOT EXISTS "role" (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Define recurrence type enum for rpm_block_massive_action
+DO $$ BEGIN
+  CREATE TYPE "enum_rpm_block_massive_action_recurrence_type" AS ENUM ('day', 'week', 'month', 'year');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Create Other Tables
 CREATE TABLE IF NOT EXISTS "role_core_quality" (
@@ -104,6 +109,7 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   color VARCHAR(7),
   text_color VARCHAR(7),
   priority INTEGER,
+  leverage TEXT,
   status action_status NOT NULL DEFAULT 'new',
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
@@ -111,6 +117,9 @@ CREATE TABLE IF NOT EXISTS "rpm_block_massive_action" (
   hour NUMERIC,
   missed_date TIMESTAMP WITH TIME ZONE,
   description TEXT,
+  recurrence_pattern JSONB DEFAULT '{}'::JSONB,
+  recurrence_type "enum_rpm_block_massive_action_recurrence_type",
+  recurrence_range JSONB,
   category_id UUID REFERENCES "category"(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -122,11 +131,25 @@ CREATE TABLE IF NOT EXISTS "rpm_massive_action_occurrence" (
   date TIMESTAMP WITH TIME ZONE,
   hour NUMERIC,
   location VARCHAR(255),
-  leverage TEXT,
   duration_amount INTEGER,
   duration_unit VARCHAR(50),
+  recurrence_pattern JSONB DEFAULT '{}'::jsonb,
+  recurrence_range JSONB,
+  is_recurring BOOLEAN DEFAULT FALSE,
+  recurrence_end_date TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Gestructureerde uitzonderingen voor terugkerende acties
+CREATE TABLE IF NOT EXISTS "rpm_massive_action_exception" (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  action_id UUID NOT NULL REFERENCES "rpm_block_massive_action"(id) ON DELETE CASCADE,
+  exception_date TIMESTAMPTZ NOT NULL,
+  exception_type VARCHAR(50) NOT NULL,    -- 'overgeslagen', 'gewijzigd', 'verplaatst'
+  modified_data JSONB,                     -- opgeslagen aangepaste velden
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "rpm_block_massive_action_note" (
